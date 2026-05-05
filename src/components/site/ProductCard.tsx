@@ -1,4 +1,5 @@
 import { Heart, Eye, Repeat, ShoppingCart } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export type Product = {
   id: string;
@@ -20,6 +21,7 @@ const toneClass: Record<NonNullable<Product["badge"]>["tone"], string> = {
 };
 
 export function ProductCard({ p }: { p: Product }) {
+  const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   return (
     <div className="group relative rounded-2xl border border-border bg-card p-3 transition hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.15)]">
       {/* Badge tab */}
@@ -33,6 +35,12 @@ export function ProductCard({ p }: { p: Product }) {
 
       {/* Image */}
       <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-secondary">
+        {discount > 0 && (
+          <span className="absolute top-2 left-2 z-10 rounded-full bg-accent text-accent-foreground text-[10px] font-medium px-2 py-0.5">
+            -{discount}%
+          </span>
+        )}
+        <Link to="/product/$id" params={{ id: p.id }} className="block size-full">
         <img
           src={p.image}
           alt={p.name}
@@ -41,6 +49,7 @@ export function ProductCard({ p }: { p: Product }) {
           loading="lazy"
           className="size-full object-cover transition duration-500 group-hover:scale-105"
         />
+        </Link>
         {/* Hover icon row */}
         <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition">
           <button className="size-9 rounded-full bg-card shadow flex items-center justify-center text-muted-foreground hover:text-foreground"><Eye className="size-4" /></button>
