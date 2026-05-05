@@ -1,6 +1,14 @@
 import { Search, Heart, ShoppingCart, User, Menu } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
-const categories = ["Gadgets", "Fashion", "Home & Living", "Beauty", "Grocery", "Deals"];
+const categories = [
+  { name: "Gadgets", to: "/category/gadgets" },
+  { name: "Fashion", to: "/category/fashion" },
+  { name: "Home & Living", to: "/category/home" },
+  { name: "Beauty", to: "/category/beauty" },
+  { name: "Grocery", to: "/category/grocery" },
+  { name: "Deals", to: "/category/deals" },
+];
 
 export function Header() {
   return (
@@ -17,10 +25,10 @@ export function Header() {
       <div className="border-b">
         <div className="mx-auto max-w-7xl px-4 h-16 flex items-center gap-4">
           <button className="md:hidden -ml-1 p-2"><Menu className="size-5" /></button>
-          <a href="/" className="flex items-baseline gap-0.5">
+          <Link to="/" className="flex items-baseline gap-0.5">
             <span className="text-xl font-semibold tracking-tight">SHOP</span>
             <span className="text-xl font-semibold tracking-tight text-[oklch(0.62_0.24_25)]">.BD</span>
-          </a>
+          </Link>
 
           <div className="flex-1 max-w-2xl mx-auto hidden md:block">
             <div className="relative">
@@ -33,14 +41,14 @@ export function Header() {
           </div>
 
           <div className="ml-auto flex items-center gap-1">
-            <button className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
+            <Link to="/login" className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
               <User className="size-4" /> Sign in
-            </button>
-            <button className="p-2.5 rounded-full hover:bg-secondary"><Heart className="size-5" /></button>
-            <button className="relative p-2.5 rounded-full hover:bg-secondary">
+            </Link>
+            <Link to="/wishlist" className="p-2.5 rounded-full hover:bg-secondary"><Heart className="size-5" /></Link>
+            <Link to="/cart" className="relative p-2.5 rounded-full hover:bg-secondary">
               <ShoppingCart className="size-5" />
               <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-accent text-accent-foreground text-[10px] font-medium flex items-center justify-center">2</span>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -59,16 +67,17 @@ export function Header() {
       {/* Categories */}
       <nav className="border-b">
         <div className="mx-auto max-w-7xl px-4 h-11 flex items-center gap-6 overflow-x-auto text-sm">
-          {categories.map((c, i) => (
-            <a
-              key={c}
-              href="#"
-              className={`whitespace-nowrap hover:text-foreground transition ${i === 0 ? "text-foreground font-medium" : "text-muted-foreground"}`}
+          {categories.map((c) => (
+            <Link
+              key={c.name}
+              to={c.to}
+              className="whitespace-nowrap text-muted-foreground hover:text-foreground transition"
+              activeProps={{ className: "whitespace-nowrap text-foreground font-medium" }}
             >
-              {c}
-            </a>
+              {c.name}
+            </Link>
           ))}
-          <a href="#" className="ml-auto whitespace-nowrap text-accent font-medium">Track order →</a>
+          <Link to="/track" className="ml-auto whitespace-nowrap text-accent font-medium">Track order →</Link>
         </div>
       </nav>
     </header>
