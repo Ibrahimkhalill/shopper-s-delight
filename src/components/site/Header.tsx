@@ -1,5 +1,8 @@
-import { Search, Heart, ShoppingCart, User, Menu } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Search, Heart, ShoppingCart, User, Menu, X, Package, LogOut, ChevronDown } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { useStore } from "@/lib/store";
+import { PRODUCTS } from "@/lib/products";
 
 const categories = [
   { name: "Gadgets", to: "/category/gadgets" },
@@ -11,62 +14,143 @@ const categories = [
 ];
 
 export function Header() {
+  const { cartCount, wishlist, user, logout } = useStore();
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [userMenu, setUserMenu] = useState(false);
+  const navigate = useNavigate();
+  const ref = useRef<HTMLDivElement>(null);
+
+  const results = q.trim()
+    ? PRODUCTS.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || p.category.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+    : [];
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (q.trim()) {
+      navigate({ to: "/search", search: { q } });
+      setOpen(false);
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-40 bg-background">
-      {/* Announcement */}
+    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="bg-black text-white text-xs">
         <div className="mx-auto max-w-7xl px-4 py-2 flex items-center justify-between">
-          <span>Free delivery on orders over ৳1,500 · Cash on Delivery available</span>
+          <span className="truncate">Free delivery on orders over ৳1,500 · Cash on Delivery available</span>
           <span className="hidden sm:inline opacity-70">EN · <span className="font-bn">বাংলা</span></span>
         </div>
       </div>
 
-      {/* Main bar */}
       <div className="border-b">
-        <div className="mx-auto max-w-7xl px-4 h-16 flex items-center gap-4">
-          <button className="md:hidden -ml-1 p-2"><Menu className="size-5" /></button>
-          <Link to="/" className="flex items-baseline gap-0.5">
+        <div className="mx-auto max-w-7xl px-4 h-16 flex items-center gap-3">
+          <button onClick={() => setMenu(true)} className="md:hidden -ml-1 p-2"><Menu className="size-5" /></button>
+          <Link to="/" className="flex items-baseline gap-0.5 shrink-0">
             <span className="text-xl font-semibold tracking-tight">SHOP</span>
-            <span className="text-xl font-semibold tracking-tight text-[oklch(0.62_0.24_25)]">.BD</span>
+            <span className="text-xl font-semibold tracking-tight text-accent">.BD</span>
           </Link>
 
-          <div className="flex-1 max-w-2xl mx-auto hidden md:block">
-            <div className="relative">
+          <div ref={ref} className="flex-1 max-w-2xl mx-auto hidden md:block relative">
+            <form onSubmit={submit}>
               <Search className="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
+                value={q}
+                onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+                onFocus={() => setOpen(true)}
                 placeholder="Search products, brands and categories"
                 className="w-full h-11 pl-11 pr-4 rounded-full border border-border bg-secondary text-sm outline-none focus:border-foreground transition"
               />
-            </div>
+            </form>
+            {open && results.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border rounded-2xl shadow-xl overflow-hidden animate-slide-down z-50">
+                {results.map((p) => (
+                  <Link key={p.id} to="/product/$id" params={{ id: p.id }} onClick={() => setOpen(false)} className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary">
+                    <img src={p.image} className="size-11 rounded-lg object-cover" alt="" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">{p.category}</p>
+                    </div>
+                    <span className="text-sm font-semibold">৳{p.price}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="ml-auto flex items-center gap-1">
-            <Link to="/login" className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
-              <User className="size-4" /> Sign in
+            {user ? (
+              <div className="relative">
+                <button onClick={() => setUserMenu(!userMenu)} className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
+                  <div className="size-7 rounded-full bg-foreground text-background flex items-center justify-center text-xs font-semibold">{user.name[0]?.toUpperCase()}</div>
+                  <span className="max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
+                  <ChevronDown className="size-3" />
+                </button>
+                {userMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border rounded-2xl shadow-xl py-2 animate-slide-down">
+                    <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><User className="size-4" /> My profile</Link>
+                    <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><Package className="size-4" /> My orders</Link>
+                    <Link to="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><Heart className="size-4" /> Wishlist</Link>
+                    <div className="border-t my-1.5" />
+                    <button onClick={() => { logout(); setUserMenu(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm text-accent"><LogOut className="size-4" /> Sign out</button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login" className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
+                <User className="size-4" /> Sign in
+              </Link>
+            )}
+            <Link to="/wishlist" className="relative p-2.5 rounded-full hover:bg-secondary">
+              <Heart className="size-5" />
+              {wishlist.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-foreground text-background text-[10px] font-medium flex items-center justify-center">{wishlist.length}</span>
+              )}
             </Link>
-            <Link to="/wishlist" className="p-2.5 rounded-full hover:bg-secondary"><Heart className="size-5" /></Link>
             <Link to="/cart" className="relative p-2.5 rounded-full hover:bg-secondary">
               <ShoppingCart className="size-5" />
-              <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-accent text-accent-foreground text-[10px] font-medium flex items-center justify-center">2</span>
+              {cartCount > 0 && (
+                <span key={cartCount} className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-accent text-accent-foreground text-[10px] font-medium flex items-center justify-center animate-bounce-soft">{cartCount}</span>
+              )}
             </Link>
           </div>
         </div>
 
-        {/* Mobile search */}
-        <div className="md:hidden px-4 pb-3">
-          <div className="relative">
-            <Search className="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <div className="md:hidden px-4 pb-3 relative" ref={ref}>
+          <form onSubmit={submit}>
+            <Search className="size-4 absolute left-7 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
+              value={q}
+              onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+              onFocus={() => setOpen(true)}
               placeholder="Search SHOP.BD"
               className="w-full h-11 pl-11 pr-4 rounded-full border border-border bg-secondary text-sm outline-none"
             />
-          </div>
+          </form>
+          {open && results.length > 0 && (
+            <div className="absolute top-full left-4 right-4 mt-1 bg-card border rounded-2xl shadow-xl overflow-hidden z-50 animate-slide-down">
+              {results.map((p) => (
+                <Link key={p.id} to="/product/$id" params={{ id: p.id }} onClick={() => setOpen(false)} className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary">
+                  <img src={p.image} className="size-10 rounded-lg object-cover" alt="" />
+                  <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{p.name}</p></div>
+                  <span className="text-sm font-semibold">৳{p.price}</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Categories */}
       <nav className="border-b">
-        <div className="mx-auto max-w-7xl px-4 h-11 flex items-center gap-6 overflow-x-auto text-sm">
+        <div className="mx-auto max-w-7xl px-4 h-11 flex items-center gap-6 overflow-x-auto no-scrollbar text-sm">
           {categories.map((c) => (
             <Link
               key={c.name}
@@ -80,6 +164,33 @@ export function Header() {
           <Link to="/track" className="ml-auto whitespace-nowrap text-accent font-medium">Track order →</Link>
         </div>
       </nav>
+
+      {/* Mobile drawer */}
+      {menu && (
+        <div className="fixed inset-0 z-50 md:hidden animate-fade-in">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMenu(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-background border-r shadow-2xl p-5 animate-slide-down">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-lg font-semibold">Menu</span>
+              <button onClick={() => setMenu(false)}><X className="size-5" /></button>
+            </div>
+            <nav className="space-y-1">
+              {categories.map((c) => (
+                <Link key={c.name} to={c.to} onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg hover:bg-secondary text-sm">{c.name}</Link>
+              ))}
+            </nav>
+            <div className="border-t my-5" />
+            {user ? (
+              <>
+                <Link to="/profile" onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg hover:bg-secondary text-sm">My profile</Link>
+                <button onClick={() => { logout(); setMenu(false); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-accent">Sign out</button>
+              </>
+            ) : (
+              <Link to="/login" onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium text-center">Sign in</Link>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -1,0 +1,124 @@
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { PRODUCTS } from "./products";
+import type { Product } from "@/components/site/ProductCard";
+
+export type CartItem = { id: string; qty: number; size?: string };
+export type Order = {
+  id: string;
+  items: CartItem[];
+  total: number;
+  status: "placed" | "packed" | "shipped" | "delivered";
+  createdAt: number;
+  payment: string;
+  address: string;
+  name: string;
+  phone: string;
+};
+export type Review = { id: string; productId: string; user: string; rating: number; text: string; createdAt: number };
+export type User = { name: string; phone: string; email?: string };
+
+type StoreCtx = {
+  cart: CartItem[];
+  wishlist: string[];
+  orders: Order[];
+  reviews: Review[];
+  user: User | null;
+  addToCart: (id: string, opts?: { qty?: number; size?: string }) => void;
+  removeFromCart: (id: string) => void;
+  setQty: (id: string, qty: number) => void;
+  clearCart: () => void;
+  toggleWishlist: (id: string) => void;
+  placeOrder: (data: Omit<Order, "id" | "items" | "total" | "status" | "createdAt">) => Order;
+  addReview: (r: Omit<Review, "id" | "createdAt">) => void;
+  login: (u: User) => void;
+  logout: () => void;
+  cartCount: number;
+  cartSubtotal: number;
+  resolveProduct: (id: string) => Product | undefined;
+};
+
+const Ctx = createContext<StoreCtx | null>(null);
+
+function usePersist<T>(key: string, initial: T) {
+  const [v, setV] = useState<T>(() => {
+    if (typeof window === "undefined") return initial;
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? (JSON.parse(raw) as T) : initial;
+    } catch {
+      return initial;
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch {}
+  }, [key, v]);
+  return [v, setV] as const;
+}
+
+export function StoreProvider({ children }: { children: ReactNode }) {
+  const [cart, setCart] = usePersist<CartItem[]>("shopbd:cart", []);
+  const [wishlist, setWishlist] = usePersist<string[]>("shopbd:wishlist", []);
+  const [orders, setOrders] = usePersist<Order[]>("shopbd:orders", []);
+  const [reviews, setReviews] = usePersist<Review[]>("shopbd:reviews", []);
+  const [user, setUser] = usePersist<User | null>("shopbd:user", null);
+
+  const resolveProduct = (id: string) => PRODUCTS.find((p) => p.id === id);
+
+  const addToCart: StoreCtx["addToCart"] = (id, opts) => {
+    setCart((c) => {
+      const existing = c.find((x) => x.id === id && x.size === opts?.size);
+      if (existing) {
+        return c.map((x) => x === existing ? { ...x, qty: x.qty + (opts?.qty ?? 1) } : x);
+      }
+      return [...c, { id, qty: opts?.qty ?? 1, size: opts?.size }];
+    });
+  };
+  const removeFromCart = (id: string) => setCart((c) => c.filter((x) => x.id !== id));
+  const setQty = (id: string, qty: number) => setCart((c) => c.map((x) => x.id === id ? { ...x, qty: Math.max(1, qty) } : x));
+  const clearCart = () => setCart([]);
+  const toggleWishlist = (id: string) =>
+    setWishlist((w) => (w.includes(id) ? w.filter((x) => x !== id) : [...w, id]));
+
+  const cartSubtotal = useMemo(
+    () => cart.reduce((s, it) => s + (resolveProduct(it.id)?.price ?? 0) * it.qty, 0),
+    [cart],
+  );
+  const cartCount = cart.reduce((s, x) => s + x.qty, 0);
+
+  const placeOrder: StoreCtx["placeOrder"] = (data) => {
+    const id = `BD-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 99999)).padStart(5, "0")}`;
+    const order: Order = {
+      ...data,
+      id,
+      items: cart,
+      total: cartSubtotal + (cartSubtotal > 1500 ? 0 : 80),
+      status: "placed",
+      createdAt: Date.now(),
+    };
+    setOrders((o) => [order, ...o]);
+    setCart([]);
+    return order;
+  };
+  const addReview: StoreCtx["addReview"] = (r) =>
+    setReviews((rs) => [{ ...r, id: crypto.randomUUID(), createdAt: Date.now() }, ...rs]);
+
+  const login = (u: User) => setUser(u);
+  const logout = () => setUser(null);
+
+  return (
+    <Ctx.Provider value={{
+      cart, wishlist, orders, reviews, user,
+      addToCart, removeFromCart, setQty, clearCart, toggleWishlist,
+      placeOrder, addReview, login, logout,
+      cartCount, cartSubtotal, resolveProduct,
+    }}>
+      {children}
+    </Ctx.Provider>
+  );
+}
+
+export function useStore() {
+  const v = useContext(Ctx);
+  if (!v) throw new Error("useStore must be used within StoreProvider");
+  return v;
+}

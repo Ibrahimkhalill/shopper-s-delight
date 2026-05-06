@@ -1,29 +1,12 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import heroImg from "@/assets/hero-shopping.png";
 
 const slides = [
-  {
-    badge: "22% Off",
-    eyebrow: "New season",
-    title: "Fashion sale for everyone",
-    subtitle: "Wear the change. Fashion that feels good.",
-    cta: "Shop now",
-  },
-  {
-    badge: "Free ৳",
-    eyebrow: "Gadgets week",
-    title: "Smarter tech, fairer prices",
-    subtitle: "Phones, audio and wearables — delivered nationwide.",
-    cta: "Explore gadgets",
-  },
-  {
-    badge: "COD",
-    eyebrow: "Beauty edit",
-    title: "Glow up your routine",
-    subtitle: "Premium beauty essentials, curated for you.",
-    cta: "Shop beauty",
-  },
+  { badge: "22% Off", eyebrow: "New season", title: "Fashion sale for everyone", subtitle: "Wear the change. Fashion that feels good.", cta: "Shop now", slug: "fashion" },
+  { badge: "Free ৳", eyebrow: "Gadgets week", title: "Smarter tech, fairer prices", subtitle: "Phones, audio and wearables — delivered nationwide.", cta: "Explore gadgets", slug: "gadgets" },
+  { badge: "COD", eyebrow: "Beauty edit", title: "Glow up your routine", subtitle: "Premium beauty essentials, curated for you.", cta: "Shop beauty", slug: "beauty" },
 ];
 
 export function HeroSlider() {
@@ -72,9 +55,9 @@ export function HeroSlider() {
                   {s.title}
                 </h1>
                 <p className="mt-4 text-sm md:text-base text-white/70 max-w-md">{s.subtitle}</p>
-                <button className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent text-accent-foreground px-6 h-11 text-sm font-medium hover:opacity-90 transition">
+                <Link to="/category/$slug" params={{ slug: s.slug }} className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent text-accent-foreground px-6 h-11 text-sm font-medium hover:opacity-90 transition leading-[2.75rem]">
                   {s.cta}
-                </button>
+                </Link>
               </div>
             </div>
           </div>
