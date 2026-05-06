@@ -1,8 +1,16 @@
+import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+
 export function Footer() {
   const cols = [
     { title: "Shop", links: ["Gadgets", "Fashion", "Home & Living", "Beauty", "Grocery"] },
     { title: "Help", links: ["Track order", "Shipping", "Returns", "FAQ", "Contact"] },
     { title: "Company", links: ["About", "Careers", "Press", "Blog"] },
+  ];
+  const socials = [
+    { Icon: Facebook, label: "Facebook" },
+    { Icon: Instagram, label: "Instagram" },
+    { Icon: Twitter, label: "Twitter" },
+    { Icon: Youtube, label: "YouTube" },
   ];
   return (
     <footer className="bg-black text-white">
@@ -16,6 +24,18 @@ export function Footer() {
             Premium multi-category e-commerce for Bangladesh. Cash on Delivery, secure payments, nationwide shipping.
           </p>
           <p className="mt-6 text-sm font-bn text-white/70">কেনাকাটার নতুন ঠিকানা</p>
+          <div className="mt-6 flex items-center gap-2">
+            {socials.map(({ Icon, label }) => (
+              <a
+                key={label}
+                href="#"
+                aria-label={label}
+                className="size-9 rounded-full border border-white/15 flex items-center justify-center hover:bg-accent hover:border-accent transition"
+              >
+                <Icon className="size-4" />
+              </a>
+            ))}
+          </div>
         </div>
         {cols.map((c) => (
           <div key={c.title}>
