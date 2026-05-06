@@ -1,5 +1,7 @@
-import { Heart, Eye, Repeat, ShoppingCart } from "lucide-react";
+import { Heart, Eye, ShoppingCart } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useStore } from "@/lib/store";
+import { toast } from "sonner";
 
 export type Product = {
   id: string;
@@ -22,8 +24,22 @@ const toneClass: Record<NonNullable<Product["badge"]>["tone"], string> = {
 
 export function ProductCard({ p }: { p: Product }) {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+  const { addToCart, toggleWishlist, wishlist } = useStore();
+  const liked = wishlist.includes(p.id);
+  const handleAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(p.id, { size: p.sizes[0] });
+    toast.success("Added to cart", { description: p.name });
+  };
+  const handleLike = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(p.id);
+    toast(liked ? "Removed from wishlist" : "Saved to wishlist");
+  };
   return (
-    <div className="group relative rounded-2xl border border-border bg-card p-3 transition hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.15)]">
+    <div className="group relative rounded-2xl border border-border bg-card p-3 hover-lift">
       {/* Badge tab */}
       {p.badge && (
         <div className="absolute -top-px left-1/2 -translate-x-1/2 z-10">
@@ -52,9 +68,9 @@ export function ProductCard({ p }: { p: Product }) {
         </Link>
         {/* Hover icon row */}
         <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition">
-          <button className="size-9 rounded-full bg-card shadow flex items-center justify-center text-muted-foreground hover:text-foreground"><Eye className="size-4" /></button>
-          <button className="size-9 rounded-full bg-card shadow flex items-center justify-center text-muted-foreground hover:text-foreground"><Repeat className="size-4" /></button>
-          <button className="size-9 rounded-full bg-accent text-accent-foreground shadow flex items-center justify-center"><ShoppingCart className="size-4" /></button>
+          <Link to="/product/$id" params={{ id: p.id }} className="size-9 rounded-full bg-card shadow flex items-center justify-center text-muted-foreground hover:text-foreground"><Eye className="size-4" /></Link>
+          <button onClick={handleLike} className={`size-9 rounded-full bg-card shadow flex items-center justify-center ${liked ? "text-accent" : "text-muted-foreground hover:text-foreground"}`}><Heart className={`size-4 ${liked ? "fill-current" : ""}`} /></button>
+          <button onClick={handleAdd} aria-label="Add to cart" className="size-9 rounded-full bg-accent text-accent-foreground shadow flex items-center justify-center hover:scale-110 transition"><ShoppingCart className="size-4" /></button>
         </div>
       </div>
 
@@ -88,8 +104,8 @@ export function ProductCard({ p }: { p: Product }) {
             />
           ))}
         </div>
-        <button className={`size-7 flex items-center justify-center rounded-full ${p.liked ? "text-accent" : "text-muted-foreground hover:text-accent"}`}>
-          <Heart className={`size-4 ${p.liked ? "fill-current" : ""}`} />
+        <button onClick={handleLike} className={`size-7 flex items-center justify-center rounded-full ${liked ? "text-accent" : "text-muted-foreground hover:text-accent"}`}>
+          <Heart className={`size-4 ${liked ? "fill-current" : ""}`} />
         </button>
       </div>
     </div>
