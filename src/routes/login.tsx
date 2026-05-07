@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
 function LoginPage() {
   const { login } = useStore();
+  const { t, lang } = useT();
   const navigate = useNavigate();
   const [identifier, setId] = useState("");
   const [pw, setPw] = useState("");
@@ -24,19 +26,19 @@ function LoginPage() {
 
   return (
     <Layout hideTrust>
-      <div className="mx-auto max-w-md px-4 py-16 animate-fade-up">
-        <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
-        <p className="text-sm text-muted-foreground mt-2">Welcome back to SHOP.BD</p>
+      <div className={`mx-auto max-w-md px-4 py-16 animate-fade-up ${lang === "bn" ? "font-bn" : ""}`}>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("user.signin")}</h1>
+        <p className="text-sm text-muted-foreground mt-2">{t("user.welcome_back")}</p>
         <form onSubmit={submit} className="mt-8 space-y-3">
-          <input value={identifier} onChange={(e) => setId(e.target.value)} placeholder="Phone or email" className="w-full h-12 px-5 rounded-full border bg-card text-sm outline-none focus:border-foreground transition" />
+          <input value={identifier} onChange={(e) => setId(e.target.value)} placeholder={t("user.phone_or_email")} className="w-full h-12 px-5 rounded-full border bg-card text-sm outline-none focus:border-foreground transition" />
           <div className="relative">
-            <input value={pw} onChange={(e) => setPw(e.target.value)} type={show ? "text" : "password"} placeholder="Password" className="w-full h-12 px-5 pr-12 rounded-full border bg-card text-sm outline-none focus:border-foreground transition" />
+            <input value={pw} onChange={(e) => setPw(e.target.value)} type={show ? "text" : "password"} placeholder={t("user.password")} className="w-full h-12 px-5 pr-12 rounded-full border bg-card text-sm outline-none focus:border-foreground transition" />
             <button type="button" onClick={() => setShow(!show)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>
           </div>
-          <button className="w-full h-12 rounded-full bg-foreground text-background text-sm font-medium hover:opacity-90 transition">Sign in</button>
+          <button className="w-full h-12 rounded-full bg-foreground text-background text-sm font-medium hover:opacity-90 transition">{t("user.signin")}</button>
         </form>
         <p className="mt-5 text-sm text-muted-foreground text-center">
-          New here? <Link to="/signup" className="text-accent font-medium">Create an account</Link>
+          {t("user.new_here")} <Link to="/signup" className="text-accent font-medium">{t("user.create")}</Link>
         </p>
       </div>
     </Layout>
