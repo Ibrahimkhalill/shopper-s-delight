@@ -1,20 +1,21 @@
-import { Search, Heart, ShoppingCart, User, Menu, X, Package, LogOut, ChevronDown } from "lucide-react";
+import { Search, Heart, ShoppingCart, User, Menu, X, Package, LogOut, ChevronDown, Globe } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { PRODUCTS } from "@/lib/products";
-
-const categories = [
-  { name: "Gadgets", to: "/category/gadgets" },
-  { name: "Fashion", to: "/category/fashion" },
-  { name: "Home & Living", to: "/category/home" },
-  { name: "Beauty", to: "/category/beauty" },
-  { name: "Grocery", to: "/category/grocery" },
-  { name: "Deals", to: "/category/deals" },
-];
+import { useT } from "@/lib/i18n";
 
 export function Header() {
   const { cartCount, wishlist, user, logout } = useStore();
+  const { lang, setLang, t } = useT();
+  const categories = [
+    { name: t("nav.gadgets"), to: "/category/gadgets" },
+    { name: t("nav.fashion"), to: "/category/fashion" },
+    { name: t("nav.home"), to: "/category/home" },
+    { name: t("nav.beauty"), to: "/category/beauty" },
+    { name: t("nav.grocery"), to: "/category/grocery" },
+    { name: t("nav.deals"), to: "/category/deals" },
+  ];
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -46,8 +47,15 @@ export function Header() {
     <header className="sticky top-0 z-40 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="bg-black text-white text-xs">
         <div className="mx-auto max-w-7xl px-4 py-2 flex items-center justify-between">
-          <span className="truncate">Free delivery on orders over ৳1,500 · Cash on Delivery available</span>
-          <span className="hidden sm:inline opacity-70">EN · <span className="font-bn">বাংলা</span></span>
+          <span className={`truncate ${lang === "bn" ? "font-bn" : ""}`}>{t("topbar.delivery")}</span>
+          <button
+            onClick={() => setLang(lang === "en" ? "bn" : "en")}
+            className="hidden sm:inline-flex items-center gap-1.5 opacity-80 hover:opacity-100 transition"
+            aria-label="Toggle language"
+          >
+            <Globe className="size-3.5" />
+            <span className={lang === "en" ? "font-bn" : ""}>{t("lang.toggle")}</span>
+          </button>
         </div>
       </div>
 
@@ -66,7 +74,7 @@ export function Header() {
                 value={q}
                 onChange={(e) => { setQ(e.target.value); setOpen(true); }}
                 onFocus={() => setOpen(true)}
-                placeholder="Search products, brands and categories"
+                placeholder={t("search.placeholder")}
                 className="w-full h-11 pl-11 pr-4 rounded-full border border-border bg-secondary text-sm outline-none focus:border-foreground transition"
               />
             </form>
@@ -96,17 +104,17 @@ export function Header() {
                 </button>
                 {userMenu && (
                   <div className="absolute right-0 top-full mt-2 w-56 bg-card border rounded-2xl shadow-xl py-2 animate-slide-down">
-                    <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><User className="size-4" /> My profile</Link>
-                    <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><Package className="size-4" /> My orders</Link>
-                    <Link to="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><Heart className="size-4" /> Wishlist</Link>
+                    <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><User className="size-4" /> {t("user.profile")}</Link>
+                    <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><Package className="size-4" /> {t("user.orders")}</Link>
+                    <Link to="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><Heart className="size-4" /> {t("user.wishlist")}</Link>
                     <div className="border-t my-1.5" />
-                    <button onClick={() => { logout(); setUserMenu(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm text-accent"><LogOut className="size-4" /> Sign out</button>
+                    <button onClick={() => { logout(); setUserMenu(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm text-accent"><LogOut className="size-4" /> {t("user.signout")}</button>
                   </div>
                 )}
               </div>
             ) : (
               <Link to="/login" className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
-                <User className="size-4" /> Sign in
+                <User className="size-4" /> {t("user.signin")}
               </Link>
             )}
             <Link to="/wishlist" className="relative p-2.5 rounded-full hover:bg-secondary">
@@ -131,7 +139,7 @@ export function Header() {
               value={q}
               onChange={(e) => { setQ(e.target.value); setOpen(true); }}
               onFocus={() => setOpen(true)}
-              placeholder="Search SHOP.BD"
+              placeholder={t("search.mobile")}
               className="w-full h-11 pl-11 pr-4 rounded-full border border-border bg-secondary text-sm outline-none"
             />
           </form>
@@ -155,13 +163,13 @@ export function Header() {
             <Link
               key={c.name}
               to={c.to}
-              className="whitespace-nowrap text-muted-foreground hover:text-foreground transition"
-              activeProps={{ className: "whitespace-nowrap text-foreground font-medium" }}
+              className={`whitespace-nowrap text-muted-foreground hover:text-foreground transition ${lang === "bn" ? "font-bn" : ""}`}
+              activeProps={{ className: `whitespace-nowrap text-foreground font-medium ${lang === "bn" ? "font-bn" : ""}` }}
             >
               {c.name}
             </Link>
           ))}
-          <Link to="/track" className="ml-auto whitespace-nowrap text-accent font-medium">Track order →</Link>
+          <Link to="/track" className={`ml-auto whitespace-nowrap text-accent font-medium ${lang === "bn" ? "font-bn" : ""}`}>{t("nav.track")}</Link>
         </div>
       </nav>
 
@@ -171,7 +179,7 @@ export function Header() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setMenu(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-72 bg-background border-r shadow-2xl p-5 animate-slide-down">
             <div className="flex items-center justify-between mb-6">
-              <span className="text-lg font-semibold">Menu</span>
+              <span className="text-lg font-semibold">{t("user.menu")}</span>
               <button onClick={() => setMenu(false)}><X className="size-5" /></button>
             </div>
             <nav className="space-y-1">
@@ -180,13 +188,21 @@ export function Header() {
               ))}
             </nav>
             <div className="border-t my-5" />
+            <button
+              onClick={() => setLang(lang === "en" ? "bn" : "en")}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-secondary text-sm"
+            >
+              <span className="flex items-center gap-2"><Globe className="size-4" /> Language</span>
+              <span className={lang === "en" ? "font-bn" : ""}>{t("lang.toggle")}</span>
+            </button>
+            <div className="border-t my-5" />
             {user ? (
               <>
-                <Link to="/profile" onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg hover:bg-secondary text-sm">My profile</Link>
-                <button onClick={() => { logout(); setMenu(false); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-accent">Sign out</button>
+                <Link to="/profile" onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg hover:bg-secondary text-sm">{t("user.profile")}</Link>
+                <button onClick={() => { logout(); setMenu(false); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-accent">{t("user.signout")}</button>
               </>
             ) : (
-              <Link to="/login" onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium text-center">Sign in</Link>
+              <Link to="/login" onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium text-center">{t("user.signin")}</Link>
             )}
           </div>
         </div>
