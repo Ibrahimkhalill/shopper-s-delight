@@ -19,15 +19,15 @@ function Index() {
       <FeaturedGrid />
       <OffersSection />
       <CategorySection
-        title="Fashion edit"
-        eyebrow="Wear the season"
+        titleKey="sec.fashion.title"
+        eyebrowKey="sec.fashion.eyebrow"
         slug="fashion"
         ids={["cotton-tshirt", "plaid-coat", "sport-shoes", "cotton-top", "smart-watch"]}
       />
       <TrendingSection />
       <CategorySection
-        title="Gadgets & audio"
-        eyebrow="Smarter tech"
+        titleKey="sec.gadgets.title"
+        eyebrowKey="sec.gadgets.eyebrow"
         slug="gadgets"
         ids={["wireless-headphones", "smart-watch", "sport-shoes", "plaid-coat", "cotton-tshirt"]}
       />
