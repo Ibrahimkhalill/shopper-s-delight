@@ -63,8 +63,8 @@ function CheckoutPage() {
           <div className="lg:col-span-2 space-y-6">
             <Section title="Contact">
               <Field label="Full name *" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Your name" />
-              <Field label="Phone number *" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+880 1XXX XXXXXX" />
-              <Field label="Email (optional)" value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder="you@email.com" />
+              <Field label="Phone number *" type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+880 1XXX XXXXXX" />
+              <Field label="Email (optional)" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder="you@email.com" />
             </Section>
             <Section title="Shipping address">
               <Field label="Address *" value={form.address} onChange={(v) => setForm({ ...form, address: v })} placeholder="House / Road / Area" />
@@ -136,11 +136,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </div>
   );
 }
-function Field({ label, placeholder, value, onChange }: { label: string; placeholder: string; value: string; onChange: (v: string) => void }) {
+function Field({ label, placeholder, value, onChange, type = "text" }: { label: string; placeholder: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <label className="block">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="mt-1 w-full h-11 px-4 rounded-xl border border-border bg-card text-sm outline-none focus:border-foreground transition" />
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="mt-1 w-full h-11 px-4 rounded-xl border border-border bg-card text-sm outline-none focus:border-foreground transition" />
     </label>
   );
 }

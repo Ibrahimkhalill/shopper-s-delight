@@ -1,4 +1,4 @@
-import { Search, Heart, ShoppingCart, User, Menu, X, Package, LogOut, ChevronDown, Globe } from "lucide-react";
+import { Search, Heart, ShoppingCart, User, Menu, X, Package, LogOut, ChevronDown, Globe, Smartphone, Shirt, Home, Sparkles, ShoppingBasket, Tag, ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
@@ -9,12 +9,12 @@ export function Header() {
   const { cartCount, wishlist, user, logout } = useStore();
   const { lang, setLang, t } = useT();
   const categories = [
-    { name: t("nav.gadgets"), to: "/category/gadgets" },
-    { name: t("nav.fashion"), to: "/category/fashion" },
-    { name: t("nav.home"), to: "/category/home" },
-    { name: t("nav.beauty"), to: "/category/beauty" },
-    { name: t("nav.grocery"), to: "/category/grocery" },
-    { name: t("nav.deals"), to: "/category/deals" },
+    { name: t("nav.gadgets"), to: "/category/gadgets", icon: Smartphone },
+    { name: t("nav.fashion"), to: "/category/fashion", icon: Shirt },
+    { name: t("nav.home"), to: "/category/home", icon: Home },
+    { name: t("nav.beauty"), to: "/category/beauty", icon: Sparkles },
+    { name: t("nav.grocery"), to: "/category/grocery", icon: ShoppingBasket },
+    { name: t("nav.deals"), to: "/category/deals", icon: Tag },
   ];
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -44,6 +44,7 @@ export function Header() {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-40 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="bg-black text-white text-xs">
         <div className="mx-auto max-w-7xl px-4 py-2 flex items-center justify-between">
@@ -158,55 +159,156 @@ export function Header() {
       </div>
 
       <nav className="border-b">
-        <div className="mx-auto max-w-7xl px-4 h-11 flex items-center gap-6 overflow-x-auto no-scrollbar text-sm">
-          {categories.map((c) => (
-            <Link
-              key={c.name}
-              to={c.to}
-              className={`whitespace-nowrap text-muted-foreground hover:text-foreground transition ${lang === "bn" ? "font-bn" : ""}`}
-              activeProps={{ className: `whitespace-nowrap text-foreground font-medium ${lang === "bn" ? "font-bn" : ""}` }}
-            >
-              {c.name}
-            </Link>
-          ))}
-          <Link to="/track" className={`ml-auto whitespace-nowrap text-accent font-medium ${lang === "bn" ? "font-bn" : ""}`}>{t("nav.track")}</Link>
+        <div className="relative">
+          <div className="mx-auto max-w-7xl px-4 h-11 flex items-center gap-6 overflow-x-auto no-scrollbar text-sm">
+            {categories.map((c) => (
+              <Link
+                key={c.name}
+                to={c.to}
+                className={`whitespace-nowrap text-muted-foreground hover:text-foreground transition ${lang === "bn" ? "font-bn" : ""}`}
+                activeProps={{ className: `whitespace-nowrap text-foreground font-medium ${lang === "bn" ? "font-bn" : ""}` }}
+              >
+                {c.name}
+              </Link>
+            ))}
+            <Link to="/track" className={`ml-auto whitespace-nowrap text-accent font-medium ${lang === "bn" ? "font-bn" : ""}`}>{t("nav.track")}</Link>
+          </div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent md:hidden" />
         </div>
       </nav>
 
-      {/* Mobile drawer */}
-      {menu && (
-        <div className="fixed inset-0 z-50 md:hidden animate-fade-in">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMenu(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-background border-r shadow-2xl p-5 animate-slide-down">
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-lg font-semibold">{t("user.menu")}</span>
-              <button onClick={() => setMenu(false)}><X className="size-5" /></button>
-            </div>
-            <nav className="space-y-1">
-              {categories.map((c) => (
-                <Link key={c.name} to={c.to} onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg hover:bg-secondary text-sm">{c.name}</Link>
-              ))}
-            </nav>
-            <div className="border-t my-5" />
-            <button
-              onClick={() => setLang(lang === "en" ? "bn" : "en")}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-secondary text-sm"
-            >
-              <span className="flex items-center gap-2"><Globe className="size-4" /> Language</span>
-              <span className={lang === "en" ? "font-bn" : ""}>{t("lang.toggle")}</span>
-            </button>
-            <div className="border-t my-5" />
-            {user ? (
-              <>
-                <Link to="/profile" onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg hover:bg-secondary text-sm">{t("user.profile")}</Link>
-                <button onClick={() => { logout(); setMenu(false); }} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-secondary text-sm text-accent">{t("user.signout")}</button>
-              </>
-            ) : (
-              <Link to="/login" onClick={() => setMenu(false)} className="block px-3 py-2.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium text-center">{t("user.signin")}</Link>
-            )}
-          </div>
-        </div>
-      )}
     </header>
+
+    {/* Mobile drawer — outside <header> so z-50 lives in the root stacking context */}
+    {menu && (
+      <div className="fixed inset-0 z-50 md:hidden animate-fade-in">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMenu(false)} />
+
+        <div className="absolute left-0 top-0 bottom-0 w-[300px] bg-background shadow-2xl flex flex-col animate-slide-left overflow-hidden">
+
+          {/* ── Brand header ── */}
+          <div className="flex items-center justify-between px-5 py-4 bg-black text-white shrink-0">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-lg font-semibold tracking-tight">SHOP</span>
+              <span className="text-lg font-semibold tracking-tight text-accent">.BD</span>
+            </div>
+            <button onClick={() => setMenu(false)} className="size-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
+              <X className="size-4" />
+            </button>
+          </div>
+
+          {/* ── User section ── */}
+          {user ? (
+            <div className="px-5 py-4 border-b bg-secondary/40 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="size-11 rounded-full bg-foreground text-background flex items-center justify-center text-base font-semibold shrink-0">
+                  {user.name[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{user.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.phone}</p>
+                </div>
+                <Link to="/profile" onClick={() => setMenu(false)} className="text-xs text-accent font-semibold shrink-0">
+                  Profile →
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="px-5 py-4 border-b bg-secondary/30 shrink-0">
+              <p className="text-xs text-muted-foreground mb-3">Sign in for faster checkout & order tracking</p>
+              <div className="flex gap-2">
+                <Link to="/login" onClick={() => setMenu(false)} className="flex-1 h-9 rounded-xl bg-accent text-accent-foreground text-xs font-semibold flex items-center justify-center">
+                  Sign in
+                </Link>
+                <Link to="/signup" onClick={() => setMenu(false)} className="flex-1 h-9 rounded-xl border text-xs font-semibold flex items-center justify-center hover:bg-secondary transition">
+                  Register
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* ── Scrollable body ── */}
+          <div className="flex-1 overflow-y-auto">
+
+            {/* Quick-action tiles */}
+            <div className="px-4 pt-4 pb-3 grid grid-cols-3 gap-2 border-b">
+              <Link to="/cart" onClick={() => setMenu(false)} className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-secondary transition">
+                <ShoppingCart className="size-5" />
+                <span className="text-[11px] font-medium">Cart</span>
+                {cartCount > 0 && (
+                  <span className="absolute top-2 right-3 size-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">{cartCount}</span>
+                )}
+              </Link>
+              <Link to="/wishlist" onClick={() => setMenu(false)} className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-secondary transition">
+                <Heart className="size-5" />
+                <span className="text-[11px] font-medium">Wishlist</span>
+                {wishlist.length > 0 && (
+                  <span className="absolute top-2 right-3 size-4 rounded-full bg-foreground text-background text-[9px] font-bold flex items-center justify-center">{wishlist.length}</span>
+                )}
+              </Link>
+              <Link to="/track" onClick={() => setMenu(false)} className="flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-secondary transition">
+                <Package className="size-5" />
+                <span className="text-[11px] font-medium">Track</span>
+              </Link>
+            </div>
+
+            {/* Categories */}
+            <div className="px-4 pt-4 pb-2">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold px-1 mb-2">Browse</p>
+              <nav className="space-y-0.5">
+                {categories.map((c) => (
+                  <Link
+                    key={c.name}
+                    to={c.to}
+                    onClick={() => setMenu(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition group"
+                  >
+                    <span className="size-8 rounded-lg bg-secondary group-hover:bg-background flex items-center justify-center transition shrink-0">
+                      <c.icon className="size-4 text-muted-foreground group-hover:text-foreground transition" />
+                    </span>
+                    <span className={`text-sm font-medium flex-1 ${lang === "bn" ? "font-bn" : ""}`}>{c.name}</span>
+                    <ChevronRight className="size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* Language toggle */}
+            <div className="px-4 pt-3 pb-4 border-t mt-2">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold px-1 mb-3 flex items-center gap-1.5"><Globe className="size-3.5" /> Language</p>
+              <div className="flex rounded-xl border overflow-hidden text-xs font-semibold">
+                <button
+                  onClick={() => setLang("en")}
+                  className={`flex-1 h-9 transition ${lang === "en" ? "bg-foreground text-background" : "hover:bg-secondary"}`}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => setLang("bn")}
+                  className={`flex-1 h-9 font-bn transition ${lang === "bn" ? "bg-foreground text-background" : "hover:bg-secondary"}`}
+                >
+                  বাংলা
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* ── Sign-out footer (logged-in only) ── */}
+          {user && (
+            <div className="px-4 py-4 border-t shrink-0">
+              <button
+                onClick={() => { logout(); setMenu(false); }}
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl border border-accent/30 text-accent text-sm font-medium hover:bg-accent/5 transition"
+              >
+                <LogOut className="size-4" /> Sign out
+              </button>
+            </div>
+          )}
+
+        </div>
+      </div>
+    )}
+    </>
   );
 }

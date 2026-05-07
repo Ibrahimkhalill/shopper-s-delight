@@ -17,14 +17,14 @@ export function CategorySection({
         </div>
         <Link to="/category/$slug" params={{ slug }} className="text-sm text-muted-foreground hover:text-foreground">{t("sec.viewall")}</Link>
       </div>
-      <div className="md:hidden -mx-4 px-4 overflow-x-auto">
-        <div className="flex gap-4 snap-x snap-mandatory pb-2">
+      <div className="sm:hidden -mx-4 px-4 overflow-x-auto no-scrollbar">
+        <div className="flex gap-3 snap-x snap-mandatory pb-1">
           {items.map((p) => (
-            <div key={p.id} className="snap-start shrink-0 w-[70%] xs:w-[55%]"><ProductCard p={p} /></div>
+            <div key={p.id} className="snap-start shrink-0 w-[52vw]"><ProductCard p={p} /></div>
           ))}
         </div>
       </div>
-      <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="hidden sm:grid grid-cols-3 lg:grid-cols-5 gap-4">
         {items.map((p) => <ProductCard key={p.id} p={p} />)}
       </div>
     </section>

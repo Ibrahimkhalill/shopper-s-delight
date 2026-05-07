@@ -16,7 +16,7 @@ export function Footer() {
   ];
   return (
     <footer className={`bg-black text-white ${lang === "bn" ? "font-bn" : ""}`}>
-      <div className="mx-auto max-w-7xl px-4 py-16 grid grid-cols-2 md:grid-cols-5 gap-10">
+      <div className="mx-auto max-w-7xl px-4 py-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10">
         <div className="col-span-2">
           <div className="flex items-baseline gap-0.5">
             <span className="text-2xl font-semibold">SHOP</span>

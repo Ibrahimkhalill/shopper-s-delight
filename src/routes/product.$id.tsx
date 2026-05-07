@@ -20,7 +20,6 @@ function ProductPage() {
   const [color, setColor] = useState(0);
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<"desc" | "reviews" | "shipping">("desc");
-  const [thumb, setThumb] = useState(0);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
 
@@ -57,13 +56,6 @@ function ProductPage() {
           <div className="aspect-square rounded-2xl bg-secondary overflow-hidden">
             <img src={p.image} alt={p.name} className="size-full object-cover transition duration-500 hover:scale-105" />
           </div>
-          <div className="grid grid-cols-4 gap-3">
-            {[p.image, p.image, p.image, p.image].map((img, i) => (
-              <button key={i} onClick={() => setThumb(i)} className={`aspect-square rounded-xl bg-secondary overflow-hidden border-2 transition ${i === thumb ? "border-foreground" : "border-transparent hover:border-border"}`}>
-                <img src={img} alt="" className="size-full object-cover" />
-              </button>
-            ))}
-          </div>
         </div>
 
         <div>
@@ -73,7 +65,7 @@ function ProductPage() {
             <div className="flex items-center gap-0.5">
               {[1,2,3,4,5].map((n) => <Star key={n} className={`size-4 ${n <= Math.round(Number(avg)) ? "fill-amber-400 text-amber-400" : "text-muted"}`} />)}
             </div>
-            <span className="text-muted-foreground">{avg} · {productReviews.length || 128} reviews</span>
+            <span className="text-muted-foreground">{avg} · {productReviews.length} reviews</span>
           </div>
 
           <div className="mt-6 flex items-baseline gap-3">
@@ -108,11 +100,17 @@ function ProductPage() {
             </div>
           </div>
 
-          <div className="mt-7 flex items-center gap-3">
-            <div className="flex items-center h-12 rounded-full border">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="size-12 flex items-center justify-center"><Minus className="size-4" /></button>
-              <span className="w-8 text-center text-sm tabular-nums">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} className="size-12 flex items-center justify-center"><Plus className="size-4" /></button>
+          <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center h-12 rounded-full border">
+                <button onClick={() => setQty(Math.max(1, qty - 1))} className="size-12 flex items-center justify-center"><Minus className="size-4" /></button>
+                <span className="w-8 text-center text-sm tabular-nums">{qty}</span>
+                <button onClick={() => setQty(qty + 1)} className="size-12 flex items-center justify-center"><Plus className="size-4" /></button>
+              </div>
+              <button
+                onClick={() => { toggleWishlist(p.id); toast(liked ? "Removed" : "Saved to wishlist"); }}
+                className={`size-12 rounded-full border flex items-center justify-center hover:border-foreground transition sm:hidden ${liked ? "text-accent border-accent" : ""}`}
+              ><Heart className={`size-5 ${liked ? "fill-current" : ""}`} /></button>
             </div>
             <button
               onClick={() => { addToCart(p.id, { qty, size }); toast.success("Added to cart", { description: `${p.name} × ${qty}` }); }}
@@ -120,7 +118,7 @@ function ProductPage() {
             >Add to cart</button>
             <button
               onClick={() => { toggleWishlist(p.id); toast(liked ? "Removed" : "Saved to wishlist"); }}
-              className={`size-12 rounded-full border flex items-center justify-center hover:border-foreground transition ${liked ? "text-accent border-accent" : ""}`}
+              className={`hidden sm:flex size-12 rounded-full border items-center justify-center hover:border-foreground transition ${liked ? "text-accent border-accent" : ""}`}
             ><Heart className={`size-5 ${liked ? "fill-current" : ""}`} /></button>
           </div>
 

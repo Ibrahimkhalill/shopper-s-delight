@@ -3,6 +3,7 @@ import { Layout } from "@/components/site/Layout";
 import { useStore } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { Package, Heart, MapPin, LogOut, User as UserIcon } from "lucide-react";
+import { ProductCard } from "@/components/site/ProductCard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({ component: ProfilePage });
@@ -77,7 +78,9 @@ function ProfilePage() {
               wishlist.length === 0 ? (
                 <Empty icon={Heart} title="Your wishlist is empty" desc="Save items you love for later." cta={{ to: "/", label: "Discover products" }} />
               ) : (
-                <Link to="/wishlist" className="text-accent text-sm font-medium">Open wishlist →</Link>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {wishlist.map(resolveProduct).filter(Boolean).map((p) => p && <ProductCard key={p.id} p={p} />)}
+                </div>
               )
             )}
 
