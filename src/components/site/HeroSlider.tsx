@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import heroImg from "@/assets/hero-shopping.png";
-import { useT, type dict as Dict } from "@/lib/i18n";
+import { useT, dict } from "@/lib/i18n";
 
-type K = keyof typeof import("@/lib/i18n").dict;
+type K = keyof typeof dict;
 
 const slides: { badge: string; eyebrow: K; title: K; subtitle: K; cta: K; slug: string }[] = [
   { badge: "22%", eyebrow: "hero.s1.eyebrow", title: "hero.s1.title", subtitle: "hero.s1.subtitle", cta: "hero.s1.cta", slug: "fashion" },
