@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
 import { getProduct, PRODUCTS } from "@/lib/products";
 import { ProductCard } from "@/components/site/ProductCard";
-import { ChevronRight, Heart, Truck, RotateCcw, ShieldCheck, Minus, Plus, Star } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ChevronRight, Heart, Truck, RotateCcw, ShieldCheck, Minus, Plus, Star, Share2, Zap, Check } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/product/$id")({
@@ -16,12 +17,16 @@ function ProductPage() {
   const { id } = Route.useParams();
   const p = getProduct(id);
   const { addToCart, toggleWishlist, wishlist, reviews, addReview, user } = useStore();
+  const navigate = useNavigate();
   const [size, setSize] = useState(p?.sizes[0]);
   const [color, setColor] = useState(0);
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<"desc" | "reviews" | "shipping">("desc");
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
+  const [zoom, setZoom] = useState({ active: false, x: 0, y: 0 });
+  const [thumb, setThumb] = useState(0);
+  const imgRef = useRef<HTMLDivElement>(null);
 
   const productReviews = useMemo(() => reviews.filter((r) => r.productId === id), [reviews, id]);
   const avg = productReviews.length ? (productReviews.reduce((s, r) => s + r.rating, 0) / productReviews.length).toFixed(1) : "4.6";
@@ -30,6 +35,27 @@ function ProductPage() {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   const liked = wishlist.includes(p.id);
   const related = PRODUCTS.filter((x) => x.id !== p.id).slice(0, 5);
+  const inStock = true;
+  const savings = p.oldPrice ? p.oldPrice - p.price : 0;
+
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    const y = ((e.clientY - r.top) / r.height) * 100;
+    setZoom({ active: true, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+  };
+
+  const buyNow = () => {
+    addToCart(p.id, { qty, size });
+    navigate({ to: "/checkout" });
+  };
+
+  const share = async () => {
+    try {
+      if (navigator.share) await navigator.share({ title: p.name, url: window.location.href });
+      else { await navigator.clipboard.writeText(window.location.href); toast.success("Link copied"); }
+    } catch {}
+  };
 
   const submitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,9 +78,72 @@ function ProductPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 pb-12 grid lg:grid-cols-2 gap-10 animate-fade-up">
-        <div className="space-y-3">
-          <div className="aspect-square rounded-2xl bg-secondary overflow-hidden">
-            <img src={p.image} alt={p.name} className="size-full object-cover transition duration-500 hover:scale-105" />
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="flex gap-3">
+            {/* Thumbnails */}
+            <div className="hidden sm:flex flex-col gap-2.5 w-20 shrink-0">
+              {[p.image, p.image, p.image, p.image].map((img, i) => (
+                <button
+                  key={i}
+                  onMouseEnter={() => setThumb(i)}
+                  onClick={() => setThumb(i)}
+                  className={`aspect-square rounded-xl bg-secondary overflow-hidden border-2 transition ${i === thumb ? "border-foreground shadow-sm" : "border-transparent hover:border-border"}`}
+                >
+                  <img src={img} alt="" className="size-full object-cover" />
+                </button>
+              ))}
+            </div>
+
+            {/* Main image with magnify */}
+            <div className="flex-1 relative">
+              <div
+                ref={imgRef}
+                onMouseEnter={() => setZoom((z) => ({ ...z, active: true }))}
+                onMouseLeave={() => setZoom({ active: false, x: 0, y: 0 })}
+                onMouseMove={handleMove}
+                className="relative aspect-square rounded-2xl bg-secondary overflow-hidden border cursor-crosshair group"
+              >
+                <img src={p.image} alt={p.name} className="size-full object-cover" />
+                {zoom.active && (
+                  <div
+                    className="hidden lg:block absolute pointer-events-none border-2 border-foreground/40 bg-foreground/10 backdrop-blur-[1px]"
+                    style={{
+                      width: 160, height: 160,
+                      left: `calc(${zoom.x}% - 80px)`,
+                      top: `calc(${zoom.y}% - 80px)`,
+                    }}
+                  />
+                )}
+                {discount > 0 && (
+                  <span className="absolute top-3 left-3 rounded-full bg-accent text-accent-foreground text-xs font-semibold px-2.5 py-1">-{discount}%</span>
+                )}
+                <button onClick={share} className="absolute top-3 right-3 size-9 rounded-full bg-card/90 backdrop-blur border flex items-center justify-center hover:bg-card transition">
+                  <Share2 className="size-4" />
+                </button>
+              </div>
+
+              {/* Zoom panel */}
+              {zoom.active && (
+                <div
+                  className="hidden lg:block absolute top-0 left-[calc(100%+1.5rem)] w-[420px] h-[420px] rounded-2xl border bg-secondary overflow-hidden shadow-xl z-30"
+                  style={{
+                    backgroundImage: `url(${p.image})`,
+                    backgroundSize: "250%",
+                    backgroundPosition: `${zoom.x}% ${zoom.y}%`,
+                    backgroundRepeat: "no-repeat",
+                  }}
+                />
+              )}
+
+              {/* Mobile thumbnails */}
+              <div className="sm:hidden mt-3 grid grid-cols-4 gap-2">
+                {[p.image, p.image, p.image, p.image].map((img, i) => (
+                  <button key={i} onClick={() => setThumb(i)} className={`aspect-square rounded-lg bg-secondary overflow-hidden border-2 transition ${i === thumb ? "border-foreground" : "border-transparent"}`}>
+                    <img src={img} alt="" className="size-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -66,60 +155,80 @@ function ProductPage() {
               {[1,2,3,4,5].map((n) => <Star key={n} className={`size-4 ${n <= Math.round(Number(avg)) ? "fill-amber-400 text-amber-400" : "text-muted"}`} />)}
             </div>
             <span className="text-muted-foreground">{avg} · {productReviews.length} reviews</span>
+            <span className="text-muted-foreground">·</span>
+            <span className={`inline-flex items-center gap-1 text-xs font-medium ${inStock ? "text-emerald-600" : "text-accent"}`}>
+              <Check className="size-3.5" /> {inStock ? "In stock" : "Out of stock"}
+            </span>
           </div>
 
-          <div className="mt-6 flex items-baseline gap-3">
-            <span className="text-3xl font-semibold">৳{p.price.toLocaleString()}</span>
-            {p.oldPrice && (
-              <>
-                <span className="text-base text-muted-foreground line-through">৳{p.oldPrice.toLocaleString()}</span>
-                <span className="text-xs font-medium bg-accent text-accent-foreground rounded-full px-2 py-0.5">-{discount}%</span>
-              </>
+          <div className="mt-6 rounded-2xl border bg-secondary/40 p-5">
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className="text-4xl font-bold tracking-tight text-accent">৳{p.price.toLocaleString()}</span>
+              {p.oldPrice && (
+                <>
+                  <span className="text-base text-muted-foreground line-through">৳{p.oldPrice.toLocaleString()}</span>
+                  <span className="text-xs font-semibold bg-accent text-accent-foreground rounded-full px-2.5 py-1">-{discount}%</span>
+                </>
+              )}
+            </div>
+            {savings > 0 && (
+              <p className="mt-1.5 text-xs text-emerald-600 font-medium">You save ৳{savings.toLocaleString()}</p>
             )}
+            <p className="mt-2 text-xs text-muted-foreground">Inclusive of all taxes · Free shipping over ৳1,500</p>
           </div>
 
-          <p className="mt-6 text-sm text-muted-foreground leading-relaxed">
-            Premium quality {p.name.toLowerCase()} crafted with attention to detail. Soft, durable, and made for everyday wear.
-          </p>
-
-          <div className="mt-7">
-            <p className="text-sm font-medium mb-2.5">Color</p>
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-sm font-medium">Color</p>
+              <p className="text-xs text-muted-foreground">{color + 1} of {p.colors.length}</p>
+            </div>
             <div className="flex items-center gap-2">
               {p.colors.map((c, i) => (
-                <button key={i} onClick={() => setColor(i)} className={`size-9 rounded-full ring-2 transition ${color === i ? "ring-foreground" : "ring-border hover:ring-foreground/40"}`} style={{ background: c }} aria-label={`Color ${i + 1}`} />
+                <button key={i} onClick={() => setColor(i)} className={`size-10 rounded-full ring-2 ring-offset-2 ring-offset-background transition ${color === i ? "ring-foreground scale-110" : "ring-border hover:ring-foreground/40"}`} style={{ background: c }} aria-label={`Color ${i + 1}`} />
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-sm font-medium">Size</p>
+              <button className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">Size guide</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {p.sizes.map((s) => (
+                <button key={s} onClick={() => setSize(s)} className={`min-w-14 h-12 px-5 rounded-xl border-2 text-sm font-medium transition ${size === s ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground"}`}>{s}</button>
               ))}
             </div>
           </div>
 
           <div className="mt-6">
-            <p className="text-sm font-medium mb-2.5">Size</p>
-            <div className="flex flex-wrap gap-2">
-              {p.sizes.map((s) => (
-                <button key={s} onClick={() => setSize(s)} className={`min-w-12 h-11 px-4 rounded-full border text-sm transition ${size === s ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground"}`}>{s}</button>
-              ))}
+            <p className="text-sm font-medium mb-2.5">Quantity</p>
+            <div className="flex items-center h-12 w-fit rounded-xl border-2">
+              <button onClick={() => setQty(Math.max(1, qty - 1))} className="size-12 flex items-center justify-center hover:bg-secondary rounded-l-lg transition"><Minus className="size-4" /></button>
+              <span className="w-12 text-center text-sm font-semibold tabular-nums">{qty}</span>
+              <button onClick={() => setQty(qty + 1)} className="size-12 flex items-center justify-center hover:bg-secondary rounded-r-lg transition"><Plus className="size-4" /></button>
             </div>
           </div>
 
-          <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center h-12 rounded-full border">
-                <button onClick={() => setQty(Math.max(1, qty - 1))} className="size-12 flex items-center justify-center"><Minus className="size-4" /></button>
-                <span className="w-8 text-center text-sm tabular-nums">{qty}</span>
-                <button onClick={() => setQty(qty + 1)} className="size-12 flex items-center justify-center"><Plus className="size-4" /></button>
-              </div>
-              <button
-                onClick={() => { toggleWishlist(p.id); toast(liked ? "Removed" : "Saved to wishlist"); }}
-                className={`size-12 rounded-full border flex items-center justify-center hover:border-foreground transition sm:hidden ${liked ? "text-accent border-accent" : ""}`}
-              ><Heart className={`size-5 ${liked ? "fill-current" : ""}`} /></button>
-            </div>
+          <div className="mt-6 grid grid-cols-2 gap-3">
             <button
               onClick={() => { addToCart(p.id, { qty, size }); toast.success("Added to cart", { description: `${p.name} × ${qty}` }); }}
-              className="flex-1 h-12 rounded-full bg-accent text-accent-foreground text-sm font-medium hover:opacity-90 transition active:scale-95"
+              className="h-13 py-3.5 rounded-xl border-2 border-foreground bg-background text-foreground text-sm font-semibold hover:bg-foreground hover:text-background transition active:scale-[0.98]"
             >Add to cart</button>
             <button
+              onClick={buyNow}
+              className="h-13 py-3.5 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:opacity-90 transition active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
+            ><Zap className="size-4 fill-current" /> Buy now</button>
+          </div>
+
+          <div className="mt-3 flex gap-3">
+            <button
               onClick={() => { toggleWishlist(p.id); toast(liked ? "Removed" : "Saved to wishlist"); }}
-              className={`hidden sm:flex size-12 rounded-full border items-center justify-center hover:border-foreground transition ${liked ? "text-accent border-accent" : ""}`}
-            ><Heart className={`size-5 ${liked ? "fill-current" : ""}`} /></button>
+              className={`flex-1 h-11 rounded-xl border flex items-center justify-center gap-2 text-sm hover:border-foreground transition ${liked ? "text-accent border-accent" : ""}`}
+            ><Heart className={`size-4 ${liked ? "fill-current" : ""}`} /> {liked ? "Wishlisted" : "Add to wishlist"}</button>
+            <button onClick={share} className="h-11 px-5 rounded-xl border flex items-center justify-center gap-2 text-sm hover:border-foreground transition">
+              <Share2 className="size-4" /> Share
+            </button>
           </div>
 
           <div className="mt-6 grid grid-cols-3 gap-3 text-xs">
@@ -128,12 +237,16 @@ function ProductPage() {
               { i: RotateCcw, t: "7-day returns" },
               { i: ShieldCheck, t: "Buyer protected" },
             ].map((b) => (
-              <div key={b.t} className="rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center">
-                <b.i className="size-4 text-muted-foreground" />
-                <span>{b.t}</span>
+              <div key={b.t} className="rounded-xl border bg-card p-3 flex flex-col items-center gap-1.5 text-center hover:border-foreground/40 transition">
+                <b.i className="size-4 text-accent" />
+                <span className="font-medium">{b.t}</span>
               </div>
             ))}
           </div>
+
+          <p className="mt-5 text-sm text-muted-foreground leading-relaxed">
+            Premium quality {p.name.toLowerCase()} crafted with attention to detail. Soft, durable, and designed for everyday wear in the Bangladesh climate.
+          </p>
         </div>
       </div>
 
