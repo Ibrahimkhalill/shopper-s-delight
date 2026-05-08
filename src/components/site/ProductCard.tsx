@@ -79,29 +79,29 @@ export function ProductCard({ p }: { p: Product }) {
         </Link>
 
         {/* Hover options — tab-shaped pill with curved side notches */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-qhite duration-300 ease-in-out z-50">
-          <div className="card-pill flex items-center -mb-[4px] gap-5 px-[10px] pt-[15px] pb-0">
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out z-50">
+          <div className="card-pill flex items-center -mb-1 gap-5 px-2.5 pt-4 pb-0">
             <Link
               to="/product/$id"
               params={{ id: p.id }}
               aria-label="View product"
               className="text-foreground/80 hover:text-foreground hover:scale-110 transition"
             >
-              <Eye className="size-[18px]" strokeWidth={1.75} />
+              <Eye className="size-4.5" strokeWidth={1.75} />
             </Link>
             <button
               onClick={handleCompare}
               aria-label="Quick view"
               className="text-accent hover:scale-110 transition"
             >
-              <ArrowLeftRight className="size-[18px]" strokeWidth={1.75} />
+              <ArrowLeftRight className="size-4.5" strokeWidth={1.75} />
             </button>
             <button
               onClick={handleAdd}
               aria-label="Add to cart"
               className="text-accent hover:scale-110 transition"
             >
-              <ShoppingCart className="size-[18px]" strokeWidth={1.75} />
+              <ShoppingCart className="size-4.5" strokeWidth={1.75} />
             </button>
           </div>
         </div>
@@ -116,7 +116,7 @@ export function ProductCard({ p }: { p: Product }) {
       </div>
 
       {/* Title */}
-      <h3 className="mt-1.5 text-[15px] font-medium text-foreground leading-snug line-clamp-2">{p.name}</h3>
+      <h3 className="mt-1.5 text-[15px] font-medium text-foreground leading-snug line-clamp-1">{p.name}</h3>
 
       {/* Price */}
       <div className="mt-1.5 flex items-baseline gap-2">
