@@ -22,6 +22,8 @@ export function Header() {
   const [userMenu, setUserMenu] = useState(false);
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const results = q.trim()
     ? PRODUCTS.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || p.category.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
@@ -119,13 +121,13 @@ export function Header() {
             )}
             <Link to="/wishlist" className="relative p-2.5 rounded-full hover:bg-secondary">
               <Heart className="size-5" />
-              {wishlist.length > 0 && (
+              {mounted && wishlist.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-foreground text-background text-[10px] font-medium flex items-center justify-center">{wishlist.length}</span>
               )}
             </Link>
             <Link to="/cart" className="relative p-2.5 rounded-full hover:bg-secondary">
               <ShoppingCart className="size-5" />
-              {cartCount > 0 && (
+              {mounted && cartCount > 0 && (
                 <span key={cartCount} className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-accent text-accent-foreground text-[10px] font-medium flex items-center justify-center animate-bounce-soft">{cartCount}</span>
               )}
             </Link>
