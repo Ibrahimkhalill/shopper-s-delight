@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { PRODUCTS } from "@/lib/products";
 import { useT } from "@/lib/i18n";
+import { CartDrawer } from "./CartDrawer";
 
 export function Header() {
   const { cartCount, wishlist, user, logout } = useStore();
@@ -20,6 +21,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -126,12 +128,12 @@ export function Header() {
                 <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-foreground text-background text-[10px] font-medium flex items-center justify-center">{wishlist.length}</span>
               )}
             </Link>
-            <Link to="/cart" className="relative p-2.5 rounded-full hover:bg-secondary">
+            <button onClick={() => setCartOpen(true)} aria-label="Open cart" className="relative p-2.5 rounded-full hover:bg-secondary">
               <ShoppingCart className="size-5" />
               {mounted && cartCount > 0 && (
                 <span key={cartCount} className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-accent text-accent-foreground text-[10px] font-medium flex items-center justify-center animate-bounce-soft">{cartCount}</span>
               )}
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -311,6 +313,7 @@ export function Header() {
         </div>
       </div>
     )}
+    <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </>
   );
 }
