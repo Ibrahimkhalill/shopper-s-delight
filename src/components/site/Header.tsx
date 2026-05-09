@@ -67,13 +67,15 @@ export function Header() {
       </div>
 
       <div className="border-b">
-        <div className="mx-auto max-w-7xl px-4 h-16 flex items-center gap-3">
-          <button onClick={() => setMenu(true)} className="md:hidden -ml-1 p-2"><Menu className="size-5" /></button>
+        <div className="mx-auto max-w-7xl px-4 h-14 flex items-center gap-3">
+
+          {/* Mobile: logo left, icons right — no hamburger */}
           <Link to="/" className="flex items-baseline gap-0.5 shrink-0">
             <span className="text-xl font-semibold tracking-tight">SHOP</span>
             <span className="text-xl font-semibold tracking-tight text-accent">.BD</span>
           </Link>
 
+          {/* Desktop search */}
           <div ref={ref} className="flex-1 max-w-2xl mx-auto hidden md:block relative">
             <form onSubmit={submit}>
               <Search className="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -101,16 +103,19 @@ export function Header() {
             )}
           </div>
 
-          <div className="ml-auto flex items-center gap-1">
+          {/* Right icons */}
+          <div className="ml-auto flex items-center gap-0.5">
+
+            {/* Desktop: user menu */}
             {user ? (
-              <div className="relative">
-                <button onClick={() => setUserMenu(!userMenu)} className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
+              <div className="relative hidden md:block">
+                <button onClick={() => setUserMenu(!userMenu)} className="flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
                   <div className="size-7 rounded-full bg-foreground text-background flex items-center justify-center text-xs font-semibold">{user.name[0]?.toUpperCase()}</div>
                   <span className="max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
                   <ChevronDown className="size-3" />
                 </button>
                 {userMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border rounded-2xl shadow-xl py-2 animate-slide-down">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border rounded-2xl shadow-xl py-2 animate-slide-down z-50">
                     <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><User className="size-4" /> {t("user.profile")}</Link>
                     <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><Package className="size-4" /> {t("user.orders")}</Link>
                     <Link to="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-secondary text-sm"><Heart className="size-4" /> {t("user.wishlist")}</Link>
@@ -120,48 +125,32 @@ export function Header() {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="hidden sm:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
+              <Link to="/login" className="hidden md:flex items-center gap-2 px-3 h-10 rounded-full hover:bg-secondary text-sm">
                 <User className="size-4" /> {t("user.signin")}
               </Link>
             )}
-            <button onClick={() => setWishlistOpen(true)} aria-label="Open wishlist" className="relative p-2.5 rounded-full hover:bg-secondary">
+
+            {/* Desktop: wishlist + cart */}
+            <button onClick={() => setWishlistOpen(true)} aria-label="Wishlist" className="hidden md:flex relative p-2.5 rounded-full hover:bg-secondary">
               <Heart className="size-5" />
               {mounted && wishlist.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-foreground text-background text-[10px] font-medium flex items-center justify-center">{wishlist.length}</span>
               )}
             </button>
-            <button onClick={() => setCartOpen(true)} aria-label="Open cart" className="relative p-2.5 rounded-full hover:bg-secondary">
+            <button onClick={() => setCartOpen(true)} aria-label="Cart" className="hidden md:flex relative p-2.5 rounded-full hover:bg-secondary">
               <ShoppingCart className="size-5" />
               {mounted && cartCount > 0 && (
                 <span key={cartCount} className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-accent text-accent-foreground text-[10px] font-medium flex items-center justify-center animate-bounce-soft">{cartCount}</span>
               )}
             </button>
+
+            {/* Mobile: only search icon — bottom nav handles cart/wishlist/account */}
+            <Link to="/search" aria-label="Search" className="md:hidden p-2.5 rounded-full hover:bg-secondary">
+              <Search className="size-5" />
+            </Link>
           </div>
         </div>
 
-        <div className="md:hidden px-4 pb-3 relative" ref={ref}>
-          <form onSubmit={submit}>
-            <Search className="size-4 absolute left-7 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={q}
-              onChange={(e) => { setQ(e.target.value); setOpen(true); }}
-              onFocus={() => setOpen(true)}
-              placeholder={t("search.mobile")}
-              className="w-full h-11 pl-11 pr-4 rounded-full border border-border bg-secondary text-sm outline-none"
-            />
-          </form>
-          {open && results.length > 0 && (
-            <div className="absolute top-full left-4 right-4 mt-1 bg-card border rounded-2xl shadow-xl overflow-hidden z-50 animate-slide-down">
-              {results.map((p) => (
-                <Link key={p.id} to="/product/$id" params={{ id: p.id }} onClick={() => setOpen(false)} className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary">
-                  <img src={p.image} className="size-10 rounded-lg object-cover" alt="" />
-                  <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{p.name}</p></div>
-                  <span className="text-sm font-semibold">৳{p.price}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       <nav className="border-b">

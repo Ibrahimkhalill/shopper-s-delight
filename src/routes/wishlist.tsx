@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
+import { PageHeader } from "@/components/site/PageHeader";
 import { useStore } from "@/lib/store";
 import {
   Heart, ShoppingCart, X, ArrowRight, Share2,
@@ -67,52 +68,25 @@ function WishlistPage() {
 
   return (
     <Layout>
-      {/* ── Header banner ── */}
-      <section className="border-b bg-linear-to-b from-secondary/50 to-background">
-        <div className="mx-auto max-w-7xl px-4 pt-8 pb-6 animate-fade-up">
-
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold mb-3">
-                <Heart className="size-3 fill-current" /> My Wishlist
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Saved items</h1>
-              <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                <span><span className="font-semibold text-foreground">{items.length}</span> {items.length === 1 ? "item" : "items"}</span>
-                <span className="text-border">·</span>
-                <span>Total <span className="font-semibold text-foreground">৳{total.toLocaleString()}</span></span>
-                {savings > 0 && (
-                  <>
-                    <span className="text-border">·</span>
-                    <span className="text-emerald-600 font-semibold">Save ৳{savings.toLocaleString()}</span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => { navigator.clipboard?.writeText(window.location.href); toast("Link copied!"); }}
-                className="h-10 px-4 rounded-full border text-sm font-medium inline-flex items-center gap-2 hover:border-foreground transition"
-              >
-                <Share2 className="size-3.5" /> Share
-              </button>
-              <button
-                onClick={clearAll}
-                className="h-10 px-4 rounded-full border text-sm font-medium inline-flex items-center gap-2 hover:border-accent hover:text-accent transition"
-              >
-                <Trash2 className="size-3.5" /> Clear all
-              </button>
-              <button
-                onClick={moveAllToCart}
-                className="h-10 px-4 rounded-full bg-accent text-white text-sm font-semibold inline-flex items-center gap-2 hover:opacity-90 transition shadow-sm"
-              >
-                <ShoppingCart className="size-3.5" /> Add all to cart
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        centered
+        title="Your Wishlist"
+        subtitle="Explore your saved favorites, manage your wishlist effortlessly, and keep track of the items you love most."
+        crumbs={[{ label: "Home", to: "/" }, { label: "Wishlist" }]}
+        actions={
+          <>
+            <button onClick={() => { navigator.clipboard?.writeText(window.location.href); toast("Link copied!"); }} className="h-9 px-3 rounded-full border text-xs font-medium inline-flex items-center gap-1.5 hover:border-foreground transition">
+              <Share2 className="size-3.5" /> Share
+            </button>
+            <button onClick={clearAll} className="h-9 px-3 rounded-full border text-xs font-medium inline-flex items-center gap-1.5 hover:border-accent hover:text-accent transition">
+              <Trash2 className="size-3.5" /> Clear all
+            </button>
+            <button onClick={moveAllToCart} className="h-9 px-4 rounded-full bg-accent text-white text-xs font-semibold inline-flex items-center gap-1.5 hover:opacity-90 transition shadow-sm">
+              <ShoppingCart className="size-3.5" /> Add all to cart
+            </button>
+          </>
+        }
+      />
 
       {/* ── Product grid ── */}
       <div className="mx-auto max-w-7xl px-4 py-8 pb-16">

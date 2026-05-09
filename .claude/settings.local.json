@@ -3,7 +3,8 @@
     "allow": [
       "Bash(Get-ChildItem -Recurse -Depth 3)",
       "Bash(Select-Object FullName, PSIsContainer)",
-      "Bash(Format-Table -AutoSize)"
+      "Bash(Format-Table -AutoSize)",
+      "Bash(node -e \"const {useRouterState} = require\\('@tanstack/react-router'\\); console.log\\('ok'\\)\")"
     ]
   }
 }

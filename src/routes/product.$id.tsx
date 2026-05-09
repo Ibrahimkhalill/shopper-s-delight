@@ -312,39 +312,42 @@ function ProductPage() {
           </div>
 
           {/* Quantity + CTA */}
-          <div className="mt-6 flex items-center gap-3 flex-wrap">
-            {/* Qty stepper */}
-            <div className="flex items-center h-12 rounded-xl border-2 border-border overflow-hidden shrink-0">
-              <button
-                onClick={() => setQty(Math.max(1, qty - 1))}
-                className="size-12 flex items-center justify-center hover:bg-secondary transition text-muted-foreground hover:text-foreground"
-              ><Minus className="size-4" /></button>
-              <span className="w-10 text-center text-sm font-bold tabular-nums">{qty}</span>
-              <button
-                onClick={() => setQty(qty + 1)}
-                className="size-12 flex items-center justify-center hover:bg-secondary transition text-muted-foreground hover:text-foreground"
-              ><Plus className="size-4" /></button>
+          <div className="mt-6 space-y-3">
+            {/* Qty stepper row */}
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-semibold text-muted-foreground w-16">Quantity</p>
+              <div className="flex items-center h-11 rounded-xl border-2 border-border overflow-hidden">
+                <button
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  className="size-11 flex items-center justify-center hover:bg-secondary transition text-muted-foreground hover:text-foreground"
+                ><Minus className="size-4" /></button>
+                <span className="w-10 text-center text-sm font-bold tabular-nums">{qty}</span>
+                <button
+                  onClick={() => setQty(qty + 1)}
+                  className="size-11 flex items-center justify-center hover:bg-secondary transition text-muted-foreground hover:text-foreground"
+                ><Plus className="size-4" /></button>
+              </div>
             </div>
 
-            {/* Add to cart */}
-            <button
-              onClick={handleAddToCart}
-              className={`flex-1 min-w-[140px] h-12 rounded-xl border-2 text-sm font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
-                added
-                  ? "border-emerald-500 bg-emerald-500 text-white"
-                  : "border-foreground bg-background text-foreground hover:bg-foreground hover:text-background"
-              }`}
-            >
-              {added ? <><Check className="size-4" /> Added!</> : "Add to cart"}
-            </button>
-
-            {/* Buy now */}
-            <button
-              onClick={buyNow}
-              className="flex-1 min-w-[140px] h-12 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition active:scale-[0.98] flex items-center justify-center gap-2 shadow-md"
-            >
-              <Zap className="size-4 fill-current" /> Buy now
-            </button>
+            {/* CTA buttons — full width, desktop only (mobile uses sticky bar) */}
+            <div className="hidden lg:grid grid-cols-2 gap-3">
+              <button
+                onClick={handleAddToCart}
+                className={`h-12 rounded-xl border-2 text-sm font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
+                  added
+                    ? "border-emerald-500 bg-emerald-500 text-white"
+                    : "border-foreground bg-background text-foreground hover:bg-foreground hover:text-background"
+                }`}
+              >
+                {added ? <><Check className="size-4" /> Added!</> : "Add to cart"}
+              </button>
+              <button
+                onClick={buyNow}
+                className="h-12 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition active:scale-[0.98] flex items-center justify-center gap-2 shadow-md"
+              >
+                <Zap className="size-4 fill-current" /> Buy now
+              </button>
+            </div>
           </div>
 
           {/* Free shipping note */}
@@ -602,11 +605,11 @@ function ProductPage() {
         </div>
       </section>
 
-      {/* ── Mobile sticky bottom CTA ── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t px-4 py-3 flex gap-3">
+      {/* ── Mobile sticky CTA — sits above bottom nav ── */}
+      <div className="lg:hidden fixed bottom-16 left-0 right-0 z-40 px-4 py-2 flex gap-2">
         <button
           onClick={handleAddToCart}
-          className={`flex-1 h-12 rounded-xl border-2 text-sm font-bold transition flex items-center justify-center gap-2 ${
+          className={`flex-1 h-11 rounded-xl border-2 text-sm font-bold shadow-lg transition flex items-center justify-center gap-2 ${
             added ? "border-emerald-500 bg-emerald-500 text-white" : "border-foreground bg-background text-foreground"
           }`}
         >
@@ -614,12 +617,12 @@ function ProductPage() {
         </button>
         <button
           onClick={buyNow}
-          className="flex-1 h-12 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg"
+          className="flex-1 h-11 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg"
         >
           <Zap className="size-4 fill-current" /> Buy now
         </button>
       </div>
-      <div className="lg:hidden h-20" />
+      <div className="lg:hidden h-28" />
     </Layout>
   );
 }

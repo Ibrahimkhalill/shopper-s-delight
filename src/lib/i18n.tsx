@@ -57,7 +57,7 @@ export const dict: Dict = {
   // sections
   "sec.featured.eyebrow": { en: "Best of the week", bn: "এই সপ্তাহের সেরা" },
   "sec.featured.title": { en: "Featured products", bn: "ফিচারড পণ্য" },
-  "sec.viewall": { en: "View all", bn: "সব দেখুন →" },
+  "sec.viewall": { en: "View all", bn: "সব দেখুন" },
   "sec.fashion.eyebrow": { en: "Wear the season", bn: "সিজনের পোশাক" },
   "sec.fashion.title": { en: "Fashion edit", bn: "ফ্যাশন এডিট" },
   "sec.gadgets.eyebrow": { en: "Smarter tech", bn: "স্মার্ট প্রযুক্তি" },
