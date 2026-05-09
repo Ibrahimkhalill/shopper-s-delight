@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { PRODUCTS } from "@/lib/products";
 import { useT } from "@/lib/i18n";
 import { CartDrawer } from "./CartDrawer";
+import { WishlistDrawer } from "./WishlistDrawer";
 
 export function Header() {
   const { cartCount, wishlist, user, logout } = useStore();
@@ -22,6 +23,7 @@ export function Header() {
   const [menu, setMenu] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [wishlistOpen, setWishlistOpen] = useState(false);
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -122,12 +124,12 @@ export function Header() {
                 <User className="size-4" /> {t("user.signin")}
               </Link>
             )}
-            <Link to="/wishlist" className="relative p-2.5 rounded-full hover:bg-secondary">
+            <button onClick={() => setWishlistOpen(true)} aria-label="Open wishlist" className="relative p-2.5 rounded-full hover:bg-secondary">
               <Heart className="size-5" />
               {mounted && wishlist.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-foreground text-background text-[10px] font-medium flex items-center justify-center">{wishlist.length}</span>
               )}
-            </Link>
+            </button>
             <button onClick={() => setCartOpen(true)} aria-label="Open cart" className="relative p-2.5 rounded-full hover:bg-secondary">
               <ShoppingCart className="size-5" />
               {mounted && cartCount > 0 && (
@@ -236,20 +238,20 @@ export function Header() {
 
             {/* Quick-action tiles */}
             <div className="px-4 pt-4 pb-3 grid grid-cols-3 gap-2 border-b">
-              <Link to="/cart" onClick={() => setMenu(false)} className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-secondary transition">
+              <button onClick={() => { setMenu(false); setCartOpen(true); }} className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-secondary transition">
                 <ShoppingCart className="size-5" />
                 <span className="text-[11px] font-medium">Cart</span>
                 {cartCount > 0 && (
                   <span className="absolute top-2 right-3 size-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">{cartCount}</span>
                 )}
-              </Link>
-              <Link to="/wishlist" onClick={() => setMenu(false)} className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-secondary transition">
+              </button>
+              <button onClick={() => { setMenu(false); setWishlistOpen(true); }} className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-secondary transition">
                 <Heart className="size-5" />
                 <span className="text-[11px] font-medium">Wishlist</span>
                 {wishlist.length > 0 && (
                   <span className="absolute top-2 right-3 size-4 rounded-full bg-foreground text-background text-[9px] font-bold flex items-center justify-center">{wishlist.length}</span>
                 )}
-              </Link>
+              </button>
               <Link to="/track" onClick={() => setMenu(false)} className="flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-secondary transition">
                 <Package className="size-5" />
                 <span className="text-[11px] font-medium">Track</span>
@@ -314,6 +316,7 @@ export function Header() {
       </div>
     )}
     <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+    <WishlistDrawer open={wishlistOpen} onClose={() => setWishlistOpen(false)} />
     </>
   );
 }
