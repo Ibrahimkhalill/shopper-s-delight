@@ -1,35 +1,63 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
 import { useStore } from "@/lib/store";
-import { Heart, ShoppingCart, X, Sparkles, ArrowRight, Share2 } from "lucide-react";
+import {
+  Heart, ShoppingCart, X, ArrowRight, Share2,
+  Trash2, ShoppingBag, Star, Zap,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/wishlist")({ component: WishlistPage });
 
 function WishlistPage() {
   const { wishlist, resolveProduct, toggleWishlist, addToCart } = useStore();
-  const items = wishlist.map((id) => resolveProduct(id)).filter(Boolean) as NonNullable<ReturnType<typeof resolveProduct>>[];
-  const total = items.reduce((s, p) => s + (p?.price ?? 0), 0);
+  const [removed, setRemoved] = useState<string[]>([]);
+
+  const items = wishlist
+    .filter((id) => !removed.includes(id))
+    .map((id) => resolveProduct(id))
+    .filter(Boolean) as NonNullable<ReturnType<typeof resolveProduct>>[];
+
+  const total    = items.reduce((s, p) => s + p.price, 0);
+  const savings  = items.reduce((s, p) => s + (p.oldPrice ? p.oldPrice - p.price : 0), 0);
+
+  const handleRemove = (id: string) => {
+    setRemoved((r) => [...r, id]);
+    setTimeout(() => toggleWishlist(id), 350);
+    toast("Removed from wishlist");
+  };
 
   const moveAllToCart = () => {
-    items.forEach((p) => p && addToCart(p.id, { size: p.sizes[0] }));
+    items.forEach((p) => addToCart(p.id, { size: p.sizes[0] }));
     toast.success(`${items.length} items added to cart`);
   };
 
+  const clearAll = () => {
+    items.forEach((p) => handleRemove(p.id));
+  };
+
+  /* ── Empty state ── */
   if (items.length === 0) {
     return (
       <Layout>
-        <div className="mx-auto max-w-2xl px-4 py-24 text-center animate-fade-up">
-          <div className="relative mx-auto size-28 mb-6">
-            <div className="absolute inset-0 rounded-full bg-accent/10 blur-2xl" />
-            <div className="relative size-28 rounded-full bg-gradient-to-br from-secondary to-background border flex items-center justify-center">
-              <Heart className="size-12 text-accent" strokeWidth={1.5} />
+        <div className="mx-auto max-w-lg px-4 py-28 text-center animate-fade-up">
+          <div className="relative mx-auto size-32 mb-8">
+            <div className="absolute inset-0 rounded-full bg-accent/10 animate-pulse" />
+            <div className="relative size-32 rounded-full bg-secondary border-2 border-dashed border-border flex items-center justify-center">
+              <Heart className="size-14 text-accent/40" strokeWidth={1.5} />
             </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Your wishlist is empty</h1>
-          <p className="mt-3 text-muted-foreground">Save products you love. We'll keep them safe here, and let you know when prices drop.</p>
-          <Link to="/" className="inline-flex items-center gap-2 mt-8 h-12 px-7 rounded-full bg-foreground text-background text-sm font-medium hover:opacity-90 transition group">
-            Discover products
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nothing saved yet</h1>
+          <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
+            Tap the heart on any product to save it here. We'll keep your favourites safe.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 mt-8 h-12 px-8 rounded-full bg-foreground text-background text-sm font-semibold hover:opacity-90 transition group"
+          >
+            <ShoppingBag className="size-4" />
+            Start shopping
             <ArrowRight className="size-4 group-hover:translate-x-1 transition" />
           </Link>
         </div>
@@ -39,70 +67,178 @@ function WishlistPage() {
 
   return (
     <Layout>
-      {/* Hero header */}
-      <section className="border-b bg-gradient-to-b from-secondary/40 to-background">
-        <div className="mx-auto max-w-7xl px-4 py-10 md:py-14 animate-fade-up">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+      {/* ── Header banner ── */}
+      <section className="border-b bg-linear-to-b from-secondary/50 to-background">
+        <div className="mx-auto max-w-7xl px-4 pt-8 pb-6 animate-fade-up">
+
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-medium text-accent uppercase tracking-wider mb-3">
-                <Sparkles className="size-3.5" /> Curated by you
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold mb-3">
+                <Heart className="size-3 fill-current" /> My Wishlist
               </div>
-              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">Wishlist</h1>
-              <p className="mt-2 text-muted-foreground">
-                <span className="font-medium text-foreground">{items.length}</span> {items.length === 1 ? "item" : "items"} · est. value <span className="font-medium text-foreground tabular-nums">৳{total.toLocaleString()}</span>
-              </p>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Saved items</h1>
+              <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                <span><span className="font-semibold text-foreground">{items.length}</span> {items.length === 1 ? "item" : "items"}</span>
+                <span className="text-border">·</span>
+                <span>Total <span className="font-semibold text-foreground">৳{total.toLocaleString()}</span></span>
+                {savings > 0 && (
+                  <>
+                    <span className="text-border">·</span>
+                    <span className="text-emerald-600 font-semibold">Save ৳{savings.toLocaleString()}</span>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => { navigator.clipboard?.writeText(window.location.href); toast("Link copied"); }} className="h-11 px-5 rounded-full border border-border hover:border-foreground text-sm font-medium inline-flex items-center gap-2 transition">
-                <Share2 className="size-4" /> Share
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => { navigator.clipboard?.writeText(window.location.href); toast("Link copied!"); }}
+                className="h-10 px-4 rounded-full border text-sm font-medium inline-flex items-center gap-2 hover:border-foreground transition"
+              >
+                <Share2 className="size-3.5" /> Share
               </button>
-              <button onClick={moveAllToCart} className="h-11 px-5 rounded-full bg-accent text-accent-foreground text-sm font-medium hover:opacity-90 inline-flex items-center gap-2 transition">
-                <ShoppingCart className="size-4" /> Move all to cart
+              <button
+                onClick={clearAll}
+                className="h-10 px-4 rounded-full border text-sm font-medium inline-flex items-center gap-2 hover:border-accent hover:text-accent transition"
+              >
+                <Trash2 className="size-3.5" /> Clear all
+              </button>
+              <button
+                onClick={moveAllToCart}
+                className="h-10 px-4 rounded-full bg-accent text-white text-sm font-semibold inline-flex items-center gap-2 hover:opacity-90 transition shadow-sm"
+              >
+                <ShoppingCart className="size-3.5" /> Add all to cart
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Grid */}
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {items.map((p, i) => (
-            <article
-              key={p.id}
-              style={{ animationDelay: `${i * 40}ms` }}
-              className="group relative rounded-2xl border bg-card overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-up"
-            >
-              <button
-                onClick={() => { toggleWishlist(p.id); toast("Removed from wishlist"); }}
-                aria-label="Remove"
-                className="absolute top-3 right-3 z-10 size-8 rounded-full bg-background/90 backdrop-blur border flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent transition"
+      {/* ── Product grid ── */}
+      <div className="mx-auto max-w-7xl px-4 py-8 pb-16">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {items.map((p, i) => {
+            const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+            const isRemoving = removed.includes(p.id);
+            return (
+              <article
+                key={p.id}
+                style={{ animationDelay: `${i * 50}ms` }}
+                className={`group relative flex flex-col rounded-2xl border bg-card overflow-hidden transition-all duration-300 animate-fade-up ${
+                  isRemoving ? "opacity-0 scale-95 pointer-events-none" : "hover:-translate-y-1 hover:shadow-xl hover:border-foreground/20"
+                }`}
               >
-                <X className="size-4" />
-              </button>
-              <Link to="/product/$id" params={{ id: p.id }} className="block aspect-[4/5] overflow-hidden bg-secondary">
-                <img src={p.image} alt={p.name} loading="lazy" className="size-full object-cover group-hover:scale-105 transition duration-700" />
-              </Link>
-              <div className="p-4">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{p.category}</p>
-                <Link to="/product/$id" params={{ id: p.id }} className="block mt-1 font-medium leading-snug hover:text-accent transition line-clamp-1">{p.name}</Link>
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-semibold tabular-nums">৳{p.price.toLocaleString()}</span>
-                    {p.oldPrice && <span className="text-xs text-muted-foreground line-through tabular-nums">৳{p.oldPrice.toLocaleString()}</span>}
+                {/* Remove button */}
+                <button
+                  onClick={() => handleRemove(p.id)}
+                  aria-label="Remove from wishlist"
+                  className="absolute top-2.5 right-2.5 z-10 size-7 rounded-full bg-background/90 backdrop-blur border flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent transition opacity-0 group-hover:opacity-100"
+                >
+                  <X className="size-3.5" />
+                </button>
+
+                {/* Discount badge */}
+                {discount > 0 && (
+                  <div className="absolute top-2.5 left-2.5 z-10">
+                    <span className="rounded-full bg-accent text-white text-[10px] font-bold px-2 py-0.5">
+                      -{discount}%
+                    </span>
                   </div>
-                  <button
-                    onClick={() => { addToCart(p.id, { size: p.sizes[0] }); toast.success("Added to cart", { description: p.name }); }}
-                    className="size-9 rounded-full bg-foreground text-background flex items-center justify-center hover:bg-accent transition group/btn"
-                    aria-label="Add to cart"
+                )}
+
+                {/* Image */}
+                <Link to="/product/$id" params={{ id: p.id }} className="block aspect-square overflow-hidden bg-secondary shrink-0">
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    loading="lazy"
+                    className="size-full object-cover group-hover:scale-105 transition duration-500"
+                  />
+                </Link>
+
+                {/* Info */}
+                <div className="flex flex-col flex-1 p-3">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{p.category}</p>
+                  <Link
+                    to="/product/$id"
+                    params={{ id: p.id }}
+                    className="mt-0.5 text-[13px] font-semibold leading-snug line-clamp-1 hover:text-accent transition"
                   >
-                    <ShoppingCart className="size-4 group-hover/btn:scale-110 transition" />
-                  </button>
+                    {p.name}
+                  </Link>
+
+                  {/* Star placeholder */}
+                  <div className="mt-1.5 flex items-center gap-1">
+                    {[1,2,3,4,5].map((n) => (
+                      <Star key={n} className={`size-3 ${n <= 4 ? "fill-amber-400 text-amber-400" : "fill-border text-border"}`} />
+                    ))}
+                    <span className="text-[10px] text-muted-foreground ml-0.5">4.0</span>
+                  </div>
+
+                  {/* Color swatches */}
+                  <div className="mt-2 flex items-center gap-1">
+                    {p.colors.map((c, idx) => (
+                      <span key={idx} className="size-3 rounded-full ring-1 ring-border" style={{ background: c }} />
+                    ))}
+                  </div>
+
+                  {/* Price + CTA */}
+                  <div className="mt-3 pt-3 border-t flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-black tabular-nums">৳{p.price.toLocaleString()}</p>
+                      {p.oldPrice && (
+                        <p className="text-[10px] text-muted-foreground line-through tabular-nums">৳{p.oldPrice.toLocaleString()}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {/* Buy now */}
+                      <button
+                        onClick={() => { addToCart(p.id, { size: p.sizes[0] }); toast.success("Added!", { description: p.name }); }}
+                        aria-label="Add to cart"
+                        className="size-8 rounded-full bg-foreground text-background flex items-center justify-center hover:bg-accent transition"
+                      >
+                        <ShoppingCart className="size-3.5" />
+                      </button>
+                      <button
+                        onClick={() => { addToCart(p.id, { size: p.sizes[0] }); window.location.href = "/checkout"; }}
+                        aria-label="Buy now"
+                        className="size-8 rounded-full bg-accent text-white flex items-center justify-center hover:opacity-80 transition"
+                      >
+                        <Zap className="size-3.5 fill-current" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
+
+        {/* Bottom summary bar */}
+        {items.length > 1 && (
+          <div className="mt-10 rounded-2xl border bg-card p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-muted-foreground text-center sm:text-left">
+              <span className="font-semibold text-foreground text-base">{items.length} items</span> in your wishlist
+              {savings > 0 && <span className="ml-2 text-emerald-600 font-semibold">· You save ৳{savings.toLocaleString()}</span>}
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/category/$slug"
+                params={{ slug: "all" }}
+                className="h-11 px-5 rounded-full border text-sm font-medium hover:border-foreground transition"
+              >
+                Continue shopping
+              </Link>
+              <button
+                onClick={moveAllToCart}
+                className="h-11 px-6 rounded-full bg-accent text-white text-sm font-bold hover:opacity-90 transition inline-flex items-center gap-2 shadow-sm"
+              >
+                <ShoppingCart className="size-4" />
+                Add all to cart · ৳{total.toLocaleString()}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
