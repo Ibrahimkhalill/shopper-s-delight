@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { X, Minus, Plus, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
+import { X, Minus, Plus, ShoppingCart, Trash2, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import { Price } from "./Price";
 
 export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, cartCount } = useStore();
@@ -10,11 +12,11 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
+    const fn = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", fn);
     document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", fn);
       document.body.style.overflow = "";
     };
   }, [open, onClose]);
@@ -23,139 +25,169 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
   const ship = cartSubtotal > 1500 || cartSubtotal === 0 ? 0 : 80;
   const total = cartSubtotal + ship;
-  const freeShipRemaining = Math.max(0, 1500 - cartSubtotal);
-  const freeShipPct = Math.min(100, (cartSubtotal / 1500) * 100);
 
   return (
-    <div className="fixed inset-0 z-[60] animate-fade-in">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <div
+      className={cn("fixed inset-0 z-[60]", lang === "bn" && "font-bn")}
+      role="presentation"
+    >
+      <button
+        type="button"
+        aria-label="Close cart"
+        className="absolute inset-0 bg-black/45 backdrop-blur-[2px] animate-in fade-in duration-200"
+        onClick={onClose}
+      />
+
       <aside
-        className={`absolute right-0 top-0 bottom-0 w-full sm:w-[420px] bg-background shadow-2xl flex flex-col animate-slide-right ${lang === "bn" ? "font-bn" : ""}`}
+        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-border bg-background shadow-2xl animate-in slide-in-from-right duration-300 sm:max-w-[420px]"
         role="dialog"
         aria-label="Shopping cart"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
-          <div className="flex items-center gap-2.5">
-            <span className="size-9 rounded-full bg-secondary flex items-center justify-center">
-              <ShoppingBag className="size-4" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold leading-tight">Your cart</p>
-              <p className="text-[11px] text-muted-foreground">{cartCount} {cartCount === 1 ? "item" : "items"}</p>
-            </div>
+        <header className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight sm:text-xl">Your cart</h2>
+            <p className="mt-0.5 text-[13px] text-muted-foreground sm:text-sm">
+              {cartCount} {cartCount === 1 ? "item" : "items"}
+            </p>
           </div>
-          <button onClick={onClose} className="size-9 rounded-full border flex items-center justify-center hover:bg-secondary transition" aria-label="Close">
-            <X className="size-4" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            aria-label="Close"
+          >
+            <X className="size-4" strokeWidth={2.25} />
           </button>
-        </div>
+        </header>
 
-        {/* Free shipping bar */}
-        {cart.length > 0 && (
-          <div className="px-5 pt-4 pb-3 border-b bg-secondary/30 shrink-0">
-            {freeShipRemaining > 0 ? (
-              <p className="text-xs text-muted-foreground mb-2">
-                Add <span className="font-semibold text-foreground">৳{freeShipRemaining.toLocaleString()}</span> more for <span className="font-semibold text-accent">FREE shipping</span>
-              </p>
-            ) : (
-              <p className="text-xs font-semibold text-accent mb-2">🎉 You unlocked FREE shipping!</p>
-            )}
-            <div className="h-1.5 rounded-full bg-border overflow-hidden">
-              <div className="h-full bg-accent transition-all duration-500" style={{ width: `${freeShipPct}%` }} />
-            </div>
-          </div>
-        )}
-
-        {/* Items */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center px-6 text-center">
-              <div className="size-20 rounded-full bg-secondary flex items-center justify-center mb-4">
-                <ShoppingBag className="size-8 text-muted-foreground" />
+            <div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
+              <div className="mb-6 flex size-[5.5rem] items-center justify-center rounded-2xl border-2 border-dashed border-border bg-secondary">
+                <ShoppingCart className="size-9 text-muted-foreground" strokeWidth={1.4} />
               </div>
-              <p className="text-base font-semibold">Your cart is empty</p>
-              <p className="text-sm text-muted-foreground mt-1 mb-5">Discover amazing products and add them here.</p>
-              <button onClick={onClose} className="h-11 px-6 rounded-full bg-foreground text-background text-sm font-semibold hover:opacity-90 transition">
-                Continue shopping
+              <p className="text-lg font-bold tracking-tight">Your cart is empty</p>
+              <p className="mt-2 max-w-[260px] text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
+                Browse products and add items you love — they will appear here.
+              </p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-8 flex h-11 items-center justify-center rounded-full bg-foreground px-8 text-sm font-semibold text-background transition hover:opacity-90"
+              >
+                Start shopping
               </button>
             </div>
           ) : (
-            <ul className="p-4 space-y-3">
-              {cart.map((it) => {
-                const p = resolveProduct(it.id);
-                if (!p) return null;
-                return (
-                  <li key={it.id + (it.size ?? "")} className="flex gap-3 rounded-2xl border bg-card p-3 hover:border-foreground/30 transition">
-                    <Link to="/product/$id" params={{ id: p.id }} onClick={onClose} className="size-20 rounded-xl bg-secondary overflow-hidden shrink-0">
-                      <img src={p.image} alt={p.name} className="size-full object-cover" />
-                    </Link>
-                    <div className="flex-1 min-w-0 flex flex-col">
-                      <div className="flex items-start gap-2">
-                        <Link to="/product/$id" params={{ id: p.id }} onClick={onClose} className="text-sm font-medium leading-snug line-clamp-2 hover:text-accent transition flex-1">
-                          {p.name}
-                        </Link>
-                        <button onClick={() => removeFromCart(it.id)} className="size-7 rounded-full hover:bg-secondary flex items-center justify-center shrink-0 text-muted-foreground hover:text-accent transition" aria-label="Remove">
-                          <Trash2 className="size-3.5" />
+            cart.map((it) => {
+              const p = resolveProduct(it.id);
+              if (!p) return null;
+              const origPrice = Math.round(p.price * 1.45);
+
+              return (
+                <div
+                  key={it.id + (it.size ?? "")}
+                  className="flex gap-3.5 rounded-2xl border border-border/90 bg-card p-3.5 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <Link
+                    to="/product/$id"
+                    params={{ id: p.id }}
+                    onClick={onClose}
+                    className="relative block size-[5.25rem] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-secondary sm:size-24"
+                  >
+                    <img src={p.image} alt={p.name} className="size-full object-cover" />
+                  </Link>
+
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        to="/product/$id"
+                        params={{ id: p.id }}
+                        onClick={onClose}
+                        className="line-clamp-2 text-[0.9375rem] font-semibold leading-snug text-foreground transition-colors hover:text-accent"
+                      >
+                        {p.name}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(it.id)}
+                        className="shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        aria-label="Remove"
+                      >
+                        <Trash2 className="size-3.5" strokeWidth={2} />
+                      </button>
+                    </div>
+
+                    {it.size && (
+                      <p className="mt-1 text-[12px] text-muted-foreground">
+                        Size: <span className="font-medium text-foreground">{it.size}</span>
+                      </p>
+                    )}
+
+                    <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+                      <div className="flex items-baseline gap-2">
+                        <Price amount={p.price * it.qty} size="sm" />
+                        <Price amount={origPrice * it.qty} size="xs" muted struck />
+                      </div>
+
+                      <div className="flex items-center overflow-hidden rounded-full border border-border bg-secondary">
+                        <button
+                          type="button"
+                          onClick={() => setQty(it.id, it.qty - 1)}
+                          disabled={it.qty <= 1}
+                          className="flex size-9 items-center justify-center text-muted-foreground transition-colors hover:bg-background disabled:opacity-30"
+                          aria-label="Decrease"
+                        >
+                          <Minus className="size-3.5" strokeWidth={2.5} />
+                        </button>
+                        <span className="min-w-7 text-center text-xs font-bold tabular-nums">{it.qty}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQty(it.id, it.qty + 1)}
+                          className="flex size-9 items-center justify-center text-muted-foreground transition-colors hover:bg-background"
+                          aria-label="Increase"
+                        >
+                          <Plus className="size-3.5" strokeWidth={2.5} />
                         </button>
                       </div>
-                      {it.size && <p className="text-[11px] text-muted-foreground mt-0.5">Size: {it.size}</p>}
-                      <div className="mt-auto flex items-center justify-between pt-2">
-                        <div className="flex items-center rounded-full border h-8">
-                          <button onClick={() => setQty(it.id, it.qty - 1)} disabled={it.qty <= 1} className="size-8 flex items-center justify-center disabled:opacity-30 hover:bg-secondary rounded-l-full transition">
-                            <Minus className="size-3" />
-                          </button>
-                          <span className="w-8 text-center text-xs font-semibold">{it.qty}</span>
-                          <button onClick={() => setQty(it.id, it.qty + 1)} className="size-8 flex items-center justify-center hover:bg-secondary rounded-r-full transition">
-                            <Plus className="size-3" />
-                          </button>
-                        </div>
-                        <p className="text-sm font-semibold">৳{(p.price * it.qty).toLocaleString()}</p>
-                      </div>
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
 
-        {/* Footer */}
         {cart.length > 0 && (
-          <div className="border-t bg-card shrink-0 p-5 space-y-3">
-            <div className="space-y-1.5 text-sm">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span className="text-foreground font-medium">৳{cartSubtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Shipping</span>
-                <span className={ship === 0 ? "text-accent font-semibold" : "text-foreground font-medium"}>
-                  {ship === 0 ? "FREE" : `৳${ship}`}
-                </span>
-              </div>
-              <div className="flex justify-between pt-2 border-t mt-2">
-                <span className="font-semibold">Total</span>
-                <span className="text-lg font-bold">৳{total.toLocaleString()}</span>
-              </div>
+          <footer className="shrink-0 space-y-4 border-t border-border bg-card/95 px-5 py-5 backdrop-blur-sm">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-semibold text-foreground">Subtotal</span>
+              <Price amount={cartSubtotal} size="md" />
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            {ship > 0 && (
+              <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+                <span>Shipping (est.)</span>
+                <Price amount={ship} size="xs" tone="inherit" />
+              </div>
+            )}
+            <div className="flex gap-3">
               <Link
                 to="/cart"
                 onClick={onClose}
-                className="h-12 rounded-full border-2 border-foreground/90 text-sm font-semibold flex items-center justify-center hover:bg-secondary transition"
+                className="flex h-12 flex-1 items-center justify-center rounded-full border border-border bg-background text-sm font-semibold text-foreground transition hover:bg-secondary"
               >
                 View cart
               </Link>
               <Link
                 to="/checkout"
                 onClick={onClose}
-                className="h-12 rounded-full bg-foreground text-background text-sm font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition group"
+                className="inline-flex h-12 flex-[1.35] items-center justify-center gap-2 rounded-full bg-foreground text-sm font-semibold text-background shadow-md transition hover:opacity-90"
               >
-                Checkout <ArrowRight className="size-4 group-hover:translate-x-0.5 transition" />
+                Checkout
+                <ArrowRight className="size-4" strokeWidth={2.25} />
               </Link>
             </div>
-            <p className="text-[10px] text-center text-muted-foreground pt-1">Secure checkout · COD · bKash · Nagad</p>
-          </div>
+          </footer>
         )}
       </aside>
     </div>

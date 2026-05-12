@@ -1,7 +1,8 @@
-import { Heart, Eye, ShoppingCart, ArrowLeftRight } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
+import { Price } from "./Price";
 
 export type Product = {
   id: string;
@@ -16,10 +17,16 @@ export type Product = {
   liked?: boolean;
 };
 
+/**
+ * Strict 3-color palette (black / white / red).
+ *  - new      → solid black pill
+ *  - sale     → solid red pill
+ *  - trending → soft white outline pill (premium, neutral)
+ */
 const toneClass: Record<NonNullable<Product["badge"]>["tone"], string> = {
-  new: "text-accent",
-  sale: "text-emerald-600",
-  trending: "text-blue-600",
+  new:      "bg-foreground text-background",
+  sale:     "bg-accent text-accent-foreground",
+  trending: "bg-background/95 text-foreground border border-border backdrop-blur-sm",
 };
 
 export function ProductCard({ p }: { p: Product }) {
@@ -41,110 +48,144 @@ export function ProductCard({ p }: { p: Product }) {
     toast(liked ? "Removed from wishlist" : "Saved to wishlist");
   };
 
-  const handleCompare = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toast("Quick view");
-  };
-
   return (
-    <div className="group relative rounded-2xl border border-border bg-card p-3 hover-lift">
+    <article
+      className="
+        group relative flex h-full flex-col overflow-hidden
+        rounded-[1.5rem] border border-border/70 bg-card
+        transition-all duration-300 ease-out
+        hover:-translate-y-[3px] hover:border-border
+        [box-shadow:0_1px_2px_-1px_oklch(0_0_0/0.04)]
+        hover:[box-shadow:0_22px_44px_-22px_oklch(0_0_0/0.14)]
+      "
+    >
+      {/* ── Image (fixed 1:1 ratio across all cards) ───────────────────── */}
+      <Link
+        to="/product/$id"
+        params={{ id: p.id }}
+        aria-label={p.name}
+        className="relative block aspect-square w-full overflow-hidden bg-secondary/60"
+      >
+        <img
+          src={p.image}
+          alt={p.name}
+          loading="lazy"
+          width={800}
+          height={800}
+          className="size-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.05]"
+        />
 
-      {/* Badge tab */}
-      {p.badge && (
-        <div className="absolute -top-px left-1/2 -translate-x-1/2 z-10">
-          <div className="bg-card border border-border border-t-0 rounded-b-md px-3 py-1 text-[10px] font-semibold tracking-wider uppercase">
-            <span className={toneClass[p.badge.tone]}>{p.badge.label}</span>
-          </div>
+        {/* Badge stack — vertical, top-left. Never collides with wishlist. */}
+        <div className="pointer-events-none absolute left-2.5 top-2.5 z-10 flex flex-col items-start gap-1 lg:left-3 lg:top-3 lg:gap-1.5">
+          {p.badge && (
+            <span
+              className={`inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold uppercase tracking-[0.04em] shadow-[0_1px_3px_oklch(0_0_0/0.08)] lg:h-[26px] lg:px-3 lg:text-xs ${toneClass[p.badge.tone]}`}
+            >
+              {p.badge.label}
+            </span>
+          )}
+          {discount > 0 && (
+            <span className="inline-flex h-6 items-center rounded-full bg-accent px-2.5 text-[11px] font-semibold text-accent-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] lg:h-[26px] lg:px-3 lg:text-xs">
+              −{discount}%
+            </span>
+          )}
         </div>
-      )}
 
-      {/* Image */}
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-secondary">
-        {discount > 0 && (
-          <span className="absolute top-2 left-2 z-10 rounded-full bg-accent text-accent-foreground text-[10px] font-semibold px-2 py-0.5">
-            -{discount}%
-          </span>
-        )}
-
-        <Link to="/product/$id" params={{ id: p.id }} className="block size-full">
-          <img
-            src={p.image}
-            alt={p.name}
-            width={800}
-            height={800}
-            loading="lazy"
-            className="size-full object-cover transition duration-500 group-hover:scale-105"
+        {/* Wishlist — fixed 36 / 40px circle, top-right, soft. */}
+        <button
+          type="button"
+          onClick={handleLike}
+          aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
+          aria-pressed={liked}
+          className={`
+            absolute right-2.5 top-2.5 z-10 inline-flex size-9 items-center justify-center rounded-full
+            border border-border/40 bg-background/85 backdrop-blur-md
+            shadow-[0_1px_3px_oklch(0_0_0/0.05)]
+            transition-all duration-200 ease-out
+            hover:scale-[1.08] hover:border-border hover:bg-background hover:shadow-[0_4px_12px_-4px_oklch(0_0_0/0.12)]
+            active:scale-95
+            lg:right-3 lg:top-3 lg:size-10
+            ${liked ? "text-accent" : "text-foreground/70 hover:text-accent"}
+          `}
+        >
+          <Heart
+            className={`size-[15px] transition-transform duration-200 lg:size-4 ${liked ? "fill-current scale-110" : ""}`}
+            strokeWidth={2}
           />
+        </button>
+      </Link>
+
+      {/* ── Content ──────────────────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col p-3.5 lg:p-4">
+        {/* Category — 11/12px uppercase */}
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground lg:text-xs">
+          {p.category}
+        </p>
+
+        {/* Title — 14px mobile / 16px desktop, font-medium per spec.
+            min-height locks 2 lines worth so every card aligns. */}
+        <Link to="/product/$id" params={{ id: p.id }} className="mt-1">
+          <h3
+            className="
+              line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug
+              text-foreground transition-colors hover:text-accent
+              lg:min-h-[2.75rem] lg:text-base
+            "
+          >
+            {p.name}
+          </h3>
         </Link>
 
-        {/* Hover options — tab-shaped pill with curved side notches */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out z-50">
-          <div className="card-pill flex items-center -mb-1 gap-5 px-2.5 pt-4 pb-0">
-            <Link
-              to="/product/$id"
-              params={{ id: p.id }}
-              aria-label="View product"
-              className="text-foreground/80 hover:text-foreground hover:scale-110 transition"
-            >
-              <Eye className="size-4.5" strokeWidth={1.75} />
-            </Link>
-            <button
-              onClick={handleCompare}
-              aria-label="Quick view"
-              className="text-accent hover:scale-110 transition"
-            >
-              <ArrowLeftRight className="size-4.5" strokeWidth={1.75} />
-            </button>
-            <button
-              onClick={handleAdd}
-              aria-label="Add to cart"
-              className="text-accent hover:scale-110 transition"
-            >
-              <ShoppingCart className="size-4.5" strokeWidth={1.75} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Meta row */}
-      <div className="mt-4 flex items-center justify-between text-[11px] uppercase tracking-wider text-muted-foreground">
-        <span>{p.category}</span>
-        <span className="space-x-1.5">
-          {p.sizes.map((s) => <span key={s}>{s}</span>)}
-        </span>
-      </div>
-
-      {/* Title */}
-      <h3 className="mt-1.5 text-[15px] font-medium text-foreground leading-snug line-clamp-1">{p.name}</h3>
-
-      {/* Price */}
-      <div className="mt-1.5 flex items-baseline gap-2">
-        <span className="text-[15px] font-semibold">৳{p.price.toLocaleString()}</span>
-        {p.oldPrice && (
-          <span className="text-xs text-muted-foreground line-through">৳{p.oldPrice.toLocaleString()}</span>
-        )}
-      </div>
-
-      {/* Footer: colors (left) + heart (right) */}
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          {p.colors.map((c, idx) => (
+        {/* Color variants — compact, aligned */}
+        <div className="mt-2 flex h-4 items-center gap-1.5 lg:mt-2.5 lg:h-[18px]">
+          {p.colors.slice(0, 5).map((c, i) => (
             <span
-              key={idx}
-              className="size-4 rounded-full ring-1 ring-border"
+              key={i}
+              aria-hidden="true"
               style={{ background: c }}
+              className="size-4 rounded-full ring-1 ring-border/80 ring-offset-2 ring-offset-card transition-colors duration-200 group-hover:ring-border lg:size-[18px]"
             />
           ))}
         </div>
-        <button
-          onClick={handleLike}
-          aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
-          className={`size-7 flex items-center justify-center rounded-full transition ${liked ? "text-accent" : "text-muted-foreground hover:text-accent"}`}
-        >
-          <Heart className={`size-4 ${liked ? "fill-current" : ""}`} />
-        </button>
+
+        {/* Price + CTA pinned to bottom for perfect baseline alignment grid-wide */}
+        <div className="mt-auto pt-3 lg:pt-3.5">
+          <div className="flex items-baseline gap-2">
+            <Price
+              amount={p.price}
+              size="md"
+              className="!font-bold lg:!text-lg"
+              symbolClassName="lg:!text-[0.88rem]"
+            />
+            {p.oldPrice && (
+              <Price
+                amount={p.oldPrice}
+                size="xs"
+                muted
+                struck
+                className="lg:!text-sm"
+                symbolClassName="lg:!text-[0.65rem]"
+              />
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="
+              mt-3 flex h-10 w-full items-center justify-center gap-1.5
+              rounded-xl bg-foreground text-sm font-semibold tracking-tight text-background
+              transition-all duration-200 ease-out
+              hover:opacity-[0.92] hover:shadow-[0_8px_22px_-10px_oklch(0_0_0/0.45)]
+              active:scale-[0.98]
+              lg:h-11
+            "
+          >
+            <ShoppingCart className="size-4" strokeWidth={2} />
+            Add to cart
+          </button>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }

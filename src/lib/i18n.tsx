@@ -33,7 +33,7 @@ export const dict: Dict = {
   "nav.beauty": { en: "Beauty", bn: "বিউটি" },
   "nav.grocery": { en: "Grocery", bn: "মুদি" },
   "nav.deals": { en: "Deals", bn: "অফার" },
-  "nav.track": { en: "Track order →", bn: "অর্ডার ট্র্যাক করুন →" },
+  "nav.track": { en: "Track order", bn: "অর্ডার ট্র্যাক করুন" },
   // category strip short
   "cat.gadgets": { en: "Gadgets", bn: "গ্যাজেট" },
   "cat.fashion": { en: "Fashion", bn: "ফ্যাশন" },

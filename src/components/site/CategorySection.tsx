@@ -9,22 +9,28 @@ export function CategorySection({
   const { t, lang } = useT();
   const items = ids.map((id) => PRODUCTS.find((p) => p.id === id)).filter(Boolean) as typeof PRODUCTS;
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10">
-      <div className={`flex items-end justify-between mb-6 ${lang === "bn" ? "font-bn" : ""}`}>
-        <div>
-          <p className="text-xs uppercase tracking-widest text-accent font-medium">{t(eyebrowKey)}</p>
-          <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">{t(titleKey)}</h2>
+    <section className="mx-auto max-w-7xl px-4 py-10 md:py-12 lg:px-6 lg:py-16">
+      <div className={`mb-7 flex items-end justify-between gap-4 sm:mb-8 lg:mb-12 ${lang === "bn" ? "font-bn" : ""}`}>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent lg:text-[13px]">{t(eyebrowKey)}</p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-balance sm:text-2xl md:text-2xl lg:mt-3 lg:text-[2.125rem] lg:tracking-[-0.02em]">{t(titleKey)}</h2>
         </div>
-        <Link to="/category/$slug" params={{ slug }} className="text-sm text-muted-foreground hover:text-foreground">{t("sec.viewall")}</Link>
+        <Link
+          to="/category/$slug"
+          params={{ slug }}
+          className="shrink-0 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:text-sm lg:text-base"
+        >
+          {t("sec.viewall")}
+        </Link>
       </div>
-      <div className="sm:hidden -mx-4 px-4 overflow-x-auto no-scrollbar">
-        <div className="flex gap-3 snap-x snap-mandatory pb-1">
+      <div className="-mx-4 overflow-x-auto px-4 no-scrollbar sm:hidden">
+        <div className="flex snap-x snap-mandatory gap-3 pb-1">
           {items.map((p) => (
-            <div key={p.id} className="snap-start shrink-0 w-[52vw]"><ProductCard p={p} /></div>
+            <div key={p.id} className="w-[52vw] shrink-0 snap-start"><ProductCard p={p} /></div>
           ))}
         </div>
       </div>
-      <div className="hidden sm:grid grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="hidden grid-cols-3 gap-4 sm:grid lg:grid-cols-5 lg:gap-6">
         {items.map((p) => <ProductCard key={p.id} p={p} />)}
       </div>
     </section>

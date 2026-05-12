@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Price } from "@/components/site/Price";
 
 export const Route = createFileRoute("/wishlist")({ component: WishlistPage });
 
@@ -75,10 +76,8 @@ function WishlistPage() {
         crumbs={[{ label: "Home", to: "/" }, { label: "Wishlist" }]}
         actions={
           <>
-            <button onClick={() => { navigator.clipboard?.writeText(window.location.href); toast("Link copied!"); }} className="h-9 px-3 rounded-full border text-xs font-medium inline-flex items-center gap-1.5 hover:border-foreground transition">
-              <Share2 className="size-3.5" /> Share
-            </button>
-            <button onClick={clearAll} className="h-9 px-3 rounded-full border text-xs font-medium inline-flex items-center gap-1.5 hover:border-accent hover:text-accent transition">
+            
+            <button onClick={clearAll} className="h-10 px-5 rounded-full border text-xs font-medium inline-flex items-center gap-1.5 hover:border-accent hover:text-accent transition">
               <Trash2 className="size-3.5" /> Clear all
             </button>
             <button onClick={moveAllToCart} className="h-9 px-4 rounded-full bg-accent text-white text-xs font-semibold inline-flex items-center gap-1.5 hover:opacity-90 transition shadow-sm">
@@ -106,7 +105,7 @@ function WishlistPage() {
                 <button
                   onClick={() => handleRemove(p.id)}
                   aria-label="Remove from wishlist"
-                  className="absolute top-2.5 right-2.5 z-10 size-7 rounded-full bg-background/90 backdrop-blur border flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent transition opacity-0 group-hover:opacity-100"
+                  className="absolute top-2.5 right-2.5 z-10 size-7 rounded-full bg-background/90 backdrop-blur border flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent transition"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -158,10 +157,10 @@ function WishlistPage() {
 
                   {/* Price + CTA */}
                   <div className="mt-3 pt-3 border-t flex items-center justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-black tabular-nums">৳{p.price.toLocaleString()}</p>
+                    <div className="flex flex-col gap-0.5">
+                      <Price amount={p.price} size="sm" className="!font-black" />
                       {p.oldPrice && (
-                        <p className="text-[10px] text-muted-foreground line-through tabular-nums">৳{p.oldPrice.toLocaleString()}</p>
+                        <Price amount={p.oldPrice} size="xs" muted struck className="!text-[10px]" />
                       )}
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -193,7 +192,11 @@ function WishlistPage() {
           <div className="mt-10 rounded-2xl border bg-card p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-muted-foreground text-center sm:text-left">
               <span className="font-semibold text-foreground text-base">{items.length} items</span> in your wishlist
-              {savings > 0 && <span className="ml-2 text-emerald-600 font-semibold">· You save ৳{savings.toLocaleString()}</span>}
+              {savings > 0 && (
+                <span className="ml-2 inline-flex items-baseline gap-1 font-semibold text-accent">
+                  · You save <Price amount={savings} size="sm" tone="inherit" className="!font-semibold" />
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Link
@@ -208,7 +211,10 @@ function WishlistPage() {
                 className="h-11 px-6 rounded-full bg-accent text-white text-sm font-bold hover:opacity-90 transition inline-flex items-center gap-2 shadow-sm"
               >
                 <ShoppingCart className="size-4" />
-                Add all to cart · ৳{total.toLocaleString()}
+                <span className="inline-flex items-baseline gap-1">
+                  Add all to cart ·{" "}
+                  <Price amount={total} size="sm" tone="inherit" className="!font-bold" />
+                </span>
               </button>
             </div>
           </div>

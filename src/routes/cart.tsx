@@ -1,48 +1,48 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
-import { PageHeader } from "@/components/site/PageHeader";
 import { useStore } from "@/lib/store";
-import { Minus, Plus, X, ShoppingBag, ArrowRight, Truck, ShieldCheck, RotateCcw, Tag, Sparkles, Heart, Lock } from "lucide-react";
+import { PRODUCTS } from "@/lib/products";
+import {
+  Minus, Plus, X, ShoppingBag, ArrowRight,
+  Heart, Lock,
+  Truck, Headphones, RotateCcw, ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { PageHeader } from "@/components/site/PageHeader";
+import { Price } from "@/components/site/Price";
 
 export const Route = createFileRoute("/cart")({ component: CartPage });
 
 const FREE_SHIP_THRESHOLD = 1500;
 
-function CartPage() {
-  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, clearCart, toggleWishlist } = useStore();
+export function CartPage() {
+  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, toggleWishlist, addToCart } = useStore();
   const items = cart.map((it) => ({ ...it, p: resolveProduct(it.id)! })).filter((x) => x.p);
-  const [coupon, setCoupon] = useState("");
-  const [discount, setDiscount] = useState(0);
 
-  const shipping = cartSubtotal > FREE_SHIP_THRESHOLD || items.length === 0 ? 0 : 80;
-  const total = Math.max(0, cartSubtotal - discount + shipping);
-  const progress = Math.min(100, (cartSubtotal / FREE_SHIP_THRESHOLD) * 100);
-  const remaining = Math.max(0, FREE_SHIP_THRESHOLD - cartSubtotal);
+  const shipping = cartSubtotal >= FREE_SHIP_THRESHOLD || items.length === 0 ? 0 : 80;
+  const total = Math.max(0, cartSubtotal + shipping);
 
-  const applyCoupon = () => {
-    const code = coupon.trim().toUpperCase();
-    if (!code) return;
-    if (code === "SHOPBD10") { setDiscount(Math.round(cartSubtotal * 0.1)); toast.success("Coupon applied · 10% off"); }
-    else if (code === "WELCOME") { setDiscount(200); toast.success("Coupon applied · ৳200 off"); }
-    else { setDiscount(0); toast.error("Invalid coupon"); }
-  };
+  const inCartIds = new Set(cart.map((it) => it.id));
+  const recommended = PRODUCTS.filter((p) => !inCartIds.has(p.id)).slice(0, 6);
 
   if (items.length === 0) {
     return (
       <Layout>
-        <div className="mx-auto max-w-2xl px-4 py-24 text-center animate-fade-up">
-          <div className="relative mx-auto size-28 mb-6">
-            <div className="absolute inset-0 rounded-full bg-accent/10 blur-2xl" />
-            <div className="relative size-28 rounded-full bg-gradient-to-br from-secondary to-background border flex items-center justify-center">
-              <ShoppingBag className="size-12" strokeWidth={1.5} />
-            </div>
+        <div className="mx-auto max-w-md px-4 py-16 text-center sm:py-20 lg:py-24">
+          <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-secondary sm:size-20 lg:mb-6 lg:size-[88px]">
+            <ShoppingBag className="size-7 text-muted-foreground sm:size-8 lg:size-9" strokeWidth={1.4} />
           </div>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Your cart is empty</h1>
-          <p className="mt-3 text-muted-foreground">Add a few favourites and we'll get them on the way.</p>
-          <Link to="/" className="inline-flex items-center gap-2 mt-8 h-12 px-7 rounded-full bg-foreground text-background text-sm font-medium hover:opacity-90 group">
-            Continue shopping <ArrowRight className="size-4 group-hover:translate-x-1 transition" />
+          <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
+            Your cart is empty
+          </h1>
+          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground lg:text-sm">
+            Add a few favourites and we&apos;ll get them on their way.
+          </p>
+          <Link
+            to="/"
+            className="mt-6 inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:opacity-90 lg:h-11 lg:px-7"
+          >
+            Continue shopping <ArrowRight className="size-4" />
           </Link>
         </div>
       </Layout>
@@ -53,143 +53,418 @@ function CartPage() {
     <Layout>
       <PageHeader
         centered
-        title="Shopping Cart"
-        subtitle="Review your items, apply coupons, and proceed to a fast and secure checkout."
+        title="Shopping cart"
+        subtitle="Review your items, adjust quantities, and continue to checkout when you are ready."
         crumbs={[{ label: "Home", to: "/" }, { label: "Cart" }]}
-        actions={
-          <button onClick={() => { clearCart(); toast("Cart cleared"); }} className="h-9 px-4 rounded-full border text-xs text-muted-foreground hover:border-accent hover:text-accent transition">
-            Clear all
-          </button>
-        }
       />
 
-      {/* Free shipping progress */}
-      <div className="mx-auto max-w-4xl px-4 pt-5">
-        <div className="rounded-2xl border bg-card px-4 py-3">
-          <div className="flex items-center gap-2 text-sm">
-            <Truck className="size-4 text-accent shrink-0" />
-            {shipping === 0 ? (
-              <span className="font-medium">You've unlocked <span className="text-accent">free shipping</span> 🎉</span>
-            ) : (
-              <span>Add <span className="font-semibold text-foreground tabular-nums">৳{remaining.toLocaleString()}</span> more for <span className="text-accent font-medium">free shipping</span></span>
-            )}
-          </div>
-          <div className="mt-2 h-1.5 rounded-full bg-secondary overflow-hidden">
-            <div className="h-full bg-accent transition-all duration-700" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-      </div>
+      <div className="min-h-screen bg-secondary/25 pb-8 md:pb-10">
+        {/* Mobile: max 480px, centered, px-4, gap-3.  Desktop (lg+): 12-col grid. */}
+        <div className="mx-auto w-full max-w-[480px] px-4 py-4 lg:grid lg:max-w-7xl lg:grid-cols-12 lg:items-start lg:gap-7 lg:px-6 lg:py-8">
 
-      <div className="mx-auto max-w-4xl px-4 py-5 space-y-3 animate-fade-up">
-        {/* Items */}
-        {items.map((it, i) => (
-          <article
-            key={it.id + (it.size ?? "")}
-            style={{ animationDelay: `${i * 50}ms` }}
-            className="group rounded-2xl border bg-card p-3 sm:p-4 transition animate-fade-up"
-          >
-            <div className="flex gap-3 sm:gap-4">
-              {/* Image */}
-              <Link to="/product/$id" params={{ id: it.id }} className="size-20 sm:size-24 rounded-xl bg-secondary overflow-hidden shrink-0">
-                <img src={it.p.image} alt={it.p.name} className="size-full object-cover group-hover:scale-105 transition duration-500" />
+          {/* ── Main column (items + mobile summary) ───────────────────────── */}
+          <main className="flex flex-col gap-3 lg:col-span-7 lg:gap-6">
+
+            {/* Heading + count — sits above items on mobile, inside the panel on desktop is handled visually by the wrapper. */}
+            <header className="lg:rounded-2xl lg:border lg:border-border/80 lg:bg-card lg:p-6">
+              <h2 className="text-lg font-bold tracking-tight lg:text-xl">Your items</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground lg:mt-1 lg:text-[13px]">
+                {items.length} product{items.length !== 1 ? "s" : ""} in cart
+              </p>
+
+              {/* Items list — horizontal cards on mobile, same structure scales up on desktop. */}
+              <ul className="mt-3 flex flex-col gap-3 lg:mt-5 lg:gap-4">
+                {items.map((it) => {
+                  const origPrice = Math.round(it.p.price * 1.45);
+                  return (
+                    <li
+                      key={it.id + (it.size ?? "")}
+                      className="
+                        flex gap-3 rounded-[14px] border border-border/60 bg-card p-3
+                        shadow-[0_1px_3px_oklch(0_0_0/0.04)]
+                        lg:gap-4 lg:rounded-xl lg:border-border/70 lg:bg-background lg:p-4 lg:shadow-none
+                      "
+                    >
+                      {/* Image — 60×60 mobile, 96 desktop. Image left, details right. */}
+                      <Link
+                        to="/product/$id"
+                        params={{ id: it.id }}
+                        className="size-[60px] shrink-0 overflow-hidden rounded-xl bg-secondary lg:size-24"
+                      >
+                        <img
+                          src={it.p.image}
+                          alt={it.p.name}
+                          className="size-full object-cover transition duration-300 hover:scale-[1.03]"
+                        />
+                      </Link>
+
+                      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 lg:gap-3">
+                        {/* Row 1 — name / variant + close button */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <Link
+                              to="/product/$id"
+                              params={{ id: it.id }}
+                              className="line-clamp-2 text-base font-semibold leading-snug text-foreground transition-colors hover:text-accent lg:text-[15px]"
+                            >
+                              {it.p.name}
+                            </Link>
+                            <p className="mt-0.5 text-[13px] text-muted-foreground">
+                              {it.size ? `Size: ${it.size}` : it.p.category}
+                            </p>
+                          </div>
+                          {/* Close button — replaces the 2-icon row from the desktop card, kept compact on mobile */}
+                          <button
+                            type="button"
+                            onClick={() => { removeFromCart(it.id); toast("Item removed"); }}
+                            className="-mr-1 -mt-1 flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-accent lg:hidden"
+                            aria-label="Remove"
+                          >
+                            <X className="size-[15px]" strokeWidth={2} />
+                          </button>
+                        </div>
+
+                        {/* Row 2 — price (18px bold) + quantity pill */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-baseline gap-2">
+                            <Price
+                              amount={it.p.price * it.qty}
+                              size="lg"
+                              className="!font-bold"
+                            />
+                            <Price
+                              amount={origPrice * it.qty}
+                              size="xs"
+                              muted
+                              struck
+                              className="hidden sm:inline-flex"
+                            />
+                          </div>
+
+                          {/* Quantity pill — rounded-full, -/+ buttons, 14px label */}
+                          <div className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary/60 px-1 py-1">
+                            <button
+                              type="button"
+                              onClick={() => setQty(it.id, it.qty - 1)}
+                              disabled={it.qty <= 1}
+                              className="qty-btn flex size-7 items-center justify-center rounded-full text-foreground hover:bg-background disabled:opacity-30"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="size-3.5" strokeWidth={2.5} />
+                            </button>
+                            <span className="min-w-6 text-center text-sm font-semibold tabular-nums">
+                              {it.qty}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setQty(it.id, it.qty + 1)}
+                              className="qty-btn flex size-7 items-center justify-center rounded-full text-foreground hover:bg-background"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="size-3.5" strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Desktop-only secondary actions row (save for later) */}
+                        <div className="hidden items-center gap-2 border-t border-border/70 pt-2 lg:flex">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              toggleWishlist(it.id);
+                              removeFromCart(it.id);
+                              toast("Saved for later");
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                            aria-label="Save for later"
+                          >
+                            <Heart className="size-3.5" strokeWidth={1.75} /> Save for later
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { removeFromCart(it.id); toast("Item removed"); }}
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-accent"
+                            aria-label="Remove"
+                          >
+                            <X className="size-3.5" strokeWidth={1.75} /> Remove
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </header>
+
+            {/* ── Mobile order summary card — subtotal, total, full-width CTA ─ */}
+            <section
+              className="
+                rounded-[14px] border border-border/60 bg-card p-4
+                shadow-[0_1px_3px_oklch(0_0_0/0.04)]
+                lg:hidden
+              "
+              aria-label="Order summary"
+            >
+              <h2 className="text-base font-bold tracking-tight">Order summary</h2>
+
+              <div className="mt-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Subtotal</span>
+                  <Price amount={cartSubtotal} size="sm" className="!font-semibold" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Shipping</span>
+                  {shipping === 0 ? (
+                    <span className="text-sm font-semibold text-foreground">Free</span>
+                  ) : (
+                    <Price amount={shipping} size="sm" className="!font-semibold" />
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-baseline justify-between border-t border-border/70 pt-3">
+                <span className="text-base font-bold tracking-tight">Total</span>
+                {/* Total — 20px bold per spec */}
+                <Price amount={total} size="xl" className="!font-bold" />
+              </div>
+
+              <Link
+                to="/checkout"
+                className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition hover:opacity-90 active:scale-[0.99]"
+              >
+                <Lock className="size-4" strokeWidth={2.25} />
+                Proceed to checkout
               </Link>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0 flex flex-col gap-2">
-                {/* Top row: name + price */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{it.p.category}</p>
-                    <Link to="/product/$id" params={{ id: it.id }} className="text-sm font-semibold mt-0.5 block line-clamp-1 hover:text-accent transition">{it.p.name}</Link>
-                    {it.size && <p className="text-xs text-muted-foreground mt-0.5">Size · <span className="text-foreground">{it.size}</span></p>}
-                  </div>
-                  <p className="text-sm font-bold tabular-nums whitespace-nowrap shrink-0">৳{(it.p.price * it.qty).toLocaleString()}</p>
-                </div>
+              <Link
+                to="/"
+                className="mt-2 block text-center text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Continue shopping
+              </Link>
+            </section>
 
-                {/* Bottom row: qty stepper + actions */}
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center h-8 rounded-full border bg-background">
-                    <button onClick={() => setQty(it.id, it.qty - 1)} className="size-8 flex items-center justify-center hover:bg-secondary rounded-l-full transition" aria-label="Decrease"><Minus className="size-3" /></button>
-                    <span className="w-7 text-center text-sm font-medium tabular-nums">{it.qty}</span>
-                    <button onClick={() => setQty(it.id, it.qty + 1)} className="size-8 flex items-center justify-center hover:bg-secondary rounded-r-full transition" aria-label="Increase"><Plus className="size-3" /></button>
-                  </div>
-                  <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                    <button onClick={() => { toggleWishlist(it.id); removeFromCart(it.id); toast("Saved for later"); }} className="inline-flex items-center gap-1 px-2 py-1.5 rounded-full hover:bg-secondary hover:text-foreground transition">
-                      <Heart className="size-3.5" /> <span className="hidden sm:inline">Save</span>
-                    </button>
-                    <button onClick={() => { removeFromCart(it.id); toast("Item removed"); }} className="inline-flex items-center gap-1 px-2 py-1.5 rounded-full hover:bg-secondary hover:text-accent transition">
-                      <X className="size-3.5" /> <span className="hidden sm:inline">Remove</span>
-                    </button>
-                  </div>
+          </main>
+
+          {/* Order summary — desktop sidebar (unchanged) */}
+          <aside className="hidden lg:sticky lg:top-24 lg:col-span-5 lg:flex lg:flex-col lg:gap-4">
+            <div className="rounded-2xl border border-border/80 bg-card p-6">
+              <h2 className="text-xl font-bold tracking-tight">Order summary</h2>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                Shipping finalized at checkout.
+              </p>
+
+              <div className="mt-5 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Subtotal</span>
+                  <Price amount={cartSubtotal} size="md" className="!font-semibold" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Shipping</span>
+                  {shipping === 0 ? (
+                    <span className="text-sm font-semibold text-foreground">Free</span>
+                  ) : (
+                    <Price amount={shipping} size="md" className="!font-semibold" />
+                  )}
                 </div>
               </div>
-            </div>
-          </article>
-        ))}
 
-        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition">
-          <ArrowRight className="size-3.5 rotate-180" /> Continue shopping
-        </Link>
-
-        {/* Order Summary */}
-        <div className="rounded-2xl border bg-card p-4 sm:p-6">
-          <p className="font-semibold mb-4 flex items-center gap-2"><Sparkles className="size-4 text-accent" /> Order summary</p>
-
-          {/* Coupon */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Tag className="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={coupon}
-                onChange={(e) => setCoupon(e.target.value)}
-                placeholder="Coupon code"
-                className="w-full h-11 pl-10 pr-3 rounded-xl border bg-background text-sm uppercase tracking-wide outline-none focus:border-foreground transition"
-              />
-            </div>
-            <button onClick={applyCoupon} className="h-11 px-4 rounded-xl border border-foreground text-sm font-medium hover:bg-foreground hover:text-background transition shrink-0">Apply</button>
-          </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            Try{" "}
-            <button onClick={() => setCoupon("SHOPBD10")} className="font-mono text-foreground hover:text-accent">SHOPBD10</button>
-            {" "}or{" "}
-            <button onClick={() => setCoupon("WELCOME")} className="font-mono text-foreground hover:text-accent">WELCOME</button>
-          </p>
-
-          <div className="border-t my-4" />
-
-          <div className="space-y-2.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">৳{cartSubtotal.toLocaleString()}</span></div>
-            {discount > 0 && <div className="flex justify-between text-accent"><span>Discount</span><span className="tabular-nums">-৳{discount.toLocaleString()}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className={shipping === 0 ? "text-accent font-medium" : ""}>{shipping === 0 ? "Free 🎉" : `৳${shipping}`}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">VAT</span><span className="text-muted-foreground">Included</span></div>
-          </div>
-
-          <div className="border-t my-4" />
-
-          <div className="flex justify-between items-baseline mb-4">
-            <span className="font-bold">Total</span>
-            <span className="text-2xl font-bold tabular-nums">৳{total.toLocaleString()}</span>
-          </div>
-
-          <Link to="/checkout" className="flex items-center justify-center gap-2 h-13 rounded-2xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition group shadow-sm">
-            <Lock className="size-4" /> Proceed to checkout · ৳{total.toLocaleString()}
-          </Link>
-          <p className="mt-3 text-xs text-muted-foreground text-center">Cash on Delivery · bKash · Card · SSLCommerz</p>
-
-          <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-3 text-center">
-            {[
-              { icon: ShieldCheck, label: "Secure" },
-              { icon: RotateCcw, label: "7-day return" },
-              { icon: Truck, label: "Fast delivery" },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex flex-col items-center gap-1 text-[10px] text-muted-foreground">
-                <Icon className="size-4" />
-                {label}
+              <div className="mt-5 flex items-baseline justify-between border-t border-border pt-4">
+                <span className="text-base font-bold tracking-tight">Total</span>
+                <Price
+                  amount={total}
+                  size="lg"
+                  className="!font-bold lg:!text-xl"
+                  symbolClassName="lg:!text-base"
+                />
               </div>
-            ))}
-          </div>
+
+              <div className="mt-5 flex flex-col gap-2.5">
+                <Link
+                  to="/checkout"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition hover:opacity-90 active:scale-[0.99]"
+                >
+                  <Lock className="size-4" strokeWidth={2.25} /> Proceed to checkout
+                </Link>
+                <Link
+                  to="/"
+                  className="text-center text-[13px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Continue shopping
+                </Link>
+              </div>
+            </div>
+          </aside>
         </div>
+
+        {/* ── Quality / trust banner ──────────────────────────────────────── */}
+        <QualityBanner />
+
+        {/* ── You may also like (full-width, after the trust banner) ──── */}
+        {recommended.length > 0 && (
+          <section className="mx-auto w-full max-w-7xl px-4 pb-10 lg:px-6 lg:pb-14">
+            <div className="mb-4 flex items-end justify-between gap-3 lg:mb-6">
+              <div>
+                <h2 className="text-lg font-bold tracking-tight lg:text-2xl">
+                  You may also like
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground lg:text-sm">
+                  Hand-picked recommendations based on your cart.
+                </p>
+              </div>
+              <Link
+                to="/"
+                className="hidden shrink-0 items-center gap-1 text-sm font-semibold text-foreground/80 underline-offset-4 hover:text-foreground hover:underline sm:inline-flex"
+              >
+                See all <ArrowRight className="size-4" strokeWidth={2.25} />
+              </Link>
+            </div>
+
+            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 no-scrollbar sm:gap-4 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-5 lg:overflow-visible lg:px-0">
+              {recommended.slice(0, 4).map((p) => (
+                <div
+                  key={p.id}
+                  className="
+                    group flex w-[10.5rem] shrink-0 flex-col rounded-2xl border border-border/70 bg-card p-3
+                    shadow-[0_1px_3px_oklch(0_0_0/0.04)]
+                    transition-all duration-300 ease-out
+                    hover:-translate-y-[2px] hover:shadow-[0_18px_36px_-20px_oklch(0_0_0/0.14)]
+                    sm:w-48 lg:w-auto lg:p-4
+                  "
+                >
+                  <Link
+                    to="/product/$id"
+                    params={{ id: p.id }}
+                    className="block aspect-square overflow-hidden rounded-xl bg-secondary"
+                  >
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="size-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                    />
+                  </Link>
+                  <Link
+                    to="/product/$id"
+                    params={{ id: p.id }}
+                    className="mt-2.5 line-clamp-2 min-h-[2.5rem] text-[13px] font-medium leading-snug text-foreground transition-colors hover:text-accent lg:mt-3 lg:min-h-[2.75rem] lg:text-sm"
+                  >
+                    {p.name}
+                  </Link>
+                  <Price
+                    amount={p.price}
+                    size="sm"
+                    className="mt-1 !font-bold lg:mt-1.5 lg:!text-base"
+                    symbolClassName="lg:!text-[0.78rem]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addToCart(p.id, { qty: 1 });
+                      toast.success("Added to cart");
+                    }}
+                    className="mt-auto flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-foreground text-[13px] font-semibold text-background transition hover:opacity-90 active:scale-[0.98] lg:mt-3 lg:h-10 lg:text-sm"
+                  >
+                    <Plus className="size-3.5 lg:size-4" strokeWidth={2.25} />
+                    Add to bag
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </Layout>
+  );
+}
+
+/* ── Quality is our priority — curved-pocket trust banner ──────────────── */
+const QUALITY_FEATURES: {
+  icon: typeof Truck;
+  title: string;
+  desc: string;
+}[] = [
+  {
+    icon: Truck,
+    title: "Free Shipping",
+    desc: "Enjoy the convenience of free shipping on every order.",
+  },
+  {
+    icon: Headphones,
+    title: "24×7 Support",
+    desc: "Round-the-clock assistance, anytime you need it.",
+  },
+  {
+    icon: RotateCcw,
+    title: "30 Days Return",
+    desc: "Your satisfaction is our priority. Return any product within 30 days.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Secure Payment",
+    desc: "Seamless shopping backed by safe and secure payment options.",
+  },
+];
+
+function QualityBanner() {
+  return (
+    <section className="mx-auto w-full max-w-7xl px-4 pb-8 pt-2 lg:px-6 lg:pb-12 lg:pt-4">
+      <div className="relative overflow-hidden rounded-3xl bg-secondary/70">
+        {/* White curved title pocket */}
+        <div
+          className="
+            absolute left-1/2 top-0 z-10 -translate-x-1/2
+            w-[min(86%,560px)]
+            bg-background
+            px-6 pb-7 pt-4 text-center
+            lg:pb-9 lg:pt-5
+          "
+          style={{
+            borderBottomLeftRadius: "50% 100%",
+            borderBottomRightRadius: "50% 100%",
+          }}
+        >
+          <h2 className="text-lg font-bold tracking-tight sm:text-xl lg:text-[22px]">
+            Quality is our priority
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground lg:text-sm">
+            Because you deserve nothing less than the best.
+          </p>
+        </div>
+
+        {/* Spacer reserving space for the title pocket overlap */}
+        <div className="h-[108px] lg:h-[132px]" aria-hidden />
+
+        {/* Feature cards grid */}
+        <div className="grid grid-cols-2 gap-3 px-4 pb-6 lg:grid-cols-4 lg:gap-4 lg:px-7 lg:pb-9">
+          {QUALITY_FEATURES.map((f) => (
+            <div
+              key={f.title}
+              className="
+                group flex flex-col items-center rounded-2xl border border-border/60 bg-background
+                px-4 py-5 text-center
+                shadow-[0_1px_3px_oklch(0_0_0/0.04)]
+                transition-all duration-300 ease-out
+                hover:-translate-y-[2px]
+                hover:shadow-[0_12px_28px_-16px_oklch(0_0_0/0.12)]
+                lg:px-6 lg:py-7
+              "
+            >
+              <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-red-50 transition-transform duration-300 group-hover:scale-[1.06] lg:mb-4 lg:size-14">
+                <f.icon
+                  className="size-[20px] text-red-600 lg:size-6"
+                  strokeWidth={2}
+                />
+              </div>
+              <p className="text-[13px] font-bold leading-snug lg:text-[15px]">
+                {f.title}
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground lg:mt-1.5 lg:text-[13px]">
+                {f.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

@@ -7,27 +7,31 @@ import { useT } from "@/lib/i18n";
 export function FeaturedGrid() {
   const { t, lang } = useT();
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:py-14">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:py-14 md:py-16 lg:px-6 lg:py-20">
       {/* Section header */}
-      <div className={`flex items-end justify-between mb-6 ${lang === "bn" ? "font-bn" : ""}`}>
-        <div>
-          <p className="text-[10px] sm:text-xs uppercase tracking-widest text-accent font-semibold">{t("sec.featured.eyebrow")}</p>
-          <h2 className="mt-1.5 text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight">{t("sec.featured.title")}</h2>
+      <div className={`mb-7 flex items-end justify-between gap-4 sm:mb-8 lg:mb-12 ${lang === "bn" ? "font-bn" : ""}`}>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent lg:text-[13px]">
+            {t("sec.featured.eyebrow")}
+          </p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-balance sm:text-2xl md:text-2xl lg:mt-3 lg:text-[2.125rem] lg:tracking-[-0.02em]">
+            {t("sec.featured.title")}
+          </h2>
         </div>
         <Link
           to="/category/$slug"
           params={{ slug: "deals" }}
-          className="flex items-center gap-1 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition"
+          className="flex shrink-0 items-center gap-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:text-sm lg:gap-1.5 lg:text-base"
         >
-          {t("sec.viewall")} <ArrowRight className="size-3.5" />
+          {t("sec.viewall")} <ArrowRight className="size-3.5 lg:size-4" />
         </Link>
       </div>
 
       {/* Mobile: horizontal scroll */}
-      <div className="sm:hidden -mx-4 px-4 overflow-x-auto no-scrollbar">
-        <div className="flex gap-3 snap-x snap-mandatory pb-1">
+      <div className="-mx-4 overflow-x-auto px-4 no-scrollbar sm:hidden">
+        <div className="flex snap-x snap-mandatory gap-3 pb-1">
           {PRODUCTS.slice(0, 5).map((p) => (
-            <div key={p.id} className="snap-start shrink-0 w-[52vw]">
+            <div key={p.id} className="w-[52vw] shrink-0 snap-start">
               <ProductCard p={p} />
             </div>
           ))}
@@ -35,7 +39,7 @@ export function FeaturedGrid() {
       </div>
 
       {/* Desktop: grid */}
-      <div className="hidden sm:grid grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="hidden grid-cols-3 gap-4 sm:grid lg:grid-cols-5 lg:gap-6">
         {PRODUCTS.slice(0, 5).map((p) => <ProductCard key={p.id} p={p} />)}
       </div>
     </section>

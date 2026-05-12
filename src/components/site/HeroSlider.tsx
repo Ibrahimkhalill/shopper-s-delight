@@ -23,8 +23,8 @@ export function HeroSlider() {
   }, [total]);
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-6">
-      <div className="relative overflow-hidden rounded-2xl bg-black text-white min-h-[560px] md:min-h-[520px]">
+    <section className="mx-auto max-w-7xl px-4 pt-5 sm:pt-6">
+      <div className="relative min-h-[520px] overflow-hidden rounded-2xl bg-black text-white shadow-lg sm:min-h-[540px] md:min-h-[520px] md:rounded-3xl">
         {/* Decorative background circles — z-0, always behind everything */}
         <div className="pointer-events-none absolute z-0 -left-40 top-1/2 -translate-y-1/2 size-[480px] rounded-full border border-white/10" />
         <div className="pointer-events-none absolute z-0 -left-32 top-1/2 -translate-y-1/2 size-[380px] rounded-full border border-white/10" />
@@ -43,12 +43,22 @@ export function HeroSlider() {
                 <img src={heroImg} alt={t(s.title)} width={1024} height={1024} className={`relative max-h-[95%] w-auto object-contain drop-shadow-2xl transition-transform duration-700 ${idx === i ? "scale-100" : "scale-95"}`} />
               </div>
               {/* Text — z-[2] within slide, always on top of image on mobile */}
-              <div className={`relative z-[2] px-6 md:px-12 py-8 md:py-0 ${lang === "bn" ? "font-bn" : ""}`}>
-                <div className="inline-flex items-center justify-center size-14 rounded-full bg-accent text-accent-foreground text-[11px] font-semibold mb-5">{s.badge}</div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/60 mb-3">{t(s.eyebrow)}</p>
-                <h1 className="text-3xl md:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight max-w-md">{t(s.title)}</h1>
-                <p className="mt-4 text-sm md:text-base text-white/70 max-w-md">{t(s.subtitle)}</p>
-                <Link to="/category/$slug" params={{ slug: s.slug }} className="mt-7 inline-flex items-center gap-2 rounded-full bg-accent text-accent-foreground px-6 h-11 text-sm font-medium hover:opacity-90 transition leading-[2.75rem]">
+              <div className={`relative z-[2] px-6 py-8 md:px-12 md:py-0 ${lang === "bn" ? "font-bn" : ""}`}>
+                <div className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground shadow-md sm:mb-5 sm:size-14 sm:text-xs">
+                  {s.badge}
+                </div>
+                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55 sm:text-xs">
+                  {t(s.eyebrow)}
+                </p>
+                <h1 className="max-w-md text-[1.625rem] font-bold leading-[1.08] tracking-tight text-balance sm:text-4xl md:text-5xl lg:text-[3.25rem]">
+                  {t(s.title)}
+                </h1>
+                <p className="mt-4 max-w-md text-[0.9375rem] leading-relaxed text-white/72 md:text-base">{t(s.subtitle)}</p>
+                <Link
+                  to="/category/$slug"
+                  params={{ slug: s.slug }}
+                  className="mt-7 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-7 text-sm font-semibold text-accent-foreground shadow-md transition hover:opacity-90 active:scale-[0.99] sm:mt-8 sm:h-[3.125rem] sm:px-8 sm:text-[15px]"
+                >
                   {t(s.cta)}
                 </Link>
               </div>

@@ -3,14 +3,16 @@ import { Layout } from "@/components/site/Layout";
 import { getProduct, PRODUCTS } from "@/lib/products";
 import { ProductCard } from "@/components/site/ProductCard";
 import {
-  ChevronRight, Heart, Truck, RotateCcw, ShieldCheck,
+  ChevronRight, Heart, Truck, RotateCcw,
   Minus, Plus, Star, Share2, Zap, Check, Package,
-  MessageSquare, Info, ChevronDown, BadgeCheck,
+  MessageSquare, ChevronDown, BadgeCheck,
+  ArrowLeftRight, HelpCircle, Ruler, Clock, Eye,
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Price } from "@/components/site/Price";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
@@ -28,6 +30,36 @@ function StarsRow({ rating, size = "sm" }: { rating: number; size?: "sm" | "lg" 
   );
 }
 
+/** Rough label for swatch — reference-style "Colors: Green" */
+function colorNameFromHex(hex: string): string {
+  const h = hex.toLowerCase().replace("#", "");
+  const map: Record<string, string> = {
+    f5b6c8: "Pink",
+    "7d8ce0": "Lilac",
+    ffffff: "White",
+    a06b48: "Brown",
+    "000000": "Black",
+    f08c6e: "Coral",
+    "7dd9a0": "Mint",
+    d96a7a: "Rose",
+    c8b5ff: "Lavender",
+    d4b3ff: "Lilac",
+  };
+  return map[h] ?? "Classic";
+}
+
+function pseudoSku(id: string) {
+  let n = 0;
+  for (let i = 0; i < id.length; i++) n = (n * 31 + id.charCodeAt(i)) >>> 0;
+  return String(500000 + (n % 900000));
+}
+
+function viewersNow(id: string) {
+  let n = 0;
+  for (let i = 0; i < id.length; i++) n = (n * 17 + id.charCodeAt(i)) >>> 0;
+  return 8 + (n % 35);
+}
+
 function ProductPage() {
   const { id } = Route.useParams();
   const p = getProduct(id);
@@ -37,6 +69,7 @@ function ProductPage() {
   const [color, setColor]       = useState(0);
   const [qty, setQty]           = useState(1);
   const [tab, setTab]           = useState<"desc" | "reviews" | "shipping">("desc");
+  const [reviewSort, setReviewSort] = useState<"recent" | "oldest" | "high" | "low">("recent");
   const [rating, setRating]     = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [zoom, setZoom]         = useState({ active: false, x: 0, y: 0 });
@@ -45,6 +78,14 @@ function ProductPage() {
   const imgRef = useRef<HTMLDivElement>(null);
 
   const productReviews = useMemo(() => reviews.filter((r) => r.productId === id), [reviews, id]);
+  const sortedReviews = useMemo(() => {
+    const list = [...productReviews];
+    if (reviewSort === "recent") list.sort((a, b) => b.createdAt - a.createdAt);
+    else if (reviewSort === "oldest") list.sort((a, b) => a.createdAt - b.createdAt);
+    else if (reviewSort === "high") list.sort((a, b) => b.rating - a.rating);
+    else list.sort((a, b) => a.rating - b.rating);
+    return list;
+  }, [productReviews, reviewSort]);
   const avg = productReviews.length
     ? productReviews.reduce((s, r) => s + r.rating, 0) / productReviews.length
     : 4.6;
@@ -54,7 +95,6 @@ function ProductPage() {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   const liked    = wishlist.includes(p.id);
   const related  = PRODUCTS.filter((x) => x.id !== p.id).slice(0, 5);
-  const savings  = p.oldPrice ? p.oldPrice - p.price : 0;
 
   const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -62,6 +102,17 @@ function ProductPage() {
     const y = ((e.clientY - r.top) / r.height) * 100;
     setZoom({ active: true, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
   };
+
+  // Side-by-side magnifier geometry
+  const LENS_SIZE = 38; // % of image — also determines zoom factor (100 / 38 ≈ 2.6×)
+  const halfLens = LENS_SIZE / 2;
+  const lensCx = Math.max(halfLens, Math.min(100 - halfLens, zoom.x));
+  const lensCy = Math.max(halfLens, Math.min(100 - halfLens, zoom.y));
+  const lensLeft = lensCx - halfLens;
+  const lensTop = lensCy - halfLens;
+  const bgX = (lensLeft / (100 - LENS_SIZE)) * 100;
+  const bgY = (lensTop / (100 - LENS_SIZE)) * 100;
+  const bgSize = (100 / LENS_SIZE) * 100; // ≈ 263%
 
   const handleAddToCart = () => {
     addToCart(p.id, { qty, size });
@@ -95,7 +146,7 @@ function ProductPage() {
   return (
     <Layout>
       {/* Breadcrumb */}
-      <div className="mx-auto max-w-7xl px-4 pt-5 pb-2">
+      <div className="mx-auto max-w-7xl px-4 pt-3 pb-1 lg:pt-5 lg:pb-2">
         <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition">Home</Link>
           <ChevronRight className="size-3" />
@@ -106,14 +157,15 @@ function ProductPage() {
       </div>
 
       {/* Main grid */}
-      <div className="mx-auto max-w-7xl px-4 py-6 grid lg:grid-cols-[1fr_1fr] gap-10 xl:gap-16 animate-fade-up">
+      <div className="mx-auto max-w-7xl px-4 pt-3 pb-5 lg:py-6 grid lg:grid-cols-[1fr_1fr] gap-6 lg:gap-10 xl:gap-16 animate-fade-up">
 
         {/* ── LEFT: Image gallery ── */}
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <div className="flex gap-3">
+        {/* z-30 ensures the zoom panel beats any stacking contexts created by transforms in the right column */}
+        <div className="relative z-30 lg:sticky lg:top-24 lg:self-start">
+          <div className="flex flex-col gap-3 lg:flex-row lg:gap-3">
 
-            {/* Vertical thumbnails — desktop */}
-            <div className="hidden sm:flex flex-col gap-2 w-[72px] shrink-0">
+            {/* Vertical thumbnails — lg+ only (reference: row below image on mobile/tablet) */}
+            <div className="hidden lg:flex flex-col gap-2 w-[72px] shrink-0 order-2 lg:order-1">
               {thumbs.map((img, i) => (
                 <button
                   key={i}
@@ -126,14 +178,14 @@ function ProductPage() {
               ))}
             </div>
 
-            {/* Main image */}
-            <div className="flex-1 relative min-w-0">
+            {/* Main image + horizontal strip */}
+            <div className="flex-1 relative min-w-0 order-1 lg:order-2">
               <div
                 ref={imgRef}
                 onMouseEnter={() => setZoom((z) => ({ ...z, active: true }))}
                 onMouseLeave={() => setZoom({ active: false, x: 0, y: 0 })}
                 onMouseMove={handleMove}
-                className="relative aspect-square rounded-2xl bg-secondary overflow-hidden border cursor-none"
+                className="relative aspect-square rounded-2xl bg-secondary overflow-hidden border lg:cursor-crosshair"
               >
                 {/* Base image */}
                 <img
@@ -142,23 +194,18 @@ function ProductPage() {
                   className="size-full object-cover transition duration-500"
                 />
 
-                {/* Inline zoom — zoomed image clipped to a circle following the cursor */}
+                {/* Rectangular zoom lens — desktop only, follows the cursor */}
                 {zoom.active && (
                   <div
-                    className="hidden lg:block absolute pointer-events-none"
+                    className="hidden lg:block absolute pointer-events-none rounded-sm border border-foreground/30 bg-foreground/[0.06] backdrop-saturate-50 transition-opacity duration-150"
                     style={{
-                      width: 160,
-                      height: 160,
-                      left: `calc(${zoom.x}% - 80px)`,
-                      top: `calc(${zoom.y}% - 80px)`,
-                      borderRadius: "50%",
-                      border: "3px solid rgba(255,255,255,0.9)",
-                      boxShadow: "0 4px 24px rgba(0,0,0,0.22)",
-                      backgroundImage: `url(${thumbs[thumb]})`,
-                      backgroundSize: "350%",
-                      backgroundPosition: `${zoom.x}% ${zoom.y}%`,
-                      backgroundRepeat: "no-repeat",
-                      zIndex: 20,
+                      left: `${lensLeft}%`,
+                      top: `${lensTop}%`,
+                      width: `${LENS_SIZE}%`,
+                      height: `${LENS_SIZE}%`,
+                      boxShadow:
+                        "0 0 0 9999px oklch(0 0 0 / 0.10), 0 2px 8px oklch(0 0 0 / 0.18)",
+                      zIndex: 15,
                     }}
                   />
                 )}
@@ -176,31 +223,42 @@ function ProductPage() {
                     </span>
                   )}
                 </div>
-
-                {/* Action buttons on image */}
-                <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
-                  <button
-                    onClick={share}
-                    className="size-9 rounded-full bg-white/90 backdrop-blur border border-border shadow-sm flex items-center justify-center hover:bg-white hover:scale-105 transition"
-                  >
-                    <Share2 className="size-4" />
-                  </button>
-                  <button
-                    onClick={() => { toggleWishlist(p.id); toast(liked ? "Removed from wishlist" : "Saved to wishlist"); }}
-                    className={`size-9 rounded-full bg-white/90 backdrop-blur border shadow-sm flex items-center justify-center hover:scale-105 transition ${liked ? "border-accent text-accent" : "border-border"}`}
-                  >
-                    <Heart className={`size-4 ${liked ? "fill-current" : ""}`} />
-                  </button>
-                </div>
               </div>
 
-              {/* Mobile thumbnails */}
-              <div className="sm:hidden mt-3 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              {/* ── Side-by-side magnifier panel — desktop only ──────────── */}
+              {zoom.active && (
+                <div
+                  aria-hidden
+                  className="
+                    hidden lg:block absolute top-0 aspect-square pointer-events-none
+                    overflow-hidden rounded-2xl border border-border bg-background
+                    shadow-[0_24px_60px_-24px_oklch(0_0_0/0.25),0_8px_24px_-12px_oklch(0_0_0/0.10)]
+                    animate-in fade-in duration-150
+                  "
+                  style={{
+                    left: "calc(100% + 2.5rem)",
+                    width: "100%",
+                    backgroundImage: `url(${thumbs[thumb]})`,
+                    backgroundSize: `${bgSize}%`,
+                    backgroundPosition: `${bgX}% ${bgY}%`,
+                    backgroundRepeat: "no-repeat",
+                    zIndex: 30,
+                  }}
+                />
+              )}
+
+              {/* Horizontal thumbnails — tablet & mobile (under main image) */}
+              <div className="lg:hidden flex justify-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar pb-0.5 pt-1">
                 {thumbs.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => setThumb(i)}
-                    className={`shrink-0 size-16 rounded-xl overflow-hidden border-2 transition ${i === thumb ? "border-foreground" : "border-transparent"}`}
+                    aria-label={`Image ${i + 1}`}
+                    className={`shrink-0 size-16 sm:size-[72px] rounded-lg sm:rounded-xl overflow-hidden bg-secondary transition-all duration-200 border-2 ${
+                      i === thumb
+                        ? "border-foreground shadow-sm"
+                        : "border-transparent opacity-80 hover:opacity-100 hover:border-border active:scale-[0.97]"
+                    }`}
                   >
                     <img src={img} alt="" className="size-full object-cover" />
                   </button>
@@ -208,242 +266,347 @@ function ProductPage() {
               </div>
             </div>
           </div>
-
-          {/* Trust badges — below image on desktop */}
-          <div className="hidden lg:grid grid-cols-3 gap-2 mt-4">
-            {[
-              { icon: Truck, label: "Free shipping", sub: "Over ৳1,500" },
-              { icon: RotateCcw, label: "7-day returns", sub: "Hassle-free" },
-              { icon: ShieldCheck, label: "Buyer protect", sub: "100% safe" },
-            ].map((b) => (
-              <div key={b.label} className="rounded-xl border bg-card p-3 flex items-center gap-2.5 text-xs">
-                <b.icon className="size-4 text-accent shrink-0" />
-                <div>
-                  <p className="font-semibold text-foreground">{b.label}</p>
-                  <p className="text-muted-foreground">{b.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* ── RIGHT: Product info ── */}
-        <div className="flex flex-col gap-0">
+        {/* z-10 keeps any locally-stacked elements (transforms, scales) BELOW the zoom panel */}
+        <div className="relative z-10 mt-2 lg:mt-0 flex flex-col">
 
           {/* Category + brand */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">{p.category}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">{p.category}</span>
             <span className="text-border">·</span>
             <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
-              <BadgeCheck className="size-3.5" /> In stock
+              <BadgeCheck className="size-3.5" strokeWidth={2.25} /> In stock
             </span>
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight">{p.name}</h1>
+          <h1 className="mt-2 text-[22px] leading-[1.2] font-bold tracking-tight sm:text-[26px] sm:leading-[1.2] lg:text-[30px] lg:leading-tight">
+            {p.name}
+          </h1>
 
-          {/* Rating row */}
-          <div className="mt-3 flex items-center gap-3 flex-wrap">
+          {/* Rating row — reference: stars + (reviews); share/heart right */}
+          <div className="mt-3 flex items-center gap-x-2 gap-y-2 flex-wrap sm:gap-x-2.5">
             <StarsRow rating={avg} />
-            <span className="text-sm font-semibold">{avg.toFixed(1)}</span>
-            <button onClick={() => setTab("reviews")} className="text-sm text-muted-foreground hover:text-foreground transition underline underline-offset-2">
-              {productReviews.length} {productReviews.length === 1 ? "review" : "reviews"}
+            <span className="text-sm font-semibold tabular-nums text-foreground">{avg.toFixed(1)}</span>
+            <button
+              type="button"
+              onClick={() => setTab("reviews")}
+              className="text-[13px] text-muted-foreground hover:text-foreground transition"
+            >
+              ({productReviews.length} {productReviews.length === 1 ? "review" : "reviews"})
             </button>
-            <span className="text-border text-sm">·</span>
-            <span className="text-sm text-emerald-600 font-medium">1.2k sold</span>
+
+            <div className="ml-auto flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={share}
+                aria-label="Share"
+                className="inline-flex size-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-all duration-200 hover:border-foreground hover:bg-secondary/60 hover:text-foreground active:scale-95"
+              >
+                <Share2 className="size-4" strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                onClick={() => { toggleWishlist(p.id); toast(liked ? "Removed from wishlist" : "Saved to wishlist"); }}
+                aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
+                aria-pressed={liked}
+                className={`inline-flex size-9 items-center justify-center rounded-full border transition-all duration-200 active:scale-95 ${
+                  liked
+                    ? "border-accent/30 bg-accent/10 text-accent"
+                    : "border-border text-muted-foreground hover:border-foreground hover:bg-secondary/60 hover:text-foreground"
+                }`}
+              >
+                <Heart className={`size-4 transition-transform ${liked ? "fill-current scale-110" : ""}`} strokeWidth={2} />
+              </button>
+            </div>
           </div>
 
-          {/* Price block */}
-          <div className="mt-5  flex items-center justify-between flex-wrap gap-3">
-            <div className="flex gap-3">
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="text-xl font-black tracking-tight text-accent">৳{p.price.toLocaleString()}</span>
-                {p.oldPrice && (
-                  <span className="text-base text-muted-foreground line-through">৳{p.oldPrice.toLocaleString()}</span>
-                )}
-              </div>
-               {discount > 0 && (
-              <span className=" px-4 py-1 text-sm bg-red-50 rounded-2xl text-red-600 font-semibold">-{discount}%</span>
+          {/* Sold + SKU — reference strip */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] sm:text-[13px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1 font-medium text-foreground">
+              <Zap className="size-3.5 shrink-0 text-accent" fill="currentColor" />
+              18 sold in last 32 hours
+            </span>
+            <span className="text-border">|</span>
+            <span>SKU: {pseudoSku(p.id)}</span>
+          </div>
+
+          {/* Price */}
+          <div className="mt-4 flex flex-wrap items-baseline gap-2 sm:gap-3">
+            <Price
+              amount={p.price}
+              size="xl"
+              tone="inherit"
+              className="text-accent !font-black !tracking-tight !text-[26px] sm:!text-[28px] lg:!text-[32px]"
+            />
+            {p.oldPrice && <Price amount={p.oldPrice} size="md" muted struck />}
+            {discount > 0 && (
+              <span className="inline-flex items-center px-2.5 py-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide bg-red-50 text-red-600 rounded-full">
+                -{discount}%
+              </span>
             )}
-            </div>
-           
           </div>
 
-          {/* Color picker */}
-          <div className="mt-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold">Color</p>
-              <p className="text-xs text-muted-foreground">Option {color + 1} of {p.colors.length}</p>
-            </div>
-            <div className="flex items-center gap-3">
+          <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
+            Made with care for everyday wear. Quality materials and a flattering fit — part of our commitment to better basics for Bangladesh.
+          </p>
+
+          {/* Social proof */}
+          <p className="mt-3 inline-flex items-center gap-2 text-[12px] sm:text-[13px] text-muted-foreground">
+            <span className="inline-flex size-8 items-center justify-center rounded-md bg-foreground text-background">
+              <Eye className="size-4" strokeWidth={2.25} />
+            </span>
+            <span><span className="font-semibold text-foreground">{viewersNow(p.id)}</span> people are viewing this right now.</span>
+          </p>
+
+          <div className="my-5 h-px w-full bg-border/80 lg:my-6" />
+
+          {/* Colors — square image swatches like reference */}
+          <div>
+            <p className="mb-3 text-sm font-medium text-foreground sm:text-[15px]">
+              <span className="font-semibold">Colors:</span>{" "}
+              <span className="text-muted-foreground">{colorNameFromHex(p.colors[color] ?? "#ccc")}</span>
+            </p>
+            <div className="flex flex-wrap gap-2.5">
               {p.colors.map((c, i) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => setColor(i)}
-                  aria-label={`Color ${i + 1}`}
-                  className={`size-5 rounded-full ring-1 ring-offset-1 ring-offset-background transition-all ${color === i ? "ring-foreground scale-100 shadow-md" : "ring-border hover:ring-foreground/40 hover:scale-105"}`}
-                  style={{ background: c }}
-                />
+                  aria-label={`Color ${colorNameFromHex(c)}`}
+                  aria-pressed={color === i}
+                  className={`relative size-16 shrink-0 overflow-hidden rounded-lg border-2 bg-secondary/60 p-1 transition-all duration-200 active:scale-[0.98] sm:size-[4.5rem] ${
+                    color === i ? "border-foreground" : "border-border hover:border-foreground/40"
+                  }`}
+                >
+                  <span className="relative block size-full overflow-hidden rounded-md bg-white">
+                    <img src={p.image} alt="" className="absolute inset-0 size-full object-cover" />
+                    <span
+                      className="absolute inset-0 mix-blend-multiply opacity-85"
+                      style={{ backgroundColor: c }}
+                      aria-hidden
+                    />
+                  </span>
+                </button>
               ))}
             </div>
           </div>
 
-          {/* Size picker */}
-          <div className="mt-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold">Size</p>
-              <button className="text-xs text-accent hover:underline underline-offset-2 flex items-center gap-1">
-                <Info className="size-3" /> Size guide
+          {/* Size */}
+          <div className="mt-5 pt-5 border-t border-border/60 lg:border-t-0 lg:pt-0">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-sm font-medium sm:text-[15px]">
+                <span className="font-semibold text-foreground">Size:</span>{" "}
+                <span className="text-muted-foreground">{size}</span>
+              </p>
+              <button
+                type="button"
+                className="text-xs font-medium text-accent underline underline-offset-2 sm:text-[13px]"
+              >
+                <span className="inline-flex items-center gap-1">
+                  <Ruler className="size-3.5" strokeWidth={2} /> Size guide
+                </span>
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
               {p.sizes.map((s) => (
                 <button
                   key={s}
+                  type="button"
                   onClick={() => setSize(s)}
-                  className={`min-w-[2rem] h-7 px-4 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border px-3 text-sm font-semibold transition-all duration-200 active:scale-[0.97] sm:min-h-12 sm:min-w-12 ${
                     size === s
-                      ? "border-foreground bg-foreground text-background shadow-sm scale-[1.02]"
-                      : "border-border hover:border-foreground/60 hover:bg-secondary/60"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-background text-foreground hover:border-foreground/50"
                   }`}
-                >{s}</button>
+                >
+                  {s}
+                </button>
               ))}
             </div>
           </div>
 
-          {/* Quantity + CTA */}
-          <div className="mt-6 space-y-3">
-            {/* Qty stepper row */}
-            <div className="flex items-center gap-3">
-              <p className="text-sm font-semibold text-muted-foreground w-16">Quantity</p>
-              <div className="flex items-center h-11 rounded-xl border-2 border-border overflow-hidden">
-                <button
-                  onClick={() => setQty(Math.max(1, qty - 1))}
-                  className="size-11 flex items-center justify-center hover:bg-secondary transition text-muted-foreground hover:text-foreground"
-                ><Minus className="size-4" /></button>
-                <span className="w-10 text-center text-sm font-bold tabular-nums">{qty}</span>
-                <button
-                  onClick={() => setQty(qty + 1)}
-                  className="size-11 flex items-center justify-center hover:bg-secondary transition text-muted-foreground hover:text-foreground"
-                ><Plus className="size-4" /></button>
-              </div>
-            </div>
+          {/* Quantity + Add to cart (same row at sm+) + Buy now full width — reference */}
+          <div className="mt-5 space-y-3 pt-5 border-t border-border/60 lg:border-t-0 lg:pt-0">
+            <p className="text-sm font-semibold text-foreground">Quantity:</p>
 
-            {/* CTA buttons — full width, desktop only (mobile uses sticky bar) */}
-            <div className="hidden lg:grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex h-12 w-full items-center justify-between rounded-full border border-border bg-secondary/40 px-1.5 sm:w-44 sm:shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  disabled={qty <= 1}
+                  className="flex size-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-background disabled:opacity-30"
+                  aria-label="Decrease quantity"
+                >
+                  <Minus className="size-4" strokeWidth={2.5} />
+                </button>
+                <span className="min-w-8 text-center text-sm font-bold tabular-nums">{qty}</span>
+                <button
+                  type="button"
+                  onClick={() => setQty(qty + 1)}
+                  className="flex size-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-background"
+                  aria-label="Increase quantity"
+                >
+                  <Plus className="size-4" strokeWidth={2.5} />
+                </button>
+              </div>
+
               <button
+                type="button"
                 onClick={handleAddToCart}
-                className={`h-12 rounded-xl border-2 text-sm font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
+                className={`flex h-12 w-full items-center justify-center rounded-full text-sm font-bold transition-all duration-200 active:scale-[0.98] sm:flex-1 ${
                   added
-                    ? "border-emerald-500 bg-emerald-500 text-white"
-                    : "border-foreground bg-background text-foreground hover:bg-foreground hover:text-background"
+                    ? "bg-emerald-500 text-white"
+                    : "bg-foreground text-background hover:opacity-90"
                 }`}
               >
-                {added ? <><Check className="size-4" /> Added!</> : "Add to cart"}
-              </button>
-              <button
-                onClick={buyNow}
-                className="h-12 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition active:scale-[0.98] flex items-center justify-center gap-2 shadow-md"
-              >
-                <Zap className="size-4 fill-current" /> Buy now
+                {added ? (
+                  <>
+                    <Check className="mr-1.5 size-4" strokeWidth={2.5} /> Added
+                  </>
+                ) : (
+                  "Add to cart"
+                )}
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={buyNow}
+              className="flex h-12 w-full items-center justify-center rounded-full bg-accent text-sm font-bold text-white shadow-md transition-all duration-200 hover:opacity-92 active:scale-[0.98]"
+            >
+              Buy it now
+            </button>
           </div>
 
-          {/* Free shipping note */}
-          <p className="mt-3 text-xs text-muted-foreground flex items-center gap-1.5">
-            <Truck className="size-3.5 text-accent" />
-            Free shipping on this order · Delivery in 1–3 business days
-          </p>
+          {/* Utility links — 2×2 reference */}
+          <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 text-[13px] sm:text-sm">
+            <button
+              type="button"
+              onClick={() => toast("Compare coming soon")}
+              className="flex items-center gap-2 text-left font-medium text-muted-foreground transition hover:text-foreground"
+            >
+              <ArrowLeftRight className="size-4 shrink-0 text-foreground/70" strokeWidth={2} />
+              Compare
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("reviews")}
+              className="flex items-center gap-2 text-left font-medium text-muted-foreground transition hover:text-foreground"
+            >
+              <HelpCircle className="size-4 shrink-0 text-foreground/70" strokeWidth={2} />
+              Ask a question
+            </button>
+            <span className="flex items-center gap-2 font-medium text-muted-foreground">
+              <Ruler className="size-4 shrink-0 text-foreground/70" strokeWidth={2} />
+              Size guide
+            </span>
+            <button
+              type="button"
+              onClick={share}
+              className="flex items-center gap-2 text-left font-medium text-muted-foreground transition hover:text-foreground"
+            >
+              <Share2 className="size-4 shrink-0 text-foreground/70" strokeWidth={2} />
+              Share
+            </button>
+          </div>
 
-          {/* Divider */}
-          <div className="my-5 border-t" />
-
-          {/* Short description */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Premium quality {p.name.toLowerCase()} crafted with attention to detail. Soft, durable, and designed for everyday wear in the Bangladesh climate. Perfect for any occasion.
-          </p>
-
-          {/* Mobile trust badges */}
-          <div className="lg:hidden mt-5 grid grid-cols-3 gap-2">
-            {[
-              { icon: Truck, label: "Free shipping", sub: "Over ৳1,500" },
-              { icon: RotateCcw, label: "7-day returns", sub: "Hassle-free" },
-              { icon: ShieldCheck, label: "Buyer protect", sub: "100% safe" },
-            ].map((b) => (
-              <div key={b.label} className="rounded-xl border bg-card p-3 flex flex-col items-center gap-1 text-xs text-center">
-                <b.icon className="size-4 text-accent" />
-                <p className="font-semibold text-foreground">{b.label}</p>
-                <p className="text-muted-foreground">{b.sub}</p>
-              </div>
-            ))}
+          {/* Delivery & returns — reference */}
+          <div className="mt-6 space-y-4 rounded-xl border border-border/70 bg-secondary/20 p-4 sm:p-5">
+            <p className="flex gap-3 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
+              <Clock className="mt-0.5 size-4 shrink-0 text-foreground" strokeWidth={2} />
+              <span>
+                <span className="font-semibold text-foreground">Estimated delivery:</span>{" "}
+                3–6 days (Dhaka metro), 5–10 days (nationwide).
+              </span>
+            </p>
+            <p className="flex gap-3 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
+              <RotateCcw className="mt-0.5 size-4 shrink-0 text-foreground" strokeWidth={2} />
+              <span>
+                Return within <span className="font-semibold text-foreground">7 days</span> of delivery. Items must be unworn with tags.
+              </span>
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ── Tabs: Description / Reviews / Shipping ── */}
+      {/* ── Tabs: Description / Customer Reviews / Shipping ── */}
       <div className="mx-auto max-w-7xl px-4 pb-16">
-        <div className="border rounded-2xl overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-border/80 bg-card">
 
-          {/* Tab header */}
-          <div className="flex border-b bg-secondary/30 overflow-x-auto no-scrollbar">
+          {/* Tab header — text + thick underline (reference) */}
+          <div className="flex border-b border-border/70 bg-background overflow-x-auto no-scrollbar">
             {[
-              { id: "desc" as const,     icon: Info,           label: "Description" },
-              { id: "reviews" as const,  icon: MessageSquare,  label: `Reviews (${productReviews.length})` },
-              { id: "shipping" as const, icon: Package,        label: "Shipping & Returns" },
+              { id: "desc" as const, label: "Description" },
+              { id: "reviews" as const, label: "Customer Reviews" },
+              { id: "shipping" as const, label: "Shipping & returns" },
             ].map((m) => (
               <button
                 key={m.id}
+                type="button"
                 onClick={() => setTab(m.id)}
-                className={`flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition ${
+                className={`relative flex-1 min-w-[8rem] px-4 py-3.5 text-center text-sm font-semibold whitespace-nowrap transition-colors sm:px-6 sm:py-4 sm:text-[15px] ${
                   tab === m.id
-                    ? "border-accent text-foreground bg-background"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-background/60"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground/80"
                 }`}
               >
-                <m.icon className="size-4" />
                 {m.label}
+                <span
+                  className={`absolute bottom-0 left-3 right-3 h-[3px] rounded-full transition-opacity sm:left-4 sm:right-4 ${
+                    tab === m.id ? "bg-foreground opacity-100" : "opacity-0"
+                  }`}
+                />
               </button>
             ))}
           </div>
 
           {/* Tab content */}
-          <div className="p-6 sm:p-8 animate-fade-in">
+          <div className="px-4 py-6 sm:px-8 sm:py-8 animate-fade-in">
             {tab === "desc" && (
-              <div className="grid sm:grid-cols-2 gap-8 max-w-3xl">
-                <div>
-                  <h3 className="font-semibold mb-3 text-base">About this product</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    The {p.name} is engineered for everyday excellence. Premium materials, considered details, and a fit that flatters every body type.
-                  </p>
-                  <ul className="mt-4 space-y-2.5">
-                    {["Premium quality construction", "Designed for Bangladesh climate", "Breathable & lightweight", "Hassle-free 7-day returns"].map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                        <span className="size-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
-                          <Check className="size-3 text-emerald-600" />
-                        </span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-3 text-base">Specifications</h3>
-                  <div className="space-y-2.5">
-                    {[
-                      ["Category", p.category],
-                      ["Available sizes", p.sizes.join(", ")],
-                      ["Colors", `${p.colors.length} options`],
-                      ["Material", "Premium fabric"],
-                      ["Origin", "Bangladesh"],
-                    ].map(([k, v]) => (
-                      <div key={k} className="flex justify-between text-sm py-2 border-b last:border-0">
-                        <span className="text-muted-foreground">{k}</span>
-                        <span className="font-medium">{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="max-w-3xl">
+                <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">{p.name}</h2>
+                <p className="mt-4 text-[13px] leading-[1.7] text-muted-foreground sm:text-sm">
+                  Designed for everyday comfort and a flattering silhouette. Soft fabric with a clean finish — easy to dress up or down for work, weekends, and everything in between.
+                </p>
+                <p className="mt-3 text-[13px] leading-[1.7] text-muted-foreground sm:text-sm">
+                  Breathable weave. Easy care. Thoughtful stitching. A wardrobe staple you will reach for again and again.
+                </p>
+
+                <h3 className="mt-8 text-base font-bold text-foreground sm:text-lg">
+                  Composition, origin and care
+                </h3>
+                <ul className="mt-4 space-y-2.5 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
+                  {[
+                    "Composition: 95% cotton, 5% elastane (varies by style)",
+                    "Designed in Dhaka",
+                    "Origin: Bangladesh",
+                    "Machine wash cold with like colours. Do not bleach. Line dry or tumble dry low.",
+                  ].map((line) => (
+                    <li key={line} className="flex gap-2">
+                      <span className="shrink-0 font-medium text-foreground">-</span>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <h3 className="mt-8 text-base font-bold text-foreground sm:text-lg">Specifications</h3>
+                <dl className="mt-4 space-y-2 border-t border-border/60 pt-2 text-[13px] sm:text-sm">
+                  {[
+                    ["Category", p.category],
+                    ["Sizes", p.sizes.join(", ")],
+                    ["Colours", `${p.colors.length} options`],
+                    ["Material", "Premium fabric blend"],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-4 border-b border-border/40 py-2.5 last:border-0">
+                      <dt className="text-muted-foreground">{k}</dt>
+                      <dd className="text-right font-medium text-foreground">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
             )}
 
@@ -492,82 +655,128 @@ function ProductPage() {
             )}
 
             {tab === "reviews" && (
-              <div className="max-w-2xl">
-                {/* Rating summary */}
-                <div className="flex items-center gap-6 mb-8 p-5 rounded-2xl bg-secondary/50 border">
-                  <div className="text-center shrink-0">
-                    <p className="text-5xl font-black">{avg.toFixed(1)}</p>
-                    <StarsRow rating={avg} size="lg" />
-                    <p className="text-xs text-muted-foreground mt-1">{productReviews.length} reviews</p>
+              <div className="max-w-4xl">
+                {/* Summary left + histogram right (reference layout) */}
+                <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-10 lg:gap-14">
+                  <div className="shrink-0 text-left md:pt-1">
+                    <p className="text-5xl font-black tabular-nums tracking-tight text-foreground sm:text-6xl">
+                      {avg.toFixed(1)}
+                    </p>
+                    <div className="mt-2 flex justify-start">
+                      <StarsRow rating={avg} size="lg" />
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      ({productReviews.length.toLocaleString()} {productReviews.length === 1 ? "Rating" : "Ratings"})
+                    </p>
                   </div>
-                  <div className="flex-1 space-y-1.5 min-w-0">
+
+                  <div className="min-w-0 flex-1 space-y-2.5 md:max-w-md lg:max-w-lg">
                     {[5, 4, 3, 2, 1].map((n) => {
                       const count = productReviews.filter((r) => Math.round(r.rating) === n).length;
-                      const pct = productReviews.length ? (count / productReviews.length) * 100 : n === 5 ? 70 : n === 4 ? 20 : 5;
+                      const pct = productReviews.length
+                        ? Math.round((count / productReviews.length) * 100)
+                        : n === 5
+                          ? 60
+                          : n === 4
+                            ? 20
+                            : n === 3
+                              ? 10
+                              : n === 2
+                                ? 7
+                                : 3;
                       return (
-                        <div key={n} className="flex items-center gap-2 text-xs">
-                          <span className="w-4 text-right text-muted-foreground">{n}</span>
-                          <Star className="size-3 fill-amber-400 text-amber-400 shrink-0" />
-                          <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
-                            <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
+                        <div key={n} className="flex items-center gap-2.5 text-sm sm:gap-3">
+                          <span className="w-3 shrink-0 text-right font-medium tabular-nums text-muted-foreground">{n}</span>
+                          <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400 sm:size-4" />
+                          <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border/80">
+                            <div
+                              className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                              style={{ width: `${pct}%` }}
+                            />
                           </div>
-                          <span className="w-6 text-muted-foreground">{count}</span>
+                          <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground sm:text-sm">
+                            {pct}%
+                          </span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Write review */}
-                <form onSubmit={submitReview} className="rounded-2xl border p-5 mb-6 bg-card">
-                  <p className="font-semibold mb-4">Write a review</p>
-                  <div className="flex items-center gap-1 mb-4">
+                <form id="write-review-form" onSubmit={submitReview} className="mt-8 rounded-xl border border-border/80 bg-secondary/20 p-4 sm:p-5">
+                  <p className="font-semibold text-foreground">Write a review</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-1">
                     {[1, 2, 3, 4, 5].map((n) => (
-                      <button type="button" key={n} onClick={() => setRating(n)} className="hover:scale-110 transition">
-                        <Star className={`size-6 ${n <= rating ? "fill-amber-400 text-amber-400" : "fill-border text-border"}`} />
+                      <button type="button" key={n} onClick={() => setRating(n)} className="rounded p-0.5 transition hover:scale-110">
+                        <Star className={`size-6 sm:size-7 ${n <= rating ? "fill-amber-400 text-amber-400" : "fill-border text-border"}`} />
                       </button>
                     ))}
-                    <span className="ml-2 text-sm text-muted-foreground">{["", "Poor", "Fair", "Good", "Very good", "Excellent"][rating]}</span>
+                    <span className="ml-2 text-xs text-muted-foreground sm:text-sm">
+                      {["", "Poor", "Fair", "Good", "Very good", "Excellent"][rating]}
+                    </span>
                   </div>
                   <textarea
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
                     rows={3}
                     placeholder="Share your experience with this product..."
-                    className="w-full rounded-xl border bg-secondary/40 p-3.5 text-sm outline-none focus:border-foreground transition resize-none"
+                    className="mt-3 w-full resize-none rounded-lg border border-border bg-background p-3 text-sm outline-none transition focus:border-foreground"
                   />
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-muted-foreground">{user ? `Posting as ${user.name}` : "Posting as Guest"}</p>
-                    <button type="submit" className="h-10 px-5 rounded-full bg-foreground text-background text-sm font-semibold hover:opacity-90 transition">
-                      Post review
+                    <button
+                      type="submit"
+                      className="h-11 w-full rounded-full bg-foreground text-sm font-bold text-background transition hover:opacity-90 sm:w-auto sm:px-8"
+                    >
+                      Write a review
                     </button>
                   </div>
                 </form>
 
-                {/* Reviews list */}
+                <div id="reviews-list" className="mt-8 flex flex-col gap-3 border-t border-border/70 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-semibold text-foreground">
+                    {String(productReviews.length).padStart(2, "0")} Comments
+                  </p>
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground sm:text-sm">
+                    <span className="shrink-0">Sort by:</span>
+                    <select
+                      value={reviewSort}
+                      onChange={(e) => setReviewSort(e.target.value as typeof reviewSort)}
+                      className="h-9 min-w-[10.5rem] rounded-lg border border-border bg-background px-2.5 text-sm font-medium text-foreground outline-none focus:border-foreground"
+                    >
+                      <option value="recent">Most recent</option>
+                      <option value="oldest">Oldest</option>
+                      <option value="high">Highest rating</option>
+                      <option value="low">Lowest rating</option>
+                    </select>
+                  </label>
+                </div>
+
                 {productReviews.length === 0 ? (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <MessageSquare className="size-10 mx-auto mb-3 opacity-30" />
-                    <p className="font-medium">No reviews yet</p>
-                    <p className="text-sm mt-1">Be the first to review this product</p>
+                  <div className="mt-8 text-left text-muted-foreground">
+                    <MessageSquare className="mb-3 size-10 opacity-30" />
+                    <p className="font-medium text-foreground">No reviews yet</p>
+                    <p className="mt-1 text-sm">Be the first to review this product</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {productReviews.map((r) => (
-                      <div key={r.id} className="rounded-2xl border p-5 bg-card">
+                  <div className="mt-6 space-y-4">
+                    {sortedReviews.map((r) => (
+                      <div key={r.id} className="rounded-xl border border-border/70 bg-background p-4 sm:p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className="size-9 rounded-full bg-secondary flex items-center justify-center text-sm font-bold">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-bold">
                               {r.user.charAt(0).toUpperCase()}
                             </div>
                             <div>
                               <p className="text-sm font-semibold">{r.user}</p>
-                              <p className="text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(r.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                              </p>
                             </div>
                           </div>
                           <StarsRow rating={r.rating} />
                         </div>
-                        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{r.text}</p>
+                        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{r.text}</p>
                       </div>
                     ))}
                   </div>
@@ -605,24 +814,6 @@ function ProductPage() {
         </div>
       </section>
 
-      {/* ── Mobile sticky CTA — sits above bottom nav ── */}
-      <div className="lg:hidden fixed bottom-16 left-0 right-0 z-40 px-4 py-2 flex gap-2">
-        <button
-          onClick={handleAddToCart}
-          className={`flex-1 h-11 rounded-xl border-2 text-sm font-bold shadow-lg transition flex items-center justify-center gap-2 ${
-            added ? "border-emerald-500 bg-emerald-500 text-white" : "border-foreground bg-background text-foreground"
-          }`}
-        >
-          {added ? <><Check className="size-4" /> Added!</> : "Add to cart"}
-        </button>
-        <button
-          onClick={buyNow}
-          className="flex-1 h-11 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg"
-        >
-          <Zap className="size-4 fill-current" /> Buy now
-        </button>
-      </div>
-      <div className="lg:hidden h-28" />
     </Layout>
   );
 }

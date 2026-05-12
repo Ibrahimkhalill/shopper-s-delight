@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { PRODUCTS } from "./products";
 import type { Product } from "@/components/site/ProductCard";
 
@@ -16,12 +16,24 @@ export type Order = {
 };
 export type Review = { id: string; productId: string; user: string; rating: number; text: string; createdAt: number };
 export type User = { name: string; phone: string; email?: string };
+export type Address = {
+  id: string;
+  label: string;
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  district: string;
+  isDefault: boolean;
+};
 
 type StoreCtx = {
   cart: CartItem[];
   wishlist: string[];
   orders: Order[];
   reviews: Review[];
+  addresses: Address[];
   user: User | null;
   addToCart: (id: string, opts?: { qty?: number; size?: string }) => void;
   removeFromCart: (id: string) => void;
@@ -32,9 +44,17 @@ type StoreCtx = {
   addReview: (r: Omit<Review, "id" | "createdAt">) => void;
   login: (u: User) => void;
   logout: () => void;
+  addAddress: (a: Omit<Address, "id">) => void;
+  updateAddress: (id: string, a: Omit<Address, "id">) => void;
+  deleteAddress: (id: string) => void;
+  setDefaultAddress: (id: string) => void;
   cartCount: number;
   cartSubtotal: number;
   resolveProduct: (id: string) => Product | undefined;
+  authModalOpen: boolean;
+  authModalTab: "login" | "signup";
+  openAuthModal: (tab?: "login" | "signup") => void;
+  closeAuthModal: () => void;
 };
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -61,6 +81,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = usePersist<Order[]>("shopbd:orders", []);
   const [reviews, setReviews] = usePersist<Review[]>("shopbd:reviews", []);
   const [user, setUser] = usePersist<User | null>("shopbd:user", null);
+  const [addresses, setAddresses] = usePersist<Address[]>("shopbd:addresses", []);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<"login" | "signup">("login");
+
+  const openAuthModal = useCallback((tab: "login" | "signup" = "login") => {
+    setAuthModalTab(tab);
+    setAuthModalOpen(true);
+  }, []);
+  const closeAuthModal = useCallback(() => setAuthModalOpen(false), []);
 
   const resolveProduct = (id: string) => PRODUCTS.find((p) => p.id === id);
 
@@ -105,12 +134,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const login = (u: User) => setUser(u);
   const logout = () => setUser(null);
 
+  const addAddress = (a: Omit<Address, "id">) => {
+    const id = crypto.randomUUID();
+    setAddresses((prev) => {
+      const list = a.isDefault ? prev.map((x) => ({ ...x, isDefault: false })) : prev;
+      return [...list, { ...a, id }];
+    });
+  };
+  const updateAddress = (id: string, a: Omit<Address, "id">) => {
+    setAddresses((prev) => {
+      const list = a.isDefault ? prev.map((x) => ({ ...x, isDefault: false })) : prev;
+      return list.map((x) => x.id === id ? { ...a, id } : x);
+    });
+  };
+  const deleteAddress = (id: string) => setAddresses((prev) => prev.filter((x) => x.id !== id));
+  const setDefaultAddress = (id: string) =>
+    setAddresses((prev) => prev.map((x) => ({ ...x, isDefault: x.id === id })));
+
   return (
     <Ctx.Provider value={{
-      cart, wishlist, orders, reviews, user,
+      cart, wishlist, orders, reviews, addresses, user,
       addToCart, removeFromCart, setQty, clearCart, toggleWishlist,
       placeOrder, addReview, login, logout,
+      addAddress, updateAddress, deleteAddress, setDefaultAddress,
       cartCount, cartSubtotal, resolveProduct,
+      authModalOpen, authModalTab, openAuthModal, closeAuthModal,
     }}>
       {children}
     </Ctx.Provider>

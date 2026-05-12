@@ -83,7 +83,7 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-0.5 capitalize">{item.category}</p>
                     <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-                      <p className="text-sm font-semibold">৳{item.price.toLocaleString()}</p>
+                      <p className="text-sm font-semibold">BDT {item.price.toLocaleString()}</p>
                       <button
                         onClick={() => { addToCart(item.id, { size: item.sizes[0] }); toast.success("Added to cart", { description: item.name }); }}
                         className="h-8 px-3 rounded-full bg-foreground text-background text-xs font-semibold inline-flex items-center gap-1.5 hover:opacity-90 transition"
@@ -99,21 +99,17 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
         </div>
 
         {items.length > 0 && (
-          <div className="border-t bg-card shrink-0 p-5 space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Saved total</span>
-              <span className="text-lg font-bold">৳{total.toLocaleString()}</span>
-            </div>
-            <button onClick={addAllToCart} className="w-full h-12 rounded-full bg-foreground text-background text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition">
-              <ShoppingCart className="size-4" /> Add all to cart
-            </button>
+          <div className=" bg-card shrink-0 p-5 space-y-3">
+          
             <div className="grid grid-cols-2 gap-2">
               <Link to="/wishlist" onClick={onClose} className="h-11 rounded-full border-2 border-foreground/90 text-sm font-semibold flex items-center justify-center hover:bg-secondary transition">
                 View wishlist
               </Link>
-              <Link to="/checkout" onClick={onClose} className="h-11 rounded-full bg-accent text-accent-foreground text-sm font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition group">
-                Checkout <ArrowRight className="size-4 group-hover:translate-x-0.5 transition" />
-              </Link>
+
+              <button onClick={addAllToCart} className="w-full h-12 rounded-full bg-foreground text-background text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition">
+              <ShoppingCart className="size-4" /> Add all to cart
+            </button>
+             
             </div>
           </div>
         )}

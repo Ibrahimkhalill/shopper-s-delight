@@ -1,383 +1,593 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Layout } from "@/components/site/Layout";
-import { PageHeader } from "@/components/site/PageHeader";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Lock, Truck, CreditCard, Wallet, Banknote, Smartphone,
-  ShieldCheck, MapPin, User as UserIcon, MessageSquare, Check,
+  ShieldCheck, RotateCcw, Minus, Plus, Trash2, Check,
+  ChevronDown, MapPin, Tag, ShoppingCart, User as UserIcon,
+  Headphones, KeyRound,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
-
-function useCountdown(seconds: number) {
-  const [left, setLeft] = useState(seconds);
-  useEffect(() => {
-    if (left <= 0) return;
-    const t = setInterval(() => setLeft((s) => s - 1), 1000);
-    return () => clearInterval(t);
-  }, [left]);
-  const mm = String(Math.floor(left / 60)).padStart(2, "0");
-  const ss = String(left % 60).padStart(2, "0");
-  return { left, mm, ss };
-}
+import { PageHeader } from "@/components/site/PageHeader";
+import { Price } from "@/components/site/Price";
 
 export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 
-const BD_DIVISIONS = [
-  "Dhaka", "Chattogram", "Rajshahi", "Khulna",
-  "Barishal", "Sylhet", "Rangpur", "Mymensingh",
+const BD_DISTRICTS = [
+  "Dhaka", "Chattogram", "Rajshahi", "Khulna", "Barishal",
+  "Sylhet", "Rangpur", "Mymensingh", "Cumilla", "Narayanganj",
+  "Gazipur", "Bogura", "Dinajpur", "Jessore", "Cox's Bazar",
 ];
 
-const THANAS: Record<string, string[]> = {
-  Dhaka: ["Dhanmondi", "Gulshan", "Mirpur", "Mohammadpur", "Motijheel", "Uttara", "Banani", "Badda", "Khilgaon", "Lalbagh"],
-  Chattogram: ["Agrabad", "Halishahar", "Khulshi", "Kotwali", "Pahartali", "Panchlaish", "Chandgaon"],
-  Rajshahi: ["Boalia", "Motihar", "Rajpara", "Shah Makhdum"],
-  Khulna: ["Daulatpur", "Khalishpur", "Khan Jahan Ali", "Kotwali", "Sonadanga"],
-  Barishal: ["Bandhar", "Barisal Sadar", "Char Aitala"],
-  Sylhet: ["Balaganj", "Jalalabad", "Kotwali", "Moglabazar", "Shah Poran"],
-  Rangpur: ["Kaunia", "Mithapukur", "Pirganj", "Rangpur Sadar"],
-  Mymensingh: ["Bhaluka", "Gaffargaon", "Mymensingh Sadar", "Trishal"],
-};
+const DELIVERY_AREAS = [
+  { id: "inside",  label: "Inside Dhaka",  sub: "3-5 Business Days", price: 80 },
+  { id: "outside", label: "Outside Dhaka", sub: "Next Day Delivery",  price: 120 },
+];
 
-function CheckoutPage() {
-  const { cart, resolveProduct, cartSubtotal, placeOrder, user } = useStore();
+const PAYMENT_METHODS = [
+  { id: "cod",   label: "Cash on Delivery",    icon: Banknote   },
+  { id: "bkash", label: "bKash",               icon: Smartphone },
+  { id: "nagad", label: "Nagad",               icon: Wallet     },
+  { id: "card",  label: "Credit / Debit Card", icon: CreditCard },
+];
+
+export function CheckoutPage() {
+  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, placeOrder, user } = useStore();
   const navigate = useNavigate();
-  const [pay, setPay] = useState("cod");
-  const [submitting, setSubmitting] = useState(false);
+
   const [form, setForm] = useState({
-    firstName: user?.name?.split(" ")[0] ?? "",
-    lastName: user?.name?.split(" ").slice(1).join(" ") ?? "",
-    phone: user?.phone ?? "",
-    altPhone: "",
-    email: user?.email ?? "",
-    division: "Dhaka",
-    thana: "Dhanmondi",
-    area: "",
-    address: "",
-    postcode: "1207",
-    notes: "",
+    name:     user?.name  ?? "",
+    phone:    user?.phone ?? "",
+    address:  "",
+    district: "",
+    notes:    "",
   });
+  const [deliveryArea, setDeliveryArea] = useState<"inside" | "outside" | "">("");
+  const [pay,          setPay]          = useState("cod");
+  const [agreed,       setAgreed]       = useState(false);
+  const [submitting,   setSubmitting]   = useState(false);
+  const [coupon,       setCoupon]       = useState("");
+  const [discount,     setDiscount]     = useState(0);
+  const [summaryOpen,  setSummaryOpen]  = useState(true);
 
-  const set = (k: keyof typeof form) => (v: string) => {
-    if (k === "division") {
-      const thanas = THANAS[v] ?? [];
-      setForm((f) => ({ ...f, division: v, thana: thanas[0] ?? "" }));
-    } else {
-      setForm((f) => ({ ...f, [k]: v }));
-    }
+  const set = (k: keyof typeof form) => (v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const shippingCost = deliveryArea === "inside" ? 80 : deliveryArea === "outside" ? 120 : 0;
+  const subtotal     = cartSubtotal;
+  const total        = subtotal - discount + shippingCost;
+
+  const applyCoupon = () => {
+    const c = coupon.trim().toUpperCase();
+    if (c === "SHOPBD10")     { setDiscount(Math.round(subtotal * 0.1)); toast.success("10% off applied!"); }
+    else if (c === "WELCOME") { setDiscount(200); toast.success("৳200 off applied!"); }
+    else toast.error("Invalid coupon code");
   };
-
-  const shipping = cartSubtotal > 1500 ? 0 : 80;
-  const total = cartSubtotal + shipping;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (cart.length === 0) { toast.error("Your cart is empty"); return; }
-    if (!form.firstName || !form.phone || !form.address) {
-      toast.error("Please fill all required fields");
-      return;
+    if (!form.name || !form.phone || !form.address || !form.district) {
+      toast.error("Please fill all required fields"); return;
     }
+    if (!deliveryArea) { toast.error("Please select a delivery method"); return; }
+    if (!agreed)       { toast.error("Please agree to Terms & Conditions"); return; }
+    if (cart.length === 0) { toast.error("Your cart is empty"); return; }
+
     setSubmitting(true);
     setTimeout(() => {
-      const fullName = `${form.firstName} ${form.lastName}`.trim();
-      const fullAddress = `${form.address}, ${form.thana}, ${form.division} ${form.postcode}`;
-      const order = placeOrder({ payment: pay, address: fullAddress, name: fullName, phone: form.phone });
+      const order = placeOrder({
+        payment: pay,
+        address: `${form.address}, ${form.district}`,
+        name:    form.name,
+        phone:   form.phone,
+      });
       toast.success("Order placed!", { description: `Order ID: ${order.id}` });
       navigate({ to: "/order/$id", params: { id: order.id } });
-    }, 800);
+    }, 900);
   };
 
   if (cart.length === 0) {
     return (
       <Layout hideTrust>
-        <div className="mx-auto max-w-md text-center py-24 px-4">
-          <h1 className="text-2xl font-semibold">Nothing to checkout</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Your cart is empty.</p>
-          <Link to="/" className="inline-block mt-6 h-11 px-6 rounded-full bg-foreground text-background text-sm font-medium leading-[2.75rem]">Browse products</Link>
+        <div className="mx-auto max-w-md px-4 py-16 text-center sm:py-20 lg:py-24">
+          <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
+            Your cart is empty
+          </h1>
+          <Link
+            to="/"
+            className="mt-6 inline-flex h-10 items-center justify-center rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:opacity-90 lg:h-11 lg:px-7"
+          >
+            Browse products
+          </Link>
         </div>
       </Layout>
     );
   }
 
-  const payments = [
-    { id: "cod",   label: "Cash on Delivery", sub: "Pay when you receive",    icon: Banknote,    color: "bg-emerald-50 text-emerald-600" },
-    { id: "bkash", label: "bKash",             sub: "Mobile payment",          icon: Smartphone,  color: "bg-pink-50 text-pink-600" },
-    { id: "nagad", label: "Nagad",             sub: "Mobile payment",          icon: Wallet,      color: "bg-orange-50 text-orange-600" },
-    { id: "card",  label: "Card",              sub: "Visa / Mastercard / Amex", icon: CreditCard,  color: "bg-blue-50 text-blue-600" },
-  ];
+  /* ── Shared order summary content ─────────────────────────────────── */
+  const OrderSummaryContent = () => (
+    <div className="flex flex-col gap-4 lg:gap-5">
+      {/* Product list */}
+      <div className="flex flex-col gap-2.5 lg:gap-3">
+        {cart.map(it => {
+          const p = resolveProduct(it.id);
+          if (!p) return null;
+          return (
+            <div
+              key={it.id + (it.size ?? "")}
+              className="flex gap-3 rounded-xl border border-border/70 bg-background p-3 lg:gap-3.5 lg:p-3.5"
+            >
+              <div className="h-16 w-14 shrink-0 overflow-hidden rounded-lg bg-muted lg:h-20 lg:w-16">
+                <img src={p.image} alt={p.name} className="size-full object-cover" />
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col justify-between">
+                <div>
+                  <p className="line-clamp-2 text-sm font-medium leading-snug lg:text-[15px]">{p.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground lg:text-[13px]">
+                    {it.size ? it.size : p.category}
+                  </p>
+                </div>
+                <div className="mt-1.5 flex items-center justify-between lg:mt-2">
+                  <div className="flex items-center gap-2.5 rounded-full border border-border px-2 py-0.5 lg:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setQty(it.id, it.qty - 1)}
+                      disabled={it.qty <= 1}
+                      className="qty-btn flex size-5 items-center justify-center rounded-full hover:bg-secondary disabled:opacity-30 lg:size-6"
+                    >
+                      <Minus className="size-3" strokeWidth={2.5} />
+                    </button>
+                    <span className="text-xs font-semibold tabular-nums lg:text-[13px]">{it.qty}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQty(it.id, it.qty + 1)}
+                      className="qty-btn flex size-5 items-center justify-center rounded-full hover:bg-secondary lg:size-6"
+                    >
+                      <Plus className="size-3" strokeWidth={2.5} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Line price — 14/15px semibold */}
+                    <Price
+                      amount={p.price * it.qty}
+                      size="sm"
+                      className="!font-semibold lg:!text-[15px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { removeFromCart(it.id); toast("Item removed"); }}
+                      className="flex size-6 items-center justify-center text-muted-foreground/60 transition-colors hover:text-accent"
+                      aria-label="Remove"
+                    >
+                      <Trash2 size={12} strokeWidth={2} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-  const thanaList = THANAS[form.division] ?? [];
-  const { left, mm, ss } = useCountdown(10 * 60);
-  const urgent = left <= 120;
+      {/* Coupon — 14px input, 14px button, h-10 */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Tag className="pointer-events-none absolute left-3 top-1/2 size-[13px] -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={coupon}
+            onChange={e => setCoupon(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && applyCoupon()}
+            placeholder="Promo code"
+            className="input-soft h-10 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm font-medium uppercase tracking-wide outline-none placeholder:normal-case placeholder:tracking-normal placeholder:text-muted-foreground"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={applyCoupon}
+          className="h-10 shrink-0 rounded-lg bg-foreground px-4 text-sm font-semibold text-background transition hover:opacity-90"
+        >
+          Apply
+        </button>
+      </div>
+      {discount > 0 && (
+        <p className="flex items-center gap-1.5 text-[13px] font-semibold text-accent">
+          <Check size={12} strokeWidth={3} />{" "}
+          <Price amount={discount} size="sm" tone="inherit" className="!font-semibold" />{" "}
+          discount applied
+        </p>
+      )}
+
+      {/* Price breakdown — Subtotal/Shipping 14px, Total 18px */}
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm text-muted-foreground">Subtotal</span>
+          <Price amount={subtotal} size="sm" className="!font-semibold" />
+        </div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm text-muted-foreground">Shipping</span>
+          {deliveryArea ? (
+            <Price amount={shippingCost} size="sm" className="!font-semibold" />
+          ) : (
+            <span className="text-sm font-semibold text-foreground">—</span>
+          )}
+        </div>
+        {discount > 0 && (
+          <div className="flex items-baseline justify-between text-accent">
+            <span className="text-sm">Discount</span>
+            <span className="inline-flex items-baseline gap-0.5 text-sm font-semibold">
+              <span>−</span>
+              <Price amount={discount} size="sm" tone="inherit" className="!font-semibold" />
+            </span>
+          </div>
+        )}
+        <div className="mt-1.5 flex items-baseline justify-between border-t border-border pt-3">
+          <span className="text-base font-bold tracking-tight">Total</span>
+          <Price
+            amount={total}
+            size="md"
+            className="!font-bold lg:!text-lg"
+            symbolClassName="lg:!text-[0.88rem]"
+          />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <Layout hideTrust>
       <PageHeader
         centered
-        title="Check Out"
-        subtitle="Review your order details carefully and complete your purchase securely and easily for a smooth shopping experience."
-        crumbs={[{ label: "Home", to: "/" }, { label: "Check Out" }]}
+        title="Checkout"
+        subtitle="Review your order, enter delivery details, and pay securely."
+        crumbs={[{ label: "Home", to: "/" }, { label: "Checkout" }]}
       />
 
-      {/* Urgency banner */}
-      <div className={`mx-auto max-w-7xl px-4 mt-4 transition-all ${left <= 0 ? "hidden" : ""}`}>
-        <div className={`flex items-center gap-3 rounded-2xl border px-5 py-3.5 text-sm transition-colors ${
-          urgent
-            ? "bg-red-50 border-red-200 text-red-700"
-            : "bg-orange-50 border-orange-200 text-orange-700"
-        }`}>
-          <span className="text-lg shrink-0">{urgent ? "🔥" : "⏳"}</span>
-          <span className="flex-1">
-            Your cart will expire in{" "}
-            <span className={`font-bold tabular-nums ${urgent ? "text-red-600" : "text-orange-600"}`}>
-              {mm}:{ss}
-            </span>{" "}
-            minutes! Please checkout now before your items sell out!
-          </span>
-        </div>
-      </div>
+      {/* ── Body ────────────────────────────────────────────────────────── */}
+      <div className="min-h-screen bg-secondary/25 pb-24 md:pb-10">
+        <form
+          id="checkout-form"
+          onSubmit={handleSubmit}
+          className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-5 px-4 py-5 sm:py-6 lg:grid-cols-12 lg:gap-7 lg:px-6 lg:py-8"
+        >
 
-      <form onSubmit={handleSubmit} className="mx-auto max-w-7xl px-4 py-6 grid lg:grid-cols-[1fr_380px] gap-6 animate-fade-up">
+          {/* ══════════ RIGHT — Order Summary ══════════ */}
+          <aside className="flex flex-col gap-3 lg:sticky lg:top-24 lg:order-last lg:col-span-5 lg:gap-4">
 
-        {/* ── Left column ── */}
-        <div className="space-y-5">
-
-          {/* Contact */}
-          <Section icon={UserIcon} title="Contact Information">
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="First Name *" value={form.firstName} onChange={set("firstName")} placeholder="Sabbir" />
-              <Field label="Last Name" value={form.lastName} onChange={set("lastName")} placeholder="Hassan" />
-              <Field label="Phone Number *" type="tel" value={form.phone} onChange={set("phone")} placeholder="01XXXXXXXXX" />
-              <Field label="Alt. Phone (optional)" type="tel" value={form.altPhone} onChange={set("altPhone")} placeholder="01XXXXXXXXX" />
-              <div className="sm:col-span-2">
-                <Field label="Email (optional)" type="email" value={form.email} onChange={set("email")} placeholder="you@email.com" />
-              </div>
-            </div>
-          </Section>
-
-          {/* Delivery Address */}
-          <Section icon={MapPin} title="Delivery Address">
-            <div className="grid sm:grid-cols-2 gap-3">
-              {/* Division */}
-              <div>
-                <label className="text-xs text-muted-foreground font-medium">Division *</label>
-                <select
-                  value={form.division}
-                  onChange={(e) => set("division")(e.target.value)}
-                  className="mt-1 w-full h-11 px-3 rounded-xl border border-border bg-card text-sm outline-none focus:border-foreground transition appearance-none cursor-pointer"
-                >
-                  {BD_DIVISIONS.map((d) => <option key={d}>{d}</option>)}
-                </select>
-              </div>
-
-              {/* Thana */}
-              <div>
-                <label className="text-xs text-muted-foreground font-medium">Thana / Upazila *</label>
-                <select
-                  value={form.thana}
-                  onChange={(e) => set("thana")(e.target.value)}
-                  className="mt-1 w-full h-11 px-3 rounded-xl border border-border bg-card text-sm outline-none focus:border-foreground transition appearance-none cursor-pointer"
-                >
-                  {thanaList.map((t) => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-
-              <Field label="Area / Neighbourhood" value={form.area} onChange={set("area")} placeholder="e.g. Kalabagan, Banani Block-C" />
-              <Field label="Postal Code" value={form.postcode} onChange={set("postcode")} placeholder="1207" />
-
-              <div className="sm:col-span-2">
-                <Field label="House / Road / Building *" value={form.address} onChange={set("address")} placeholder="e.g. House 12, Road 4, Block B" />
-              </div>
-            </div>
-
-            <div className="mt-3 rounded-xl bg-accent/5 border border-accent/20 p-3 flex items-center gap-3 text-sm">
-              <Truck className="size-4 text-accent shrink-0" />
-              <span className="text-muted-foreground">Delivery within <span className="font-semibold text-foreground">1–3 business days</span> across Bangladesh</span>
-            </div>
-          </Section>
-
-          {/* Notes */}
-          <Section icon={MessageSquare} title="Order Notes (optional)">
-            <textarea
-              value={form.notes}
-              onChange={(e) => set("notes")(e.target.value)}
-              placeholder="Special instructions, landmark, preferred delivery time..."
-              rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-card text-sm outline-none focus:border-foreground transition resize-none"
-            />
-          </Section>
-
-          {/* Payment */}
-          <Section icon={CreditCard} title="Payment Method">
-            <div className="grid grid-cols-2 gap-3">
-              {payments.map((m) => {
-                const Icon = m.icon;
-                const sel = pay === m.id;
-                return (
-                  <label
-                    key={m.id}
-                    className={`relative flex items-center gap-3 rounded-xl border p-4 cursor-pointer transition select-none ${
-                      sel ? "border-foreground ring-2 ring-foreground/10 bg-secondary/40" : "hover:border-foreground/30 hover:bg-secondary/20"
-                    }`}
-                  >
-                    <input type="radio" name="pay" checked={sel} onChange={() => setPay(m.id)} className="sr-only" />
-                    <div className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${m.color}`}>
-                      <Icon className="size-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold">{m.label}</p>
-                      <p className="text-xs text-muted-foreground">{m.sub}</p>
-                    </div>
-                    {sel && (
-                      <span className="absolute top-2.5 right-2.5 size-4 rounded-full bg-foreground flex items-center justify-center">
-                        <Check className="size-2.5 text-background" />
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
-
-            {pay === "bkash" && (
-              <div className="mt-3 rounded-xl bg-pink-50 border border-pink-200 p-3 text-xs text-pink-700">
-                After placing order, send payment to <span className="font-bold">01XXXXXXXXX</span> (bKash) and mention your Order ID as reference.
-              </div>
-            )}
-            {pay === "nagad" && (
-              <div className="mt-3 rounded-xl bg-orange-50 border border-orange-200 p-3 text-xs text-orange-700">
-                After placing order, send payment to <span className="font-bold">01XXXXXXXXX</span> (Nagad) and mention your Order ID as reference.
-              </div>
-            )}
-          </Section>
-        </div>
-
-        {/* ── Right: Order summary ── */}
-        <aside className="lg:sticky lg:top-28 h-fit space-y-4">
-          <div className="rounded-2xl border bg-card p-5">
-            <p className="font-semibold mb-4 text-base">Order Summary</p>
-
-            <div className="space-y-3 max-h-64 overflow-auto pr-1">
-              {cart.map((it) => {
-                const p = resolveProduct(it.id);
-                if (!p) return null;
-                return (
-                  <div key={it.id + (it.size ?? "")} className="flex gap-3">
-                    <div className="relative shrink-0">
-                      <img src={p.image} className="size-14 rounded-xl object-cover border" alt="" />
-                      <span className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center justify-center">{it.qty}</span>
-                    </div>
-                    <div className="flex-1 min-w-0 py-0.5">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      {it.size && <p className="text-xs text-muted-foreground">Size: {it.size}</p>}
-                      <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">৳{p.price.toLocaleString()} × {it.qty}</p>
-                    </div>
-                    <p className="text-sm font-semibold tabular-nums whitespace-nowrap pt-0.5">৳{(p.price * it.qty).toLocaleString()}</p>
+            {/* Mobile collapsible */}
+            <div className="lg:hidden overflow-hidden rounded-xl border border-border/80 bg-card">
+              <button
+                type="button"
+                onClick={() => setSummaryOpen((o) => !o)}
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-3.5 text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="size-4 text-foreground" strokeWidth={2} />
+                  <span className="text-sm font-semibold">
+                    {summaryOpen ? "Hide" : "Show"} order summary
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={`text-muted-foreground transition-transform duration-200 ${summaryOpen ? "rotate-180" : ""}`}
+                  />
+                </div>
+                <Price amount={total} size="md" className="!font-bold" />
+              </button>
+              {summaryOpen && (
+                <div className="px-4 pb-4 border-t border-border">
+                  <div className="pt-3.5">
+                    <OrderSummaryContent />
                   </div>
-                );
-              })}
-            </div>
-
-            <div className="border-t my-4" />
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="tabular-nums">৳{cartSubtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Shipping</span>
-                <span className={shipping === 0 ? "text-emerald-600 font-medium" : "tabular-nums"}>
-                  {shipping === 0 ? "Free 🎉" : `৳${shipping}`}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">VAT</span>
-                <span className="text-muted-foreground">Included</span>
-              </div>
-            </div>
-
-            <div className="border-t my-4" />
-            <div className="flex justify-between items-baseline">
-              <span className="font-bold text-base">Total</span>
-              <span className="text-2xl font-bold tabular-nums">৳{total.toLocaleString()}</span>
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="mt-5 w-full h-13 rounded-2xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 shadow-sm"
-            >
-              {submitting ? (
-                <>
-                  <span className="size-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  Placing order...
-                </>
-              ) : (
-                <>
-                  <Lock className="size-4" />
-                  Place Order · ৳{total.toLocaleString()}
-                </>
+                </div>
               )}
-            </button>
+            </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+            {/* Desktop panel — 20px heading */}
+            <div className="hidden rounded-2xl border border-border/80 bg-card p-6 lg:block">
+              <h2 className="text-xl font-bold tracking-tight">Order summary</h2>
+              <div className="mt-4">
+                <OrderSummaryContent />
+              </div>
+            </div>
+
+            {/* Trust badges */}
+            <div className="hidden grid-cols-3 gap-3 rounded-2xl border border-border/80 bg-card p-4 lg:grid">
               {[
                 { icon: ShieldCheck, label: "Secure" },
-                { icon: Truck, label: "Fast delivery" },
-                { icon: Check, label: "7-day return" },
+                { icon: RotateCcw, label: "7-Day Return" },
+                { icon: KeyRound, label: "Encrypted" },
               ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex flex-col items-center gap-1 text-[10px] text-muted-foreground">
-                  <Icon className="size-4" />
-                  {label}
+                <div key={label} className="flex flex-col items-center gap-1.5 text-center">
+                  <Icon className="size-[18px] text-foreground" strokeWidth={2} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {label}
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
 
-          <Link to="/cart" className="flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-foreground transition">
-            ← Edit cart
-          </Link>
-        </aside>
-      </form>
+            <div className="hidden items-center gap-3 rounded-2xl border border-border/70 bg-secondary/50 p-4 lg:flex">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-background text-foreground">
+                <Headphones className="size-[18px]" strokeWidth={2} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Need assistance?</p>
+                <p className="text-[13px] text-muted-foreground">Concierge: +880 1999-000000</p>
+              </div>
+            </div>
+          </aside>
+
+          {/* ══════════ LEFT — Form Sections ══════════ */}
+          <div className="flex flex-col gap-4 lg:col-span-7 lg:gap-5">
+
+            {/* Customer Information */}
+            <section className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 lg:p-7">
+              <SectionHead icon={UserIcon} title="Customer information" />
+              <div className="mt-4 grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:mt-5 lg:gap-4">
+                <div className="md:col-span-2">
+                  <FormField label="Full Name" required placeholder="e.g. Sabbir Hassan" value={form.name} onChange={set("name")} />
+                </div>
+                <FormField label="Phone Number" required type="tel" placeholder="+880 1XXX-XXXXXX" value={form.phone} onChange={set("phone")} />
+              </div>
+            </section>
+
+            {/* Shipping Address */}
+            <section className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 lg:p-7">
+              <SectionHead icon={MapPin} title="Shipping address" />
+              <div className="mt-4 grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:mt-5 lg:gap-4">
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    District <span className="text-accent">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={form.district}
+                      onChange={e => set("district")(e.target.value)}
+                      required
+                      className="input-soft h-10 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background pl-3.5 pr-9 text-sm font-medium outline-none lg:h-11"
+                    >
+                      <option value="">Select District</option>
+                      {BD_DISTRICTS.map(d => <option key={d}>{d}</option>)}
+                    </select>
+                    <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Full address <span className="text-accent">*</span>
+                  </label>
+                  <textarea
+                    value={form.address}
+                    onChange={e => set("address")(e.target.value)}
+                    placeholder="House no, Street name, Area"
+                    rows={3}
+                    required
+                    className="input-soft w-full resize-none rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Order notes <span className="text-[11px] font-normal normal-case text-muted-foreground">(optional)</span>
+                  </label>
+                  <textarea
+                    value={form.notes}
+                    onChange={e => set("notes")(e.target.value)}
+                    placeholder="Special instructions, landmark, preferred time..."
+                    rows={2}
+                    className="input-soft w-full resize-none rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Delivery Area */}
+            <section className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 lg:p-7">
+              <SectionHead icon={Truck} title="Delivery area" />
+              <div className="mt-4 flex flex-col gap-2 lg:mt-5 lg:gap-2.5">
+                {DELIVERY_AREAS.map(area => {
+                  const selected = deliveryArea === area.id;
+                  return (
+                    <label
+                      key={area.id}
+                      className={`flex cursor-pointer select-none items-center gap-3 rounded-lg border px-3.5 py-3 transition-colors lg:gap-4 lg:rounded-xl lg:px-4 lg:py-3.5 ${
+                        selected ? "border-foreground bg-secondary" : "border-border bg-background hover:border-foreground/35"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="deliveryArea"
+                        value={area.id}
+                        checked={selected}
+                        onChange={() => setDeliveryArea(area.id as "inside" | "outside")}
+                        className="sr-only"
+                      />
+                      <div className={`flex size-[18px] shrink-0 items-center justify-center rounded border-2 transition-all ${
+                        selected ? "border-foreground bg-foreground" : "border-border"
+                      }`}>
+                        {selected && <Check size={10} className="text-background" strokeWidth={3} />}
+                      </div>
+                      <div className="flex flex-1 flex-col">
+                        <span className="text-sm font-semibold text-foreground lg:text-[15px]">{area.label}</span>
+                        <span className="hidden text-[13px] text-muted-foreground sm:block">{area.sub}</span>
+                      </div>
+                      <Price
+                        amount={area.price}
+                        size="sm"
+                        tone="inherit"
+                        className="text-accent !font-bold lg:!text-base"
+                        symbolClassName="lg:!text-[0.78rem]"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Payment Method */}
+            <section className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 lg:p-7">
+              <SectionHead icon={CreditCard} title="Payment method" />
+              <div className="mt-4 flex flex-col gap-2 lg:mt-5 lg:gap-2.5">
+                {PAYMENT_METHODS.map(m => {
+                  const Icon = m.icon;
+                  const sel  = pay === m.id;
+                  return (
+                    <label
+                      key={m.id}
+                      className={`flex cursor-pointer select-none items-center gap-3.5 rounded-lg border p-3.5 transition-all lg:gap-4 lg:rounded-xl lg:p-4 ${
+                        sel ? "border-foreground bg-secondary" : "border-border bg-background hover:border-foreground/35"
+                      }`}
+                    >
+                      <input type="radio" name="pay" checked={sel} onChange={() => setPay(m.id)} className="sr-only" />
+                      <div className={`flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                        sel ? "border-foreground bg-foreground" : "border-border"
+                      }`}>
+                        {sel && <div className="size-1.5 rounded-full bg-background" />}
+                      </div>
+                      <span className="flex-1 text-sm font-semibold lg:text-[15px]">{m.label}</span>
+                      <Icon className="size-4 text-muted-foreground lg:size-[18px]" />
+                    </label>
+                  );
+                })}
+              </div>
+              {pay === "bkash" && (
+                <p className="mt-3 rounded-lg border border-accent/25 bg-accent/5 px-3.5 py-2.5 text-[13px] leading-relaxed text-foreground lg:mt-4 lg:rounded-xl lg:px-4 lg:py-3">
+                  After placing your order, send payment to <strong>01XXXXXXXXX</strong> (bKash) with your order ID in the reference.
+                </p>
+              )}
+              {pay === "nagad" && (
+                <p className="mt-3 rounded-lg border border-accent/25 bg-accent/5 px-3.5 py-2.5 text-[13px] leading-relaxed text-foreground lg:mt-4 lg:rounded-xl lg:px-4 lg:py-3">
+                  After placing your order, send payment to <strong>01XXXXXXXXX</strong> (Nagad) with your order ID in the reference.
+                </p>
+              )}
+            </section>
+
+            {/* Terms + desktop CTA */}
+            <div className="hidden md:block space-y-4 rounded-2xl border border-border/80 bg-card p-5 sm:p-6 lg:space-y-5 lg:p-7">
+              <label className="flex cursor-pointer select-none items-start gap-3">
+                <div
+                  onClick={() => setAgreed(a => !a)}
+                  className={`mt-0.5 flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-md border-2 transition-all ${
+                    agreed ? "border-foreground bg-foreground" : "border-border hover:border-foreground"
+                  }`}
+                >
+                  {agreed && <Check size={10} className="text-background" strokeWidth={3} />}
+                </div>
+                <span className="text-[13px] leading-relaxed text-muted-foreground lg:text-sm">
+                  I agree with the{" "}
+                  <a href="#" className="font-semibold text-accent hover:underline">Terms &amp; Conditions.</a>
+                </span>
+              </label>
+
+              <button
+                type="submit"
+                disabled={submitting || !agreed}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 lg:h-12"
+              >
+                {submitting ? (
+                  <>
+                    <span className="size-4 animate-spin rounded-full border-2 border-background/30 border-t-background" />
+                    Placing order...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="size-4" strokeWidth={2.25} />
+                    Place order
+                  </>
+                )}
+              </button>
+
+              <div className="flex items-center justify-center gap-5 pt-1 lg:gap-7">
+                {[
+                  { icon: ShieldCheck, label: "Secure" },
+                  { icon: Truck,       label: "Fast delivery" },
+                  { icon: RotateCcw,   label: "7-day return" },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-1.5 text-muted-foreground">
+                    <Icon className="size-[13px]" strokeWidth={2} />
+                    <span className="text-[11px] font-semibold lg:text-xs">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* ── Mobile sticky bottom bar ─────────────────────────────────────── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-border bg-background/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-16px_rgba(0,0,0,0.1)] backdrop-blur-md supports-[backdrop-filter]:bg-background/90">
+        <label className="flex items-center gap-2.5 mb-2.5 cursor-pointer select-none">
+          <div
+            onClick={() => setAgreed(a => !a)}
+            className={`w-[18px] h-[18px] rounded-md border-2 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+              agreed ? "bg-foreground border-foreground" : "border-border"
+            }`}
+          >
+            {agreed && <Check size={10} className="text-background" strokeWidth={3} />}
+          </div>
+          <span className="text-[12px] leading-snug text-muted-foreground">
+            I agree with the{" "}
+            <a href="#" className="text-accent font-semibold">Terms &amp; Conditions.</a>
+          </span>
+        </label>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <span className="text-[11px] font-medium text-muted-foreground">Total to pay</span>
+            <Price amount={total} size="md" className="!font-bold" />
+          </div>
+          <button
+            type="submit"
+            form="checkout-form"
+            disabled={submitting || !agreed}
+            className="flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-foreground text-sm font-semibold text-background transition hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {submitting ? (
+              <><span className="w-4 h-4 rounded-full border-2 border-background/30 border-t-background animate-spin" /> Placing...</>
+            ) : (
+              <><Lock size={15} /> Place Order</>
+            )}
+          </button>
+        </div>
+      </div>
     </Layout>
   );
 }
 
-function Section({ icon: Icon, title, children }: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  children: React.ReactNode;
-}) {
+/* ── Small reusable components ─────────────────────────────────────── */
+/* Section heading: 18px mobile / 20px desktop. Compact, Amazon-style. */
+function SectionHead({
+  icon: Icon, title,
+}: { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; title: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-5 sm:p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="size-9 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-          <Icon className="size-4 text-muted-foreground" />
-        </div>
-        <p className="font-semibold">{title}</p>
-      </div>
-      {children}
+    <div className="flex items-center gap-3">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground lg:size-9 lg:rounded-xl">
+        <Icon className="size-4 text-foreground lg:size-[18px]" strokeWidth={2} />
+      </span>
+      <h2 className="text-lg font-bold tracking-tight lg:text-xl">
+        {title}
+      </h2>
     </div>
   );
 }
 
-function Field({ label, placeholder, value, onChange, type = "text" }: {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
+/* Form field: 12px label, 14px input, h-10 mobile / h-11 desktop. */
+function FormField({
+  label, placeholder, value, onChange, type = "text", required,
+}: {
+  label: string; placeholder: string; value: string;
+  onChange: (v: string) => void; type?: string; required?: boolean;
 }) {
   return (
-    <label className="block">
-      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}{required && <span className="ml-1 text-accent">*</span>}
+      </label>
       <input
         type={type}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-1 w-full h-11 px-4 rounded-xl border border-border bg-card text-sm outline-none focus:border-foreground transition"
+        required={required}
+        className="input-soft h-10 w-full rounded-lg border border-border bg-background px-3.5 text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none lg:h-11"
       />
-    </label>
+    </div>
   );
 }

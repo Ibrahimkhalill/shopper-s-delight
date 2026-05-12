@@ -7,6 +7,7 @@ import {
   ArrowUpDown, LayoutGrid, List, ChevronDown, Check,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Price } from "@/components/site/Price";
 
 export const Route = createFileRoute("/category/$slug")({ component: CategoryPage });
 
@@ -347,8 +348,8 @@ function ListCard({ p }: { p: typeof PRODUCTS[0] }) {
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{p.category}</p>
         <h3 className="mt-0.5 text-sm font-medium leading-snug line-clamp-2">{p.name}</h3>
         <div className="mt-2 flex items-center gap-2">
-          <span className="text-base font-semibold">৳{p.price.toLocaleString()}</span>
-          {p.oldPrice && <span className="text-xs text-muted-foreground line-through">৳{p.oldPrice.toLocaleString()}</span>}
+          <Price amount={p.price} size="md" className="!font-semibold" />
+          {p.oldPrice && <Price amount={p.oldPrice} size="xs" muted struck />}
         </div>
         <div className="mt-2 flex items-center gap-1.5">
           {p.colors.map((c, i) => <span key={i} className="size-3.5 rounded-full ring-1 ring-border" style={{ background: c }} />)}

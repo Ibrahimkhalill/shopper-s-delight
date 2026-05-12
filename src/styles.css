@@ -2,7 +2,7 @@
 @source "../src";
 @import "tw-animate-css";
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -64,7 +64,37 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  /* 16px — card / control radius baseline (maps to rounded-2xl scale) */
+  --radius: 1rem;
+
+  /* ── Typography scale (Amazon / Apple inspired, rem-based) ─────────────
+   * Step    px      Token        Usage
+   * 11px →  0.6875  --fs-2xs     micro meta, ratings count
+   * 12px →  0.75    --fs-xs      labels, badges, breadcrumb
+   * 13px →  0.8125  --fs-sm      small body, helper text
+   * 14px →  0.875   --fs-base    body, buttons, inputs, table cells, product title (mobile)
+   * 15px →  0.9375  --fs-md      emphasized body, comfortable desktop body
+   * 16px →  1       --fs-lg      product title (desktop), section subtitle
+   * 18px →  1.125   --fs-xl      price (desktop), total amount, large UI
+   * 20px →  1.25    --fs-2xl     section heading
+   * 24px →  1.5     --fs-3xl     page heading (max)
+   */
+  --fs-2xs:  0.6875rem;
+  --fs-xs:   0.75rem;
+  --fs-sm:   0.8125rem;
+  --fs-base: 0.875rem;
+  --fs-md:   0.9375rem;
+  --fs-lg:   1rem;
+  --fs-xl:   1.125rem;
+  --fs-2xl:  1.25rem;
+  --fs-3xl:  1.5rem;
+
+  /* Line heights */
+  --lh-tight:   1.2;    /* big headings */
+  --lh-snug:    1.35;   /* medium headings, product titles */
+  --lh-normal:  1.5;    /* body */
+  --lh-relaxed: 1.6;    /* paragraphs, descriptions */
+
   /* SHOP.BD — strict three color system: black / white / red accent */
   --background: oklch(1 0 0);
   --foreground: oklch(0 0 0);
@@ -140,12 +170,33 @@
     border-color: var(--color-border);
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
-    font-feature-settings: "ss01", "cv11";
-    -webkit-font-smoothing: antialiased;
+    font-family: "Inter", var(--font-sans);
+    font-size: var(--fs-base); /* 14px — body baseline (Amazon-style) */
+    line-height: var(--lh-normal);
+    letter-spacing: -0.005em;
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  @media (min-width: 1024px) {
+    body {
+      font-size: var(--fs-md); /* 15px desktop — comfortable but not heavy */
+    }
+  }
+
+  /* Headings inherit the tight line-height by default so we never need to override per-element. */
+  h1, h2, h3, h4 {
+    line-height: var(--lh-snug);
+    letter-spacing: -0.01em;
   }
 
   .font-bn {
@@ -182,8 +233,61 @@
 @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
 @keyframes bounce-soft { 0%, 100% { transform: scale(1) } 30% { transform: scale(1.18) } 60% { transform: scale(0.94) } }
 
-.hover-lift { transition: transform .25s ease, box-shadow .25s ease; }
-.hover-lift:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -20px rgba(0,0,0,0.18); }
+.hover-lift {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px -24px oklch(0 0 0 / 0.14);
+  border-color: oklch(0.88 0 0);
+}
+
+/* Tiny press feedback for buttons and tappable cards. */
+.press {
+  transition: transform 0.15s ease, opacity 0.18s ease, box-shadow 0.22s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Soft, premium card elevation utility. */
+.card-elevated {
+  box-shadow:
+    0 1px 2px -1px oklch(0 0 0 / 0.06),
+    0 6px 18px -10px oklch(0 0 0 / 0.10);
+}
+.card-elevated-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-elevated-hover:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 1px 2px -1px oklch(0 0 0 / 0.06),
+    0 24px 44px -22px oklch(0 0 0 / 0.18);
+}
+
+/* Smoother input focus ring without harsh outline. */
+.input-soft {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+.input-soft:focus-visible {
+  border-color: oklch(0 0 0 / 0.35);
+  box-shadow: 0 0 0 4px oklch(0 0 0 / 0.07);
+  outline: none;
+}
+
+/* Quantity stepper button micro-interaction. */
+.qty-btn {
+  transition: background-color 0.15s ease, transform 0.1s ease, color 0.15s ease;
+}
+.qty-btn:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+/* Mobile tap-highlight cleanup. */
+html, button, a, label {
+  -webkit-tap-highlight-color: transparent;
+}
 
 .no-scrollbar::-webkit-scrollbar { display: none }
 .no-scrollbar { scrollbar-width: none }

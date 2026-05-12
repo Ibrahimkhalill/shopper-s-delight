@@ -14,6 +14,8 @@ export function BottomNav() {
   const { cartCount, wishlist } = useStore();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  if (pathname === "/checkout" || pathname === "/cart") return null;
+
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
 
@@ -56,9 +58,7 @@ export function BottomNav() {
               </span>
 
               {/* Label */}
-              <span className={`text-[10px] font-medium transition-all duration-200 ${
-                active ? "text-accent" : "text-muted-foreground"
-              }`}>
+              <span className={`text-[11px] font-medium leading-tight sm:text-xs ${active ? "text-accent" : "text-muted-foreground"}`}>
                 {label}
               </span>
             </Link>

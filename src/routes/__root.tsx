@@ -1,9 +1,10 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { StoreProvider } from "@/lib/store";
+import { StoreProvider, useStore } from "@/lib/store";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/lib/i18n";
+import { AuthModal } from "@/components/site/AuthModal";
 
 function NotFoundComponent() {
   return (
@@ -71,9 +72,19 @@ function RootComponent() {
   return (
     <I18nProvider>
       <StoreProvider>
-        <Outlet />
-        <Toaster position="top-center" richColors />
+        <AppShell />
       </StoreProvider>
     </I18nProvider>
+  );
+}
+
+function AppShell() {
+  const { authModalOpen, authModalTab, closeAuthModal } = useStore();
+  return (
+    <>
+      <Outlet />
+      <Toaster position="top-center" richColors />
+      <AuthModal open={authModalOpen} onClose={closeAuthModal} defaultTab={authModalTab} />
+    </>
   );
 }
