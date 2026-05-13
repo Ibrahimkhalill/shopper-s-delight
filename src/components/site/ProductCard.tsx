@@ -1,5 +1,7 @@
+"use client";
+
 import { Heart, ShoppingCart } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Price } from "./Price";
@@ -8,6 +10,9 @@ export type Product = {
   id: string;
   name: string;
   category: string;
+  brand: string;
+  /** Fabric / build — compare & detail */
+  material?: string;
   sizes: string[];
   price: number;
   oldPrice?: number;
@@ -61,8 +66,7 @@ export function ProductCard({ p }: { p: Product }) {
     >
       {/* ── Image (fixed 1:1 ratio across all cards) ───────────────────── */}
       <Link
-        to="/product/$id"
-        params={{ id: p.id }}
+        href={`/product/${p.id}`}
         aria-label={p.name}
         className="relative block aspect-square w-full overflow-hidden bg-secondary/60"
       >
@@ -120,11 +124,17 @@ export function ProductCard({ p }: { p: Product }) {
         {/* Category — 11/12px uppercase */}
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground lg:text-xs">
           {p.category}
+          {p.brand ? (
+            <>
+              {" "}
+              <span className="font-normal normal-case tracking-normal text-muted-foreground/80">· {p.brand}</span>
+            </>
+          ) : null}
         </p>
 
         {/* Title — 14px mobile / 16px desktop, font-medium per spec.
             min-height locks 2 lines worth so every card aligns. */}
-        <Link to="/product/$id" params={{ id: p.id }} className="mt-1">
+        <Link href={`/product/${p.id}`} className="mt-1">
           <h3
             className="
               line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug
@@ -136,14 +146,14 @@ export function ProductCard({ p }: { p: Product }) {
           </h3>
         </Link>
 
-        {/* Color variants — compact, aligned */}
+        {/* Color variants — same box for all swatches (no ring-offset: white looked larger) */}
         <div className="mt-2 flex h-4 items-center gap-1.5 lg:mt-2.5 lg:h-[18px]">
           {p.colors.slice(0, 5).map((c, i) => (
             <span
               key={i}
               aria-hidden="true"
               style={{ background: c }}
-              className="size-4 rounded-full ring-1 ring-border/80 ring-offset-2 ring-offset-card transition-colors duration-200 group-hover:ring-border lg:size-[18px]"
+              className="box-border size-4 shrink-0 rounded-full border border-border/80 transition-colors duration-200 group-hover:border-border lg:size-[18px]"
             />
           ))}
         </div>

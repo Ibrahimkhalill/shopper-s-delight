@@ -1,4 +1,7 @@
-import { Link } from "@tanstack/react-router";
+"use client";
+
+import type { StaticImageData } from "next/image";
+import Link from "next/link";
 import { useT, dict } from "@/lib/i18n";
 import gadgets from "@/assets/cat-gadgets.jpg";
 import fashion from "@/assets/cat-fashion.jpg";
@@ -7,7 +10,7 @@ import beauty from "@/assets/cat-beauty.jpg";
 import grocery from "@/assets/cat-grocery.jpg";
 import deals from "@/assets/cat-deals.jpg";
 
-const cats: { key: keyof typeof dict; slug: string; img: string }[] = [
+const cats: { key: keyof typeof dict; slug: string; img: string | StaticImageData }[] = [
   { key: "cat.gadgets", slug: "gadgets", img: gadgets },
   { key: "cat.fashion", slug: "fashion", img: fashion },
   { key: "cat.home",    slug: "home",    img: home },
@@ -24,13 +27,12 @@ export function CategoryStrip() {
         {cats.map(({ key, slug, img }) => (
           <Link
             key={slug}
-            to="/category/$slug"
-            params={{ slug }}
+            href={`/category/${slug}`}
             className="group flex flex-col items-center justify-center gap-2 sm:gap-3 rounded-2xl border border-border bg-card py-3 sm:py-4 px-2 transition hover:border-foreground hover:shadow-md hover-lift"
           >
             <span className="size-14 sm:size-20 rounded-full overflow-hidden ring-1 ring-border bg-secondary">
               <img
-                src={img}
+                src={typeof img === "string" ? img : img.src}
                 alt={t(key)}
                 width={512}
                 height={512}

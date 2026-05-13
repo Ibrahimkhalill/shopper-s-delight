@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+"use client";
+
+import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useStore } from "@/lib/store";
@@ -9,8 +11,6 @@ import {
 import { toast } from "sonner";
 import { useState } from "react";
 import { Price } from "@/components/site/Price";
-
-export const Route = createFileRoute("/wishlist")({ component: WishlistPage });
 
 function WishlistPage() {
   const { wishlist, resolveProduct, toggleWishlist, addToCart } = useStore();
@@ -52,10 +52,10 @@ function WishlistPage() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Nothing saved yet</h1>
           <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
-            Tap the heart on any product to save it here. We'll keep your favourites safe.
+            {"Tap the heart on any product to save it here. We'll keep your favourites safe."}
           </p>
           <Link
-            to="/"
+            href="/"
             className="inline-flex items-center gap-2 mt-8 h-12 px-8 rounded-full bg-foreground text-background text-sm font-semibold hover:opacity-90 transition group"
           >
             <ShoppingBag className="size-4" />
@@ -120,7 +120,7 @@ function WishlistPage() {
                 )}
 
                 {/* Image */}
-                <Link to="/product/$id" params={{ id: p.id }} className="block aspect-square overflow-hidden bg-secondary shrink-0">
+                <Link href={`/product/${p.id}`} className="block aspect-square overflow-hidden bg-secondary shrink-0">
                   <img
                     src={p.image}
                     alt={p.name}
@@ -133,8 +133,7 @@ function WishlistPage() {
                 <div className="flex flex-col flex-1 p-3">
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{p.category}</p>
                   <Link
-                    to="/product/$id"
-                    params={{ id: p.id }}
+                    href={`/product/${p.id}`}
                     className="mt-0.5 text-[13px] font-semibold leading-snug line-clamp-1 hover:text-accent transition"
                   >
                     {p.name}
@@ -151,7 +150,7 @@ function WishlistPage() {
                   {/* Color swatches */}
                   <div className="mt-2 flex items-center gap-1">
                     {p.colors.map((c, idx) => (
-                      <span key={idx} className="size-3 rounded-full ring-1 ring-border" style={{ background: c }} />
+                      <span key={idx} className="box-border size-3 shrink-0 rounded-full border border-border" style={{ background: c }} />
                     ))}
                   </div>
 
@@ -200,8 +199,7 @@ function WishlistPage() {
             </div>
             <div className="flex items-center gap-3">
               <Link
-                to="/category/$slug"
-                params={{ slug: "all" }}
+                href={`/category/${"all"}`}
                 className="h-11 px-5 rounded-full border text-sm font-medium hover:border-foreground transition"
               >
                 Continue shopping
@@ -223,3 +221,5 @@ function WishlistPage() {
     </Layout>
   );
 }
+
+export default WishlistPage;

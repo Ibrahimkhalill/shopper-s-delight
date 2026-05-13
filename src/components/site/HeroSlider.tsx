@@ -1,6 +1,8 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import heroImg from "@/assets/hero-shopping.png";
 import { useT, dict } from "@/lib/i18n";
 
@@ -40,7 +42,7 @@ export function HeroSlider() {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="size-64 md:size-96 rounded-full bg-white/5" />
                 </div>
-                <img src={heroImg} alt={t(s.title)} width={1024} height={1024} className={`relative max-h-[95%] w-auto object-contain drop-shadow-2xl transition-transform duration-700 ${idx === i ? "scale-100" : "scale-95"}`} />
+                <img src={heroImg.src} alt={t(s.title)} width={1024} height={1024} className={`relative max-h-[95%] w-auto object-contain drop-shadow-2xl transition-transform duration-700 ${idx === i ? "scale-100" : "scale-95"}`} />
               </div>
               {/* Text — z-[2] within slide, always on top of image on mobile */}
               <div className={`relative z-[2] px-6 py-8 md:px-12 md:py-0 ${lang === "bn" ? "font-bn" : ""}`}>
@@ -55,8 +57,7 @@ export function HeroSlider() {
                 </h1>
                 <p className="mt-4 max-w-md text-[0.9375rem] leading-relaxed text-white/72 md:text-base">{t(s.subtitle)}</p>
                 <Link
-                  to="/category/$slug"
-                  params={{ slug: s.slug }}
+                  href={`/category/${s.slug}`}
                   className="mt-7 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-7 text-sm font-semibold text-accent-foreground shadow-md transition hover:opacity-90 active:scale-[0.99] sm:mt-8 sm:h-[3.125rem] sm:px-8 sm:text-[15px]"
                 >
                   {t(s.cta)}

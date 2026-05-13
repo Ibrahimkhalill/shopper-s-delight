@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+"use client";
+
 import { Layout } from "@/components/site/Layout";
 import { HeroSlider } from "@/components/site/HeroSlider";
 import { CategoryStrip } from "@/components/site/CategoryStrip";
@@ -6,10 +7,6 @@ import { FeaturedGrid } from "@/components/site/FeaturedGrid";
 import { TrendingSection } from "@/components/site/TrendingSection";
 import { OffersSection } from "@/components/site/OffersSection";
 import { CategorySection } from "@/components/site/CategorySection";
-
-export const Route = createFileRoute("/")({
-  component: Index,
-});
 
 function Index() {
   return (
@@ -34,3 +31,5 @@ function Index() {
     </Layout>
   );
 }
+
+export default Index;

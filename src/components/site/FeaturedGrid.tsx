@@ -1,5 +1,7 @@
+"use client";
+
 import { ArrowRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import { PRODUCTS } from "@/lib/products";
 import { useT } from "@/lib/i18n";
@@ -19,8 +21,7 @@ export function FeaturedGrid() {
           </h2>
         </div>
         <Link
-          to="/category/$slug"
-          params={{ slug: "deals" }}
+          href="/category/deals"
           className="flex shrink-0 items-center gap-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:text-sm lg:gap-1.5 lg:text-base"
         >
           {t("sec.viewall")} <ArrowRight className="size-3.5 lg:size-4" />

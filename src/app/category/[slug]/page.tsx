@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+"use client";
+
+import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { PRODUCTS } from "@/lib/products";
@@ -6,10 +8,16 @@ import {
   ChevronRight, SlidersHorizontal, X, Search,
   ArrowUpDown, LayoutGrid, List, ChevronDown, Check,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
+import { useParams } from "next/navigation";
 import { Price } from "@/components/site/Price";
-
-export const Route = createFileRoute("/category/$slug")({ component: CategoryPage });
+import { DataPagination } from "@/components/site/DataPagination";
+import {
+  uniqueBrands,
+  uniqueColorSwatches,
+  productHasAnyColor,
+  colorLabelFromHex,
+} from "@/lib/product-filters";
 
 const PRICE_BANDS = [
   { id: "u1k",   label: "Under ৳1,000",       test: (n: number) => n < 1000 },
@@ -30,27 +38,47 @@ type SortKey = typeof SORT_OPTIONS[number]["value"];
 
 const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "1 size", "7", "8", "10", "BLK"];
 const ALL_CATEGORIES = [...new Set(PRODUCTS.map((p) => p.category))];
+const ALL_BRANDS = uniqueBrands(PRODUCTS);
+const COLOR_CATALOG = uniqueColorSwatches(PRODUCTS);
+const PAGE_SIZE = 4;
 
 function CategoryPage() {
-  const { slug } = Route.useParams();
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug ?? "";
   const title = slug.charAt(0).toUpperCase() + slug.slice(1);
 
   const [search, setSearch]       = useState("");
   const [bands, setBands]         = useState<string[]>([]);
   const [sizes, setSizes]         = useState<string[]>([]);
   const [cats, setCats]           = useState<string[]>([]);
+  const [brands, setBrands]       = useState<string[]>([]);
+  const [colorHexes, setColorHexes] = useState<string[]>([]);
   const [sort, setSort]           = useState<SortKey>("feat");
   const [drawer, setDrawer]       = useState(false);
   const [view, setView]           = useState<"grid" | "list">("grid");
   const [sortOpen, setSortOpen]   = useState(false);
+  const [page, setPage]           = useState(1);
 
   const toggleBand = (id: string) => setBands((b) => b.includes(id) ? b.filter((x) => x !== id) : [...b, id]);
   const toggleSize = (s: string)  => setSizes((v) => v.includes(s) ? v.filter((x) => x !== s) : [...v, s]);
   const toggleCat  = (c: string)  => setCats((v)  => v.includes(c) ? v.filter((x) => x !== c) : [...v, c]);
+  const toggleBrand = (b: string) => setBrands((v) => v.includes(b) ? v.filter((x) => x !== b) : [...v, b]);
+  const toggleColor = (hex: string) => {
+    const key = hex.toLowerCase();
+    setColorHexes((v) => (v.includes(key) ? v.filter((x) => x !== key) : [...v, key]));
+  };
 
-  const activeFilterCount = bands.length + sizes.length + cats.length + (search ? 1 : 0);
+  const activeFilterCount =
+    bands.length + sizes.length + cats.length + brands.length + colorHexes.length + (search ? 1 : 0);
 
-  const clearAll = () => { setBands([]); setSizes([]); setCats([]); setSearch(""); };
+  const clearAll = () => {
+    setBands([]);
+    setSizes([]);
+    setCats([]);
+    setBrands([]);
+    setColorHexes([]);
+    setSearch("");
+  };
 
   const list = useMemo(() => {
     let arr = [...PRODUCTS];
@@ -58,17 +86,38 @@ function CategoryPage() {
     if (bands.length) arr = arr.filter((p) => PRICE_BANDS.filter((b) => bands.includes(b.id)).some((b) => b.test(p.price)));
     if (sizes.length) arr = arr.filter((p) => p.sizes.some((s) => sizes.includes(s)));
     if (cats.length)  arr = arr.filter((p) => cats.includes(p.category));
-    if (sort === "lh")   arr.sort((a, b) => a.price - b.price);
-    if (sort === "hl")   arr.sort((a, b) => b.price - a.price);
-    if (sort === "sale") arr = arr.filter((p) => p.oldPrice).concat(arr.filter((p) => !p.oldPrice));
-    if (sort === "new")  arr.reverse();
+    if (brands.length) arr = arr.filter((p) => brands.includes(p.brand));
+    if (colorHexes.length) arr = arr.filter((p) => productHasAnyColor(p, colorHexes));
+    if (sort === "lh")   arr = [...arr].sort((a, b) => a.price - b.price);
+    if (sort === "hl")   arr = [...arr].sort((a, b) => b.price - a.price);
+    if (sort === "sale") arr = arr.filter((p) => p.oldPrice);
+    if (sort === "new")  arr = [...arr].reverse();
     return arr;
-  }, [search, bands, sizes, cats, sort]);
+  }, [search, bands, sizes, cats, brands, colorHexes, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, bands, sizes, cats, brands, colorHexes, sort]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const pageItems = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return list.slice(start, start + PAGE_SIZE);
+  }, [list, currentPage]);
+
+  const rangeStart = list.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = list.length === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, list.length);
 
   const currentSort = SORT_OPTIONS.find((o) => o.value === sort)!;
 
   const FilterPanel = () => (
-    <div className="space-y-1">
+    <div className="flex flex-col gap-2">
 
       {/* Search inside filter */}
       <div className="relative mb-4">
@@ -92,11 +141,59 @@ function CategoryPage() {
           {ALL_CATEGORIES.map((c) => (
             <button
               key={c}
+              type="button"
               onClick={() => toggleCat(c)}
-              className={`h-8 px-3 rounded-full text-xs font-medium border transition ${cats.includes(c) ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground/40"}`}
+              className={`h-8 px-3 rounded-full text-xs font-medium border transition ${cats.includes(c) ? "bg-foreground text-background border-foreground" : "border-border bg-background/50 hover:border-foreground/40"}`}
             >{c}</button>
           ))}
         </div>
+      </FilterGroup>
+
+      {/* Brand */}
+      <FilterGroup title="Brand" onClear={brands.length ? () => setBrands([]) : undefined}>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {ALL_BRANDS.map((b) => (
+            <button
+              key={b}
+              type="button"
+              onClick={() => toggleBrand(b)}
+              className={`h-8 max-w-full truncate px-3 rounded-full text-xs font-medium border transition ${brands.includes(b) ? "bg-foreground text-background border-foreground" : "border-border bg-background/50 hover:border-foreground/40"}`}
+            >{b}</button>
+          ))}
+        </div>
+      </FilterGroup>
+
+      {/* Color — compact swatches aligned with h-8 filter chips */}
+      <FilterGroup title="Color" onClear={colorHexes.length ? () => setColorHexes([]) : undefined}>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {COLOR_CATALOG.map(({ hex, label }) => {
+            const selected = colorHexes.includes(hex);
+            return (
+              <button
+                key={hex}
+                type="button"
+                title={label}
+                aria-label={`${label}${selected ? ", selected" : ""}`}
+                aria-pressed={selected}
+                onClick={() => toggleColor(hex)}
+                className={`relative box-border size-6 shrink-0 rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${selected ? "border-foreground" : "border-border hover:border-foreground/50"}`}
+                style={{ background: hex }}
+              >
+                {hex.toLowerCase() === "#ffffff" ? (
+                  <span className="pointer-events-none absolute inset-px rounded-full border border-border/50" aria-hidden />
+                ) : null}
+                {selected ? (
+                  <Check
+                    className={`pointer-events-none absolute inset-0 m-auto size-2.5 drop-shadow-sm ${hex.toLowerCase() === "#ffffff" ? "text-foreground" : "text-white"}`}
+                    strokeWidth={3}
+                    aria-hidden
+                  />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[11px] leading-snug text-muted-foreground">Shows items that use any selected colour.</p>
       </FilterGroup>
 
       {/* Price */}
@@ -152,7 +249,7 @@ function CategoryPage() {
       <div className="border-b bg-linear-to-b from-secondary/50 to-background">
         <div className="mx-auto max-w-7xl px-4 pt-6 pb-5">
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-            <Link to="/" className="hover:text-foreground">Home</Link>
+            <Link href="/" className="hover:text-foreground">Home</Link>
             <ChevronRight className="size-3" />
             <span className="text-foreground font-medium">{title}</span>
           </nav>
@@ -161,7 +258,12 @@ function CategoryPage() {
               <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 {list.length} {list.length === 1 ? "product" : "products"}
-                {activeFilterCount > 0 && <> · <button onClick={clearAll} className="text-accent hover:underline">{activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active — clear all</button></>}
+                {activeFilterCount > 0 && (
+                  <>
+                    {" "}
+                    · {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
+                  </>
+                )}
               </p>
             </div>
 
@@ -225,6 +327,14 @@ function CategoryPage() {
                 <Chip label={`"${search}"`} onRemove={() => setSearch("")} />
               )}
               {cats.map((c) => <Chip key={c} label={c} onRemove={() => toggleCat(c)} />)}
+              {brands.map((b) => <Chip key={b} label={b} onRemove={() => toggleBrand(b)} />)}
+              {colorHexes.map((hex) => (
+                <Chip
+                  key={hex}
+                  label={COLOR_CATALOG.find((c) => c.hex === hex)?.label ?? colorLabelFromHex(hex)}
+                  onRemove={() => toggleColor(hex)}
+                />
+              ))}
               {bands.map((b) => <Chip key={b} label={PRICE_BANDS.find((x) => x.id === b)!.label} onRemove={() => toggleBand(b)} />)}
               {sizes.map((s) => <Chip key={s} label={`Size ${s}`} onRemove={() => toggleSize(s)} />)}
             </div>
@@ -263,13 +373,23 @@ function CategoryPage() {
             </div>
           ) : view === "list" ? (
             <div className="space-y-3">
-              {list.map((p) => <ListCard key={p.id} p={p} />)}
+              {pageItems.map((p) => <ListCard key={p.id} p={p} />)}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-              {list.map((p) => <ProductCard key={p.id} p={p} />)}
+              {pageItems.map((p) => <ProductCard key={p.id} p={p} />)}
             </div>
           )}
+          <DataPagination
+            hideWhenSinglePage
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            totalItems={list.length}
+            className="mt-10"
+          />
         </div>
       </div>
 
@@ -307,18 +427,32 @@ function CategoryPage() {
   );
 }
 
-function FilterGroup({ title, children, onClear }: { title: string; children: React.ReactNode; onClear?: () => void }) {
+function FilterGroup({ title, children, onClear }: { title: string; children: ReactNode; onClear?: () => void }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="border-t py-4 first:border-t-0 first:pt-0">
-      <button onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between mb-2 group">
-        <span className="text-sm font-semibold">{title}</span>
+    <div className="rounded-xl border border-border/60 bg-secondary/20 py-3 px-3 first:mt-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between rounded-lg px-1 py-1 text-left transition hover:bg-background/60"
+      >
+        <span className="text-xs font-bold uppercase tracking-wider text-foreground">{title}</span>
         <div className="flex items-center gap-2">
-          {onClear && <span onClick={(e) => { e.stopPropagation(); onClear(); }} className="text-xs text-accent hover:underline">Clear</span>}
-          <ChevronDown className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+          {onClear && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); onClear(); }}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onClear(); } }}
+              className="text-xs font-medium text-accent hover:underline"
+            >
+              Clear
+            </span>
+          )}
+          <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
         </div>
       </button>
-      {open && children}
+      {open && <div className="mt-2">{children}</div>}
     </div>
   );
 }
@@ -337,7 +471,7 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
 function ListCard({ p }: { p: typeof PRODUCTS[0] }) {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   return (
-    <Link to="/product/$id" params={{ id: p.id }} className="flex gap-4 rounded-2xl border bg-card p-3 hover:border-foreground/40 hover:shadow-sm transition group">
+    <Link href={`/product/${p.id}`} className="flex gap-4 rounded-2xl border bg-card p-3 hover:border-foreground/40 hover:shadow-sm transition group">
       <div className="relative size-24 sm:size-28 rounded-xl bg-secondary overflow-hidden shrink-0">
         {discount > 0 && (
           <span className="absolute top-1.5 left-1.5 rounded-full bg-accent text-white text-[9px] font-bold px-1.5 py-0.5">-{discount}%</span>
@@ -346,13 +480,16 @@ function ListCard({ p }: { p: typeof PRODUCTS[0] }) {
       </div>
       <div className="flex flex-col justify-center flex-1 min-w-0 py-1">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{p.category}</p>
+        <p className="text-[10px] font-medium text-muted-foreground/90">{p.brand}</p>
         <h3 className="mt-0.5 text-sm font-medium leading-snug line-clamp-2">{p.name}</h3>
         <div className="mt-2 flex items-center gap-2">
           <Price amount={p.price} size="md" className="!font-semibold" />
           {p.oldPrice && <Price amount={p.oldPrice} size="xs" muted struck />}
         </div>
         <div className="mt-2 flex items-center gap-1.5">
-          {p.colors.map((c, i) => <span key={i} className="size-3.5 rounded-full ring-1 ring-border" style={{ background: c }} />)}
+          {p.colors.map((c, i) => (
+            <span key={i} className="box-border size-3.5 shrink-0 rounded-full border border-border" style={{ background: c }} />
+          ))}
         </div>
       </div>
       <div className="hidden sm:flex items-center shrink-0 pr-2">
@@ -361,3 +498,5 @@ function ListCard({ p }: { p: typeof PRODUCTS[0] }) {
     </Link>
   );
 }
+
+export default CategoryPage;

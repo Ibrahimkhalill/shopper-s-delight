@@ -1,6 +1,8 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { ShoppingCart, ArrowRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { PRODUCTS } from "@/lib/products";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -35,8 +37,7 @@ function DealCard({ p }: { p: typeof PRODUCTS[0] }) {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   return (
     <Link
-      to="/product/$id"
-      params={{ id: p.id }}
+      href={`/product/${p.id}`}
       className="group flex flex-col bg-white/10 hover:bg-white/15 rounded-2xl overflow-hidden transition border border-white/10"
     >
       <div className="relative aspect-square overflow-hidden bg-white/5">
@@ -133,8 +134,7 @@ export function OffersSection() {
           </div>
 
           <Link
-            to="/category/$slug"
-            params={{ slug: "deals" }}
+            href="/category/deals"
             className="mt-5 flex items-center justify-center gap-2 text-sm font-medium text-white/70 hover:text-white transition"
           >
             View all deals <ArrowRight className="size-4" />

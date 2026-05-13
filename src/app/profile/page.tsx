@@ -1,4 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Layout } from "@/components/site/Layout";
 import { useStore } from "@/lib/store";
 import type { Address } from "@/lib/store";
@@ -12,8 +15,6 @@ import {
 import { ProductCard } from "@/components/site/ProductCard";
 import { Price } from "@/components/site/Price";
 import { toast } from "sonner";
-
-export const Route = createFileRoute("/profile")({ component: ProfilePage });
 
 type Tab = "dashboard" | "orders" | "notifications" | "addresses" | "wishlist" | "cart" | "settings";
 
@@ -29,22 +30,13 @@ const NAV = [
 
 function ProfilePage() {
   const { user, orders, wishlist, cart, logout, resolveProduct, openAuthModal } = useStore();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("dashboard");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!user) openAuthModal("login");
   }, [user, openAuthModal]);
-  if (!user) return null;
-
-  const handleLogout = () => {
-    logout();
-    toast("Signed out");
-    navigate({ to: "/" });
-  };
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const activeItem = NAV.find((n) => n.id === tab)!;
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -58,6 +50,16 @@ function ProfilePage() {
     };
   }, [drawerOpen]);
 
+  if (!user) return null;
+
+  const handleLogout = () => {
+    logout();
+    toast("Signed out");
+    router.push("/");
+  };
+
+  const activeItem = NAV.find((n) => n.id === tab)!;
+
   const onSelectTab = (t: Tab) => {
     setTab(t);
     setDrawerOpen(false);
@@ -70,7 +72,7 @@ function ProfilePage() {
 
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4 lg:mb-6">
-            <Link to="/" className="hover:text-foreground transition">Home</Link>
+            <Link href="/" className="hover:text-foreground transition">Home</Link>
             <ChevronRight className="size-3" />
             <span className="text-foreground font-medium">My Account</span>
           </nav>
@@ -348,7 +350,7 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
                 <MapPin className="size-5 text-gray-400" strokeWidth={2} />
               </div>
               <p className="text-xs lg:text-[13px] text-gray-500 max-w-[14rem]">
-                You haven't set up a default billing address yet.
+                {"You haven't set up a default billing address yet."}
               </p>
             </div>
           )}
@@ -396,8 +398,7 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
             {orders.slice(0, 3).map((o) => (
               <Link
                 key={o.id}
-                to="/order/$id"
-                params={{ id: o.id }}
+                href={`/order/${o.id}`}
                 className="
                   flex items-center gap-3 px-5 lg:px-6 py-3.5 lg:py-4
                   hover:bg-gray-50 transition-colors group
@@ -497,7 +498,7 @@ function OrdersTab({ orders, resolveProduct }: {
       ) : (
         <div className="space-y-3">
           {filtered.map((o) => (
-            <Link key={o.id} to="/order/$id" params={{ id: o.id }}
+            <Link key={o.id} href={`/order/${o.id}`}
               className="group block bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md hover:border-black/20 transition"
             >
               <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -541,7 +542,7 @@ function NotificationsTab() {
   return (
     <div className="animate-fade-up">
       <SectionTitle icon={Bell}>Notifications</SectionTitle>
-      <EmptyState icon={Bell} title="No notifications" desc="You're all caught up! We'll notify you about orders and offers." />
+      <EmptyState icon={Bell} title="No notifications" desc={"You're all caught up! We'll notify you about orders and offers."} />
     </div>
   );
 }
@@ -607,7 +608,7 @@ function AddressesTab() {
           </div>
           <p className="font-bold text-base">No Addresses Found</p>
           <p className="text-sm text-gray-500 mt-2 max-w-xs mx-auto">
-            You haven't saved any addresses yet. Add one now for a faster checkout experience.
+            {"You haven't saved any addresses yet. Add one now for a faster checkout experience."}
           </p>
           <button
             onClick={openAdd}
@@ -857,7 +858,7 @@ function CartTab({ cart, resolveProduct }: {
         })}
       </div>
       <div className="mt-4 flex justify-end">
-        <Link to="/cart" className="h-10 lg:h-11 px-5 lg:px-6 rounded-xl bg-black text-white text-sm font-semibold hover:bg-red-600 active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2">
+        <Link href="/cart" className="h-10 lg:h-11 px-5 lg:px-6 rounded-xl bg-black text-white text-sm font-semibold hover:bg-red-600 active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2">
           <ShoppingCart className="size-4" strokeWidth={2} /> View full cart
         </Link>
       </div>
@@ -1094,10 +1095,12 @@ function EmptyState({ icon: Icon, title, desc, cta }: {
       <p className="text-[15px] lg:text-base font-bold">{title}</p>
       <p className="mt-1 text-[13px] lg:text-sm text-gray-500 max-w-sm mx-auto leading-relaxed">{desc}</p>
       {cta && (
-        <Link to={cta.to} className="inline-block mt-5 h-10 px-6 rounded-xl bg-black text-white text-sm font-semibold leading-[40px] hover:bg-red-600 active:scale-[0.98] transition-all duration-200">
+        <Link href={cta.to} className="inline-block mt-5 h-10 px-6 rounded-xl bg-black text-white text-sm font-semibold leading-[40px] hover:bg-red-600 active:scale-[0.98] transition-all duration-200">
           {cta.label}
         </Link>
       )}
     </div>
   );
 }
+
+export default ProfilePage;

@@ -1,6 +1,8 @@
+"use client";
+
 import { ProductCard } from "./ProductCard";
 import { PRODUCTS } from "@/lib/products";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { useT, dict } from "@/lib/i18n";
 
 export function CategorySection({
@@ -16,8 +18,7 @@ export function CategorySection({
           <h2 className="mt-2 text-xl font-bold tracking-tight text-balance sm:text-2xl md:text-2xl lg:mt-3 lg:text-[2.125rem] lg:tracking-[-0.02em]">{t(titleKey)}</h2>
         </div>
         <Link
-          to="/category/$slug"
-          params={{ slug }}
+          href={`/category/${slug}`}
           className="shrink-0 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:text-sm lg:text-base"
         >
           {t("sec.viewall")}

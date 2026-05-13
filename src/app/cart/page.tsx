@@ -1,22 +1,31 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+"use client";
+
+import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
 import { useStore } from "@/lib/store";
 import { PRODUCTS } from "@/lib/products";
 import {
-  Minus, Plus, X, ShoppingBag, ArrowRight,
-  Heart, Lock,
-  Truck, Headphones, RotateCcw, ShieldCheck,
+  Minus,
+  Plus,
+  X,
+  ShoppingBag,
+  ArrowRight,
+  Heart,
+  Lock,
+  Truck,
+  Headphones,
+  RotateCcw,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Price } from "@/components/site/Price";
 
-export const Route = createFileRoute("/cart")({ component: CartPage });
-
 const FREE_SHIP_THRESHOLD = 1500;
 
-export function CartPage() {
-  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, toggleWishlist, addToCart } = useStore();
+function CartPage() {
+  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, toggleWishlist, addToCart } =
+    useStore();
   const items = cart.map((it) => ({ ...it, p: resolveProduct(it.id)! })).filter((x) => x.p);
 
   const shipping = cartSubtotal >= FREE_SHIP_THRESHOLD || items.length === 0 ? 0 : 80;
@@ -30,16 +39,17 @@ export function CartPage() {
       <Layout>
         <div className="mx-auto max-w-md px-4 py-16 text-center sm:py-20 lg:py-24">
           <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-secondary sm:size-20 lg:mb-6 lg:size-[88px]">
-            <ShoppingBag className="size-7 text-muted-foreground sm:size-8 lg:size-9" strokeWidth={1.4} />
+            <ShoppingBag
+              className="size-7 text-muted-foreground sm:size-8 lg:size-9"
+              strokeWidth={1.4}
+            />
           </div>
-          <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
-            Your cart is empty
-          </h1>
+          <h1 className="text-xl font-bold tracking-tight lg:text-2xl">Your cart is empty</h1>
           <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground lg:text-sm">
             Add a few favourites and we&apos;ll get them on their way.
           </p>
           <Link
-            to="/"
+            href="/"
             className="mt-6 inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:opacity-90 lg:h-11 lg:px-7"
           >
             Continue shopping <ArrowRight className="size-4" />
@@ -61,10 +71,8 @@ export function CartPage() {
       <div className="min-h-screen bg-secondary/25 pb-8 md:pb-10">
         {/* Mobile: max 480px, centered, px-4, gap-3.  Desktop (lg+): 12-col grid. */}
         <div className="mx-auto w-full max-w-[480px] px-4 py-4 lg:grid lg:max-w-7xl lg:grid-cols-12 lg:items-start lg:gap-7 lg:px-6 lg:py-8">
-
           {/* ── Main column (items + mobile summary) ───────────────────────── */}
           <main className="flex flex-col gap-3 lg:col-span-7 lg:gap-6">
-
             {/* Heading + count — sits above items on mobile, inside the panel on desktop is handled visually by the wrapper. */}
             <header className="lg:rounded-2xl lg:border lg:border-border/80 lg:bg-card lg:p-6">
               <h2 className="text-lg font-bold tracking-tight lg:text-xl">Your items</h2>
@@ -87,8 +95,7 @@ export function CartPage() {
                     >
                       {/* Image — 60×60 mobile, 96 desktop. Image left, details right. */}
                       <Link
-                        to="/product/$id"
-                        params={{ id: it.id }}
+                        href={`/product/${it.id}`}
                         className="size-[60px] shrink-0 overflow-hidden rounded-xl bg-secondary lg:size-24"
                       >
                         <img
@@ -103,8 +110,7 @@ export function CartPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <Link
-                              to="/product/$id"
-                              params={{ id: it.id }}
+                              href={`/product/${it.id}`}
                               className="line-clamp-2 text-base font-semibold leading-snug text-foreground transition-colors hover:text-accent lg:text-[15px]"
                             >
                               {it.p.name}
@@ -116,7 +122,10 @@ export function CartPage() {
                           {/* Close button — replaces the 2-icon row from the desktop card, kept compact on mobile */}
                           <button
                             type="button"
-                            onClick={() => { removeFromCart(it.id); toast("Item removed"); }}
+                            onClick={() => {
+                              removeFromCart(it.id);
+                              toast("Item removed");
+                            }}
                             className="-mr-1 -mt-1 flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-accent lg:hidden"
                             aria-label="Remove"
                           >
@@ -127,11 +136,7 @@ export function CartPage() {
                         {/* Row 2 — price (18px bold) + quantity pill */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-baseline gap-2">
-                            <Price
-                              amount={it.p.price * it.qty}
-                              size="lg"
-                              className="!font-bold"
-                            />
+                            <Price amount={it.p.price * it.qty} size="lg" className="!font-bold" />
                             <Price
                               amount={origPrice * it.qty}
                               size="xs"
@@ -182,7 +187,10 @@ export function CartPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => { removeFromCart(it.id); toast("Item removed"); }}
+                            onClick={() => {
+                              removeFromCart(it.id);
+                              toast("Item removed");
+                            }}
                             className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-accent"
                             aria-label="Remove"
                           >
@@ -229,7 +237,7 @@ export function CartPage() {
               </div>
 
               <Link
-                to="/checkout"
+                href="/checkout"
                 className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition hover:opacity-90 active:scale-[0.99]"
               >
                 <Lock className="size-4" strokeWidth={2.25} />
@@ -237,13 +245,12 @@ export function CartPage() {
               </Link>
 
               <Link
-                to="/"
+                href="/"
                 className="mt-2 block text-center text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
                 Continue shopping
               </Link>
             </section>
-
           </main>
 
           {/* Order summary — desktop sidebar (unchanged) */}
@@ -281,13 +288,13 @@ export function CartPage() {
 
               <div className="mt-5 flex flex-col gap-2.5">
                 <Link
-                  to="/checkout"
+                  href="/checkout"
                   className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-foreground text-sm font-semibold text-background transition hover:opacity-90 active:scale-[0.99]"
                 >
                   <Lock className="size-4" strokeWidth={2.25} /> Proceed to checkout
                 </Link>
                 <Link
-                  to="/"
+                  href="/"
                   className="text-center text-[13px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
                   Continue shopping
@@ -305,15 +312,13 @@ export function CartPage() {
           <section className="mx-auto w-full max-w-7xl px-4 pb-10 lg:px-6 lg:pb-14">
             <div className="mb-4 flex items-end justify-between gap-3 lg:mb-6">
               <div>
-                <h2 className="text-lg font-bold tracking-tight lg:text-2xl">
-                  You may also like
-                </h2>
+                <h2 className="text-lg font-bold tracking-tight lg:text-2xl">You may also like</h2>
                 <p className="mt-1 text-xs text-muted-foreground lg:text-sm">
                   Hand-picked recommendations based on your cart.
                 </p>
               </div>
               <Link
-                to="/"
+                href="/"
                 className="hidden shrink-0 items-center gap-1 text-sm font-semibold text-foreground/80 underline-offset-4 hover:text-foreground hover:underline sm:inline-flex"
               >
                 See all <ArrowRight className="size-4" strokeWidth={2.25} />
@@ -333,8 +338,7 @@ export function CartPage() {
                   "
                 >
                   <Link
-                    to="/product/$id"
-                    params={{ id: p.id }}
+                    href={`/product/${p.id}`}
                     className="block aspect-square overflow-hidden rounded-xl bg-secondary"
                   >
                     <img
@@ -344,8 +348,7 @@ export function CartPage() {
                     />
                   </Link>
                   <Link
-                    to="/product/$id"
-                    params={{ id: p.id }}
+                    href={`/product/${p.id}`}
                     className="mt-2.5 line-clamp-2 min-h-[2.5rem] text-[13px] font-medium leading-snug text-foreground transition-colors hover:text-accent lg:mt-3 lg:min-h-[2.75rem] lg:text-sm"
                   >
                     {p.name}
@@ -365,7 +368,7 @@ export function CartPage() {
                     className="mt-auto flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-foreground text-[13px] font-semibold text-background transition hover:opacity-90 active:scale-[0.98] lg:mt-3 lg:h-10 lg:text-sm"
                   >
                     <Plus className="size-3.5 lg:size-4" strokeWidth={2.25} />
-                    Add to bag
+                    Add to Cart
                   </button>
                 </div>
               ))}
@@ -450,14 +453,9 @@ function QualityBanner() {
               "
             >
               <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-red-50 transition-transform duration-300 group-hover:scale-[1.06] lg:mb-4 lg:size-14">
-                <f.icon
-                  className="size-[20px] text-red-600 lg:size-6"
-                  strokeWidth={2}
-                />
+                <f.icon className="size-[20px] text-red-600 lg:size-6" strokeWidth={2} />
               </div>
-              <p className="text-[13px] font-bold leading-snug lg:text-[15px]">
-                {f.title}
-              </p>
+              <p className="text-[13px] font-bold leading-snug lg:text-[15px]">{f.title}</p>
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground lg:mt-1.5 lg:text-[13px]">
                 {f.desc}
               </p>
@@ -468,3 +466,5 @@ function QualityBanner() {
     </section>
   );
 }
+
+export default CartPage;

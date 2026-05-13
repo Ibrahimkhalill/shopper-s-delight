@@ -1,4 +1,6 @@
-import { Link } from "@tanstack/react-router";
+"use client";
+
+import Link from "next/link";
 import { ArrowRight, Heart, ShoppingCart, Trash2, X } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -69,12 +71,12 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
             <ul className="p-4 space-y-3">
               {items.map((item) => (
                 <li key={item.id} className="flex gap-3 rounded-2xl border bg-card p-3 hover:border-foreground/30 transition">
-                  <Link to="/product/$id" params={{ id: item.id }} onClick={onClose} className="size-20 rounded-xl bg-secondary overflow-hidden shrink-0">
+                  <Link href={`/product/${item.id}`} onClick={onClose} className="size-20 rounded-xl bg-secondary overflow-hidden shrink-0">
                     <img src={item.image} alt={item.name} className="size-full object-cover" />
                   </Link>
                   <div className="flex-1 min-w-0 flex flex-col">
                     <div className="flex items-start gap-2">
-                      <Link to="/product/$id" params={{ id: item.id }} onClick={onClose} className="text-sm font-medium leading-snug line-clamp-2 hover:text-accent transition flex-1">
+                      <Link href={`/product/${item.id}`} onClick={onClose} className="text-sm font-medium leading-snug line-clamp-2 hover:text-accent transition flex-1">
                         {item.name}
                       </Link>
                       <button onClick={() => { toggleWishlist(item.id); toast("Removed from wishlist"); }} className="size-7 rounded-full hover:bg-secondary flex items-center justify-center shrink-0 text-muted-foreground hover:text-accent transition" aria-label="Remove from wishlist">
@@ -102,7 +104,7 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
           <div className=" bg-card shrink-0 p-5 space-y-3">
           
             <div className="grid grid-cols-2 gap-2">
-              <Link to="/wishlist" onClick={onClose} className="h-11 rounded-full border-2 border-foreground/90 text-sm font-semibold flex items-center justify-center hover:bg-secondary transition">
+              <Link href="/wishlist" onClick={onClose} className="h-11 rounded-full border-2 border-foreground/90 text-sm font-semibold flex items-center justify-center hover:bg-secondary transition">
                 View wishlist
               </Link>
 

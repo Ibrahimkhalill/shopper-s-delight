@@ -248,7 +248,7 @@ export function AuthModal({ open, onClose, defaultTab = "login" }: AuthModalProp
           {/* Footer switch */}
           <p className="mt-5 text-sm text-muted-foreground text-center">
             {tab === "login" ? (
-              <>Don't have an account?{" "}
+              <>{"Don't have an account? "}
                 <button onClick={() => setTab("signup")} className="font-semibold text-foreground hover:underline">
                   Register
                 </button>

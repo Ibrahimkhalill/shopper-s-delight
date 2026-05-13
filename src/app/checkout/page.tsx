@@ -1,4 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Layout } from "@/components/site/Layout";
 import { useState } from "react";
 import {
@@ -12,7 +15,16 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Price } from "@/components/site/Price";
 
-export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
+const BD_DIVISIONS = [
+  "Barishal",
+  "Chattogram",
+  "Dhaka",
+  "Khulna",
+  "Mymensingh",
+  "Rajshahi",
+  "Rangpur",
+  "Sylhet",
+] as const;
 
 const BD_DISTRICTS = [
   "Dhaka", "Chattogram", "Rajshahi", "Khulna", "Barishal",
@@ -32,18 +44,20 @@ const PAYMENT_METHODS = [
   { id: "card",  label: "Credit / Debit Card", icon: CreditCard },
 ];
 
-export function CheckoutPage() {
+function CheckoutPage() {
   const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, placeOrder, user } = useStore();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [form, setForm] = useState({
     name:     user?.name  ?? "",
     phone:    user?.phone ?? "",
+    email:    user?.email ?? "",
     address:  "",
+    division: "",
     district: "",
     notes:    "",
   });
-  const [deliveryArea, setDeliveryArea] = useState<"inside" | "outside" | "">("");
+  const [deliveryArea, setDeliveryArea] = useState<"inside" | "outside">("inside");
   const [pay,          setPay]          = useState("cod");
   const [agreed,       setAgreed]       = useState(false);
   const [submitting,   setSubmitting]   = useState(false);
@@ -53,7 +67,7 @@ export function CheckoutPage() {
 
   const set = (k: keyof typeof form) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  const shippingCost = deliveryArea === "inside" ? 80 : deliveryArea === "outside" ? 120 : 0;
+  const shippingCost = deliveryArea === "inside" ? 80 : 120;
   const subtotal     = cartSubtotal;
   const total        = subtotal - discount + shippingCost;
 
@@ -66,10 +80,12 @@ export function CheckoutPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.phone || !form.address || !form.district) {
+    if (!form.name || !form.phone || !form.email.trim() || !form.address || !form.division || !form.district) {
       toast.error("Please fill all required fields"); return;
     }
-    if (!deliveryArea) { toast.error("Please select a delivery method"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      toast.error("Please enter a valid email address"); return;
+    }
     if (!agreed)       { toast.error("Please agree to Terms & Conditions"); return; }
     if (cart.length === 0) { toast.error("Your cart is empty"); return; }
 
@@ -77,12 +93,13 @@ export function CheckoutPage() {
     setTimeout(() => {
       const order = placeOrder({
         payment: pay,
-        address: `${form.address}, ${form.district}`,
+        address: `${form.address}, ${form.district}, ${form.division}`,
         name:    form.name,
         phone:   form.phone,
+        email:   form.email.trim(),
       });
       toast.success("Order placed!", { description: `Order ID: ${order.id}` });
-      navigate({ to: "/order/$id", params: { id: order.id } });
+      router.push(`/order/${order.id}`);
     }, 900);
   };
 
@@ -94,7 +111,7 @@ export function CheckoutPage() {
             Your cart is empty
           </h1>
           <Link
-            to="/"
+            href="/"
             className="mt-6 inline-flex h-10 items-center justify-center rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:opacity-90 lg:h-11 lg:px-7"
           >
             Browse products
@@ -205,11 +222,7 @@ export function CheckoutPage() {
         </div>
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-muted-foreground">Shipping</span>
-          {deliveryArea ? (
-            <Price amount={shippingCost} size="sm" className="!font-semibold" />
-          ) : (
-            <span className="text-sm font-semibold text-foreground">—</span>
-          )}
+          <Price amount={shippingCost} size="sm" className="!font-semibold" />
         </div>
         {discount > 0 && (
           <div className="flex items-baseline justify-between text-accent">
@@ -327,6 +340,7 @@ export function CheckoutPage() {
                   <FormField label="Full Name" required placeholder="e.g. Sabbir Hassan" value={form.name} onChange={set("name")} />
                 </div>
                 <FormField label="Phone Number" required type="tel" placeholder="+880 1XXX-XXXXXX" value={form.phone} onChange={set("phone")} />
+                <FormField label="Email" required type="email" placeholder="you@example.com" value={form.email} onChange={set("email")} autoComplete="email" />
               </div>
             </section>
 
@@ -336,17 +350,45 @@ export function CheckoutPage() {
               <div className="mt-4 grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:mt-5 lg:gap-4">
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Division <span className="text-accent">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={form.division}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setForm((f) => ({ ...f, division: v, district: "" }));
+                      }}
+                      required
+                      className="input-soft h-10 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background pl-3.5 pr-9 text-sm font-medium outline-none lg:h-11"
+                    >
+                      <option value="">Select Division</option>
+                      {BD_DIVISIONS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     District <span className="text-accent">*</span>
                   </label>
                   <div className="relative">
                     <select
                       value={form.district}
-                      onChange={e => set("district")(e.target.value)}
+                      onChange={(e) => set("district")(e.target.value)}
                       required
                       className="input-soft h-10 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background pl-3.5 pr-9 text-sm font-medium outline-none lg:h-11"
                     >
                       <option value="">Select District</option>
-                      {BD_DISTRICTS.map(d => <option key={d}>{d}</option>)}
+                      {BD_DISTRICTS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   </div>
@@ -570,10 +612,10 @@ function SectionHead({
 
 /* Form field: 12px label, 14px input, h-10 mobile / h-11 desktop. */
 function FormField({
-  label, placeholder, value, onChange, type = "text", required,
+  label, placeholder, value, onChange, type = "text", required, autoComplete,
 }: {
   label: string; placeholder: string; value: string;
-  onChange: (v: string) => void; type?: string; required?: boolean;
+  onChange: (v: string) => void; type?: string; required?: boolean; autoComplete?: string;
 }) {
   return (
     <div>
@@ -586,8 +628,11 @@ function FormField({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
+        autoComplete={autoComplete}
         className="input-soft h-10 w-full rounded-lg border border-border bg-background px-3.5 text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none lg:h-11"
       />
     </div>
   );
 }
+
+export default CheckoutPage;

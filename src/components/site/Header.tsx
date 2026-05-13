@@ -1,10 +1,15 @@
+"use client";
+
 import {
   Search, Heart, ShoppingCart, User, Menu, X, Package,
   LogOut, ChevronDown, Globe, Smartphone, Shirt, Home,
   Sparkles, ShoppingBasket, Tag, ChevronRight, MapPin, Settings,
+  ArrowLeftRight,
 } from "lucide-react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useStore } from "@/lib/store";
 import { PRODUCTS } from "@/lib/products";
 import { useT } from "@/lib/i18n";
@@ -13,7 +18,7 @@ import { WishlistDrawer } from "./WishlistDrawer";
 import { Price } from "./Price";
 
 export function Header() {
-  const { cartCount, wishlist, user, logout, openAuthModal } = useStore();
+  const { cartCount, wishlist, compareList, user, logout, openAuthModal } = useStore();
   const { lang, setLang, t } = useT();
 
   const categories = [
@@ -32,8 +37,11 @@ export function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
+  const [searchPopover, setSearchPopover] = useState<{ top: number; left: number; width: number } | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -46,14 +54,47 @@ export function Header() {
   const results = q.trim()
     ? PRODUCTS.filter((p) =>
         p.name.toLowerCase().includes(q.toLowerCase()) ||
-        p.category.toLowerCase().includes(q.toLowerCase())
+        p.category.toLowerCase().includes(q.toLowerCase()) ||
+        p.brand.toLowerCase().includes(q.toLowerCase()),
       ).slice(0, 6)
     : [];
 
+  useLayoutEffect(() => {
+    if (!searchOpen || !q.trim()) {
+      setSearchPopover(null);
+      return;
+    }
+    const update = () => {
+      const el = searchRef.current;
+      if (!el) {
+        setSearchPopover(null);
+        return;
+      }
+      const r = el.getBoundingClientRect();
+      if (r.width < 8) {
+        setSearchPopover(null);
+        return;
+      }
+      const gap = 6;
+      const pad = 8;
+      const maxLeft = window.innerWidth - r.width - pad;
+      const left = Math.max(pad, Math.min(r.left, maxLeft));
+      setSearchPopover({ top: r.bottom + gap, left, width: r.width });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [searchOpen, q]);
+
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node))
-        setSearchOpen(false);
+      const t = e.target as Node;
+      if (searchRef.current?.contains(t) || searchDropdownRef.current?.contains(t)) return;
+      setSearchOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -61,17 +102,17 @@ export function Header() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (q.trim()) { navigate({ to: "/search", search: { q } }); setSearchOpen(false); }
+    if (q.trim()) { router.push(`/search?q=${encodeURIComponent(q)}`); setSearchOpen(false); }
   };
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/70">
+      <header className="sticky top-0 z-40 w-full min-w-0 bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/70">
 
         {/* ── Top bar ── */}
         <div className="bg-black text-xs text-white lg:text-[13px]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 lg:px-6 lg:py-2.5">
-            <span className={`truncate ${lang === "bn" ? "font-bn" : ""}`}>{t("topbar.delivery")}</span>
+          <div className="mx-auto flex min-w-0 max-w-7xl items-center justify-between gap-2 px-4 py-2 lg:px-6 lg:py-2.5">
+            <span className={`min-w-0 flex-1 truncate ${lang === "bn" ? "font-bn" : ""}`}>{t("topbar.delivery")}</span>
             <button
               onClick={() => setLang(lang === "en" ? "bn" : "en")}
               className="hidden items-center gap-1.5 opacity-80 transition hover:opacity-100 sm:inline-flex lg:gap-2"
@@ -84,8 +125,8 @@ export function Header() {
         </div>
 
         {/* ── Main bar ── */}
-        <div className="border-b">
-          <div className="mx-auto flex h-[3.75rem] max-w-7xl items-center gap-3 px-4 sm:h-16 lg:h-20 lg:gap-5 lg:px-6">
+        <div className="border-b bg-background">
+          <div className="mx-auto flex h-[3.75rem] min-w-0 max-w-7xl items-center gap-3 px-4 sm:h-16 lg:h-20 lg:gap-5 lg:px-6">
 
             {/* Hamburger — mobile only */}
             <button
@@ -98,7 +139,7 @@ export function Header() {
 
             {/* Logo — centered on mobile, left on desktop */}
             <Link
-              to="/"
+              href="/"
               className="absolute left-1/2 flex shrink-0 -translate-x-1/2 items-center gap-1.5 md:static md:mr-4 md:translate-x-0 lg:mr-6"
             >
               <span className="text-xl font-bold tracking-tight text-accent lg:text-2xl">SHOP</span>
@@ -117,31 +158,6 @@ export function Header() {
                   className="h-12 w-full rounded-full border border-border bg-secondary pl-11 pr-4 text-sm outline-none transition focus-visible:border-foreground/35 focus-visible:ring-2 focus-visible:ring-ring/20 lg:h-[52px] lg:pl-12 lg:pr-5 lg:text-base"
                 />
               </form>
-              {searchOpen && results.length > 0 && (
-                <div className="absolute inset-x-0 top-full z-50 mt-2 animate-slide-down overflow-hidden rounded-2xl border bg-card shadow-xl lg:mt-3 lg:rounded-3xl">
-                  {results.map((p) => (
-                    <Link
-                      key={p.id}
-                      to="/product/$id"
-                      params={{ id: p.id }}
-                      onClick={() => setSearchOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary lg:gap-4 lg:px-5 lg:py-3.5"
-                    >
-                      <img src={p.image} className="size-11 rounded-lg object-cover lg:size-14 lg:rounded-xl" alt="" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium lg:text-base">{p.name}</p>
-                        <p className="text-xs text-muted-foreground lg:text-sm">{p.category}</p>
-                      </div>
-                      <Price
-                        amount={p.price}
-                        size="sm"
-                        className="!font-semibold lg:!text-lg"
-                        symbolClassName="lg:!text-[0.88rem]"
-                      />
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Right icons */}
@@ -162,9 +178,9 @@ export function Header() {
                   </button>
                   {userMenu && (
                     <div className="absolute right-0 top-full z-50 mt-2 w-56 animate-slide-down rounded-2xl border bg-card py-2 shadow-xl lg:w-64">
-                      <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><User className="size-4 lg:size-[18px]" /> {t("user.profile")}</Link>
-                      <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Package className="size-4 lg:size-[18px]" /> {t("user.orders")}</Link>
-                      <Link to="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Heart className="size-4 lg:size-[18px]" /> {t("user.wishlist")}</Link>
+                      <Link href="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><User className="size-4 lg:size-[18px]" /> {t("user.profile")}</Link>
+                      <Link href="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Package className="size-4 lg:size-[18px]" /> {t("user.orders")}</Link>
+                      <Link href="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Heart className="size-4 lg:size-[18px]" /> {t("user.wishlist")}</Link>
                       <div className="my-1.5 border-t" />
                       <button onClick={() => { logout(); setUserMenu(false); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-accent hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]">
                         <LogOut className="size-4 lg:size-[18px]" /> {t("user.signout")}
@@ -180,6 +196,20 @@ export function Header() {
                   <User className="size-4 lg:size-[18px]" /> {t("user.signin")}
                 </button>
               )}
+
+              {/* Desktop: compare */}
+              <Link
+                href="/compare"
+                aria-label="Compare products"
+                className="relative hidden rounded-full p-2.5 hover:bg-secondary md:flex lg:p-3"
+              >
+                <ArrowLeftRight className="size-5 text-muted-foreground lg:size-[22px]" strokeWidth={2} />
+                {mounted && compareList.length > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background lg:size-[18px] lg:text-[11px]">
+                    {compareList.length > 9 ? "9+" : compareList.length}
+                  </span>
+                )}
+              </Link>
 
               {/* Desktop: wishlist + cart */}
               <button
@@ -211,7 +241,7 @@ export function Header() {
               </button>
 
               {/* Mobile: search + cart icons */}
-              <Link to="/search" aria-label="Search" className="md:hidden p-2.5 rounded-full hover:bg-secondary">
+              <Link href="/search" aria-label="Search" className="md:hidden p-2.5 rounded-full hover:bg-secondary">
                 <Search className="size-5" />
               </Link>
               <button onClick={() => setCartOpen(true)} aria-label="Cart" className="md:hidden relative p-2.5 rounded-full hover:bg-secondary">
@@ -225,20 +255,23 @@ export function Header() {
         </div>
 
         {/* ── Category nav bar ── */}
-        <nav className="border-b">
+        <nav className="border-b bg-background">
           <div className="relative">
-            <div className="mx-auto flex h-11 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm no-scrollbar lg:h-14 lg:gap-9 lg:px-6 lg:text-[17px]">
-              {categories.map((c) => (
+            <div className="mx-auto flex h-11 w-full min-w-0 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm no-scrollbar lg:h-14 lg:gap-9 lg:px-6 lg:text-[17px]">
+              {categories.map((c) => {
+                const catActive =
+                  pathname === c.to || (c.to !== "/" && pathname.startsWith(c.to));
+                return (
                 <Link
                   key={c.name}
-                  to={c.to}
-                  className={`whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground ${lang === "bn" ? "font-bn" : ""}`}
-                  activeProps={{ className: `whitespace-nowrap text-foreground font-semibold ${lang === "bn" ? "font-bn" : ""}` }}
+                  href={c.to}
+                  className={`whitespace-nowrap transition-colors ${catActive ? `text-foreground font-semibold ${lang === "bn" ? "font-bn" : ""}` : `text-muted-foreground hover:text-foreground ${lang === "bn" ? "font-bn" : ""}`}`}
                 >
                   {c.name}
                 </Link>
-              ))}
-              <Link to="/track" className={`ml-auto whitespace-nowrap font-semibold text-accent ${lang === "bn" ? "font-bn" : ""}`}>
+                );
+              })}
+              <Link href="/track" className={`ml-auto whitespace-nowrap font-semibold text-accent ${lang === "bn" ? "font-bn" : ""}`}>
                 {t("nav.track")}
               </Link>
             </div>
@@ -249,8 +282,9 @@ export function Header() {
       </header>
 
       {/* ── Mobile hamburger drawer ── */}
+      {/* Mobile nav overlay — must sit above sticky page chrome (e.g. checkout bar z-50, drawers z-60) */}
       {menu && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-[100] md:hidden">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
@@ -262,7 +296,7 @@ export function Header() {
 
             {/* Brand header */}
             <div className="flex items-center justify-between px-5 py-4 bg-black text-white shrink-0">
-              <Link to="/" onClick={() => setMenu(false)} className="flex items-baseline gap-0.5">
+              <Link href="/" onClick={() => setMenu(false)} className="flex items-baseline gap-0.5">
                 <span className="text-lg font-semibold tracking-tight">SHOP</span>
                 <span className="text-lg font-semibold tracking-tight text-accent">.BD</span>
               </Link>
@@ -310,9 +344,9 @@ export function Header() {
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto">
 
-              {/* Quick action tile — Track only */}
-              <div className="px-4 pt-4 pb-3 border-b">
-                <Link to="/track" onClick={() => setMenu(false)}
+              {/* Quick actions */}
+              <div className="px-4 pt-4 pb-3 border-b space-y-0.5">
+                <Link href="/track" onClick={() => setMenu(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition"
                 >
                   <span className="size-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
@@ -321,6 +355,20 @@ export function Header() {
                   <span className="text-sm font-medium">Track Order</span>
                   <ChevronRight className="size-3.5 text-muted-foreground ml-auto" />
                 </Link>
+                <Link href="/compare" onClick={() => setMenu(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition"
+                >
+                  <span className="size-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                    <ArrowLeftRight className="size-4 text-muted-foreground" />
+                  </span>
+                  <span className="text-sm font-medium flex-1">Compare products</span>
+                  {compareList.length > 0 && (
+                    <span className="text-[10px] font-bold rounded-full bg-foreground text-background px-1.5 py-0.5 min-w-5 text-center">
+                      {compareList.length}
+                    </span>
+                  )}
+                  <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
+                </Link>
               </div>
 
               {/* Categories */}
@@ -328,7 +376,7 @@ export function Header() {
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold px-1 mb-2">Categories</p>
                 <nav className="space-y-0.5">
                   {categories.map((c) => (
-                    <Link key={c.name} to={c.to} onClick={() => setMenu(false)}
+                    <Link key={c.name} href={c.to} onClick={() => setMenu(false)}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition group"
                     >
                       <span className="size-8 rounded-lg bg-secondary group-hover:bg-background flex items-center justify-center transition shrink-0">
@@ -353,7 +401,7 @@ export function Header() {
                       { to: "/wishlist", icon: Heart,    label: "Wishlist" },
                       { to: "/profile",  icon: Settings, label: "Settings" },
                     ].map((item) => (
-                      <Link key={item.label} to={item.to} onClick={() => setMenu(false)}
+                      <Link key={item.label} href={item.to} onClick={() => setMenu(false)}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition group"
                       >
                         <span className="size-8 rounded-lg bg-secondary group-hover:bg-background flex items-center justify-center transition shrink-0">
@@ -403,6 +451,82 @@ export function Header() {
           </div>
         </div>
       )}
+
+      {/* Desktop search suggestions — portaled so it stacks above category nav & is never clipped by header overflow */}
+      {searchOpen &&
+        q.trim().length > 0 &&
+        searchPopover &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={searchDropdownRef}
+            role="listbox"
+            aria-label="Search suggestions"
+            className="pointer-events-auto fixed z-[500] hidden max-h-[min(22rem,70svh)] overflow-hidden overflow-y-auto overscroll-contain rounded-xl border border-border/90 bg-card shadow-xl ring-1 ring-foreground/[0.04] animate-slide-down md:block"
+            style={{ top: searchPopover.top, left: searchPopover.left, width: searchPopover.width }}
+          >
+            {results.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No matches for <span className="font-medium text-foreground">{q}</span>
+                </p>
+                <Link
+                  href="/search"
+                  className="mt-3 inline-block text-xs font-semibold text-accent hover:underline"
+                  onClick={() => setSearchOpen(false)}
+                >
+                  Browse all products
+                </Link>
+              </div>
+            ) : (
+              <>
+                <ul className="divide-y divide-border/60 py-1">
+                  {results.map((p) => (
+                    <li key={p.id}>
+                      <Link
+                        href={`/product/${p.id}`}
+                        onClick={() => setSearchOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 transition-colors hover:bg-secondary/80"
+                        role="option"
+                      >
+                        <img
+                          src={p.image}
+                          className="size-9 shrink-0 rounded-md object-cover ring-1 ring-border/50"
+                          alt=""
+                          width={36}
+                          height={36}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium leading-snug text-foreground">{p.name}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                            {p.category} · {p.brand}
+                          </p>
+                        </div>
+                        <Price
+                          amount={p.price}
+                          size="sm"
+                          className="shrink-0 !text-sm !font-semibold"
+                          symbolClassName="!text-[0.65rem]"
+                        />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-border/70 bg-secondary/25 px-2 py-1.5">
+                  <Link
+                    href={`/search?q=${encodeURIComponent(q.trim())}`}
+                    onClick={() => setSearchOpen(false)}
+                    className="flex items-center justify-center gap-1 rounded-lg py-2 text-xs font-semibold text-foreground/80 transition hover:bg-secondary hover:text-foreground"
+                  >
+                    View all results
+                    <ChevronRight className="size-3.5 opacity-60" aria-hidden />
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>,
+          document.body,
+        )}
 
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       <WishlistDrawer open={wishlistOpen} onClose={() => setWishlistOpen(false)} />

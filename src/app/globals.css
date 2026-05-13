@@ -1,8 +1,6 @@
 @import "tailwindcss" source(none);
-@source "../src";
+@source "..";
 @import "tw-animate-css";
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -179,7 +177,7 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Inter", var(--font-sans);
+    font-family: var(--font-inter), var(--font-sans);
     font-size: var(--fs-base); /* 14px — body baseline (Amazon-style) */
     line-height: var(--lh-normal);
     letter-spacing: -0.005em;
@@ -200,7 +198,7 @@
   }
 
   .font-bn {
-    font-family: "Hind Siliguri", "Noto Sans Bengali", sans-serif;
+    font-family: var(--font-hind), "Noto Sans Bengali", sans-serif;
   }
 }
 
@@ -305,7 +303,7 @@ html, button, a, label {
     position: absolute;
     right: -18px;
     bottom: 4px;
-    background-image: url("./assets/shape-1.png");
+    background-image: url("../assets/shape-1.png");
     background-repeat: no-repeat;
     background-size: 100%;
 }
@@ -317,10 +315,9 @@ html, button, a, label {
     position: absolute;
     left: -16px;
     bottom: -1px;
-     background-image: url("./assets/shape-1.png");
+     background-image: url("../assets/shape-1.png");
     background-repeat: no-repeat;
     background-size: 100%;
     -webkit-transform: translateY(-50%) rotate(270deg);
     transform: translateY(-50%) rotate(270deg);
 }
-

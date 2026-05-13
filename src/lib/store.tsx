@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { PRODUCTS } from "./products";
 import type { Product } from "@/components/site/ProductCard";
@@ -13,6 +15,7 @@ export type Order = {
   address: string;
   name: string;
   phone: string;
+  email?: string;
 };
 export type Review = { id: string; productId: string; user: string; rating: number; text: string; createdAt: number };
 export type User = { name: string; phone: string; email?: string };
@@ -31,6 +34,7 @@ export type Address = {
 type StoreCtx = {
   cart: CartItem[];
   wishlist: string[];
+  compareList: string[];
   orders: Order[];
   reviews: Review[];
   addresses: Address[];
@@ -40,6 +44,10 @@ type StoreCtx = {
   setQty: (id: string, qty: number) => void;
   clearCart: () => void;
   toggleWishlist: (id: string) => void;
+  addToCompare: (id: string) => void;
+  removeFromCompare: (id: string) => void;
+  toggleCompare: (id: string) => void;
+  clearCompare: () => void;
   placeOrder: (data: Omit<Order, "id" | "items" | "total" | "status" | "createdAt">) => Order;
   addReview: (r: Omit<Review, "id" | "createdAt">) => void;
   login: (u: User) => void;
@@ -58,6 +66,8 @@ type StoreCtx = {
 };
 
 const Ctx = createContext<StoreCtx | null>(null);
+
+const MAX_COMPARE = 4;
 
 function usePersist<T>(key: string, initial: T) {
   const [v, setV] = useState<T>(() => {
@@ -78,6 +88,7 @@ function usePersist<T>(key: string, initial: T) {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = usePersist<CartItem[]>("shopbd:cart", []);
   const [wishlist, setWishlist] = usePersist<string[]>("shopbd:wishlist", []);
+  const [compareList, setCompareList] = usePersist<string[]>("shopbd:compare", []);
   const [orders, setOrders] = usePersist<Order[]>("shopbd:orders", []);
   const [reviews, setReviews] = usePersist<Review[]>("shopbd:reviews", []);
   const [user, setUser] = usePersist<User | null>("shopbd:user", null);
@@ -107,6 +118,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const clearCart = () => setCart([]);
   const toggleWishlist = (id: string) =>
     setWishlist((w) => (w.includes(id) ? w.filter((x) => x !== id) : [...w, id]));
+
+  const addToCompare = useCallback((id: string) => {
+    setCompareList((list) => {
+      if (list.includes(id)) return list;
+      if (list.length >= MAX_COMPARE) return list;
+      return [...list, id];
+    });
+  }, [setCompareList]);
+
+  const removeFromCompare = useCallback((id: string) => {
+    setCompareList((list) => list.filter((x) => x !== id));
+  }, [setCompareList]);
+
+  const toggleCompare = useCallback((id: string) => {
+    setCompareList((list) => {
+      if (list.includes(id)) return list.filter((x) => x !== id);
+      if (list.length >= MAX_COMPARE) return list;
+      return [...list, id];
+    });
+  }, [setCompareList]);
+
+  const clearCompare = useCallback(() => setCompareList([]), [setCompareList]);
 
   const cartSubtotal = useMemo(
     () => cart.reduce((s, it) => s + (resolveProduct(it.id)?.price ?? 0) * it.qty, 0),
@@ -153,8 +186,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={{
-      cart, wishlist, orders, reviews, addresses, user,
+      cart, wishlist, compareList, orders, reviews, addresses, user,
       addToCart, removeFromCart, setQty, clearCart, toggleWishlist,
+      addToCompare, removeFromCompare, toggleCompare, clearCompare,
       placeOrder, addReview, login, logout,
       addAddress, updateAddress, deleteAddress, setDefaultAddress,
       cartCount, cartSubtotal, resolveProduct,

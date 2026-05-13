@@ -1,15 +1,16 @@
+"use client";
+
 import React from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
 import { useStore } from "@/lib/store";
 import TakaSvg from "@/assets/TakaSvg";
 import {
   Check, Package, Truck, Home, ShoppingBag,
-  MapPin, Phone, ChevronLeft,
+  MapPin, Phone, ChevronLeft, Mail,
 } from "lucide-react";
 import { PageHeader } from "@/components/site/PageHeader";
-
-export const Route = createFileRoute("/order/$id")({ component: OrderPage });
 
 function Price({ amount, className }: { amount: number | string; className?: string }) {
   const num = typeof amount === "number" ? amount.toLocaleString() : amount;
@@ -40,7 +41,8 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function OrderPage() {
-  const { id } = Route.useParams();
+  const params = useParams<{ id: string }>();
+  const id = params.id ?? "";
   const { orders, resolveProduct } = useStore();
   const order = orders.find((o) => o.id === id);
   const stepIdx = order ? STATUSES.indexOf(order.status) : 0;
@@ -152,8 +154,7 @@ function OrderPage() {
                     return (
                       <Link
                         key={it.id}
-                        to="/product/$id"
-                        params={{ id: it.id }}
+                        href={`/product/${it.id}`}
                         className="flex items-center gap-5 p-5 hover:bg-secondary/50 transition-colors"
                       >
                         <div className="w-20 h-20 bg-secondary rounded-lg overflow-hidden shrink-0">
@@ -226,9 +227,19 @@ function OrderPage() {
                     <div>
                       <h4 className="font-bold text-base mb-1">{order.name}</h4>
                       <p className="text-sm text-muted-foreground leading-relaxed mb-3">{order.address}</p>
-                      <div className="flex items-center gap-2 text-sm font-semibold">
-                        <Phone size={14} />
-                        {order.phone}
+                      <div className="flex flex-col gap-2 text-sm font-semibold">
+                        <div className="flex items-center gap-2">
+                          <Phone size={14} />
+                          {order.phone}
+                        </div>
+                        {order.email ? (
+                          <div className="flex items-center gap-2 font-medium text-muted-foreground">
+                            <Mail size={14} />
+                            <a href={`mailto:${order.email}`} className="hover:text-foreground hover:underline">
+                              {order.email}
+                            </a>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -238,13 +249,13 @@ function OrderPage() {
               {/* Actions */}
               <div className="grid grid-cols-2 gap-3">
                 <Link
-                  to="/track"
+                  href="/track"
                   className="h-12 flex items-center justify-center rounded-md border border-border text-sm font-semibold hover:border-foreground transition"
                 >
                   Track another
                 </Link>
                 <Link
-                  to="/"
+                  href="/"
                   className="h-12 flex items-center justify-center rounded-md bg-foreground text-background text-sm font-bold hover:opacity-80 transition gap-2"
                 >
                   <ShoppingBag size={15} /> Continue Shopping
@@ -257,3 +268,5 @@ function OrderPage() {
     </Layout>
   );
 }
+
+export default OrderPage;

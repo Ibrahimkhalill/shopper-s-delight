@@ -1,4 +1,6 @@
-import { Link } from "@tanstack/react-router";
+"use client";
+
+import Link from "next/link";
 import { X, Minus, Plus, ShoppingCart, Trash2, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
@@ -90,8 +92,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   className="flex gap-3.5 rounded-2xl border border-border/90 bg-card p-3.5 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <Link
-                    to="/product/$id"
-                    params={{ id: p.id }}
+                    href={`/product/${p.id}`}
                     onClick={onClose}
                     className="relative block size-[5.25rem] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-secondary sm:size-24"
                   >
@@ -101,8 +102,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   <div className="flex min-w-0 flex-1 flex-col">
                     <div className="flex items-start justify-between gap-2">
                       <Link
-                        to="/product/$id"
-                        params={{ id: p.id }}
+                        href={`/product/${p.id}`}
                         onClick={onClose}
                         className="line-clamp-2 text-[0.9375rem] font-semibold leading-snug text-foreground transition-colors hover:text-accent"
                       >
@@ -172,14 +172,14 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             )}
             <div className="flex gap-3">
               <Link
-                to="/cart"
+                href="/cart"
                 onClick={onClose}
                 className="flex h-12 flex-1 items-center justify-center rounded-full border border-border bg-background text-sm font-semibold text-foreground transition hover:bg-secondary"
               >
                 View cart
               </Link>
               <Link
-                to="/checkout"
+                href="/checkout"
                 onClick={onClose}
                 className="inline-flex h-12 flex-[1.35] items-center justify-center gap-2 rounded-full bg-foreground text-sm font-semibold text-background shadow-md transition hover:opacity-90"
               >
