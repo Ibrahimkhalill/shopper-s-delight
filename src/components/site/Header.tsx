@@ -241,9 +241,9 @@ export function Header() {
               </button>
 
               {/* Mobile: search + cart icons */}
-              <Link href="/search" aria-label="Search" className="md:hidden p-2.5 rounded-full hover:bg-secondary">
+              {/* <Link href="/search" aria-label="Search" className="md:hidden p-2.5 rounded-full hover:bg-secondary">
                 <Search className="size-5" />
-              </Link>
+              </Link> */}
               <button onClick={() => setCartOpen(true)} aria-label="Cart" className="md:hidden relative p-2.5 rounded-full hover:bg-secondary">
                 <ShoppingCart className="size-5" />
                 {mounted && cartCount > 0 && (

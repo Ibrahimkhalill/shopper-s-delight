@@ -178,16 +178,16 @@ function OrderTrackingPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 justify-end">
             <Link
               href={`/order/${id}/details`}
-              className="h-12 flex items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold hover:border-foreground transition"
+              className="h-12 px-10 flex items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold hover:border-foreground transition"
             >
               <Receipt size={15} /> View Details
             </Link>
             <Link
               href="/"
-              className="h-12 flex items-center justify-center gap-2 rounded-xl bg-foreground text-background text-sm font-bold hover:opacity-80 transition"
+              className="h-12 px-10 flex items-center justify-center gap-2 rounded-xl bg-foreground text-background text-sm font-bold hover:opacity-80 transition"
             >
               Continue Shopping
             </Link>
