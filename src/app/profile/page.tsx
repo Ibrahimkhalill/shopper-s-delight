@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Layout } from "@/components/site/Layout";
 import { useStore } from "@/lib/store";
 import type { Address } from "@/lib/store";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
   LayoutDashboard, Package, PackageCheck, Clock, Bell, MapPin, Heart,
   ShoppingCart, Settings, LogOut, ChevronRight,
@@ -30,7 +30,7 @@ const NAV_LINKS = [
   { href: "/cart",     label: "Shopping Cart", icon: ShoppingCart },
 ];
 
-function ProfilePage() {
+function ProfilePageInner() {
   const { user, orders, logout, resolveProduct } = useStore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1058,4 +1058,12 @@ function EmptyState({ icon: Icon, title, desc, cta }: {
   );
 }
 
-export default ProfilePage;
+
+
+export default function ProfilePage() {
+  return (
+    <Suspense>
+      <ProfilePageInner />
+    </Suspense>
+  );
+}
