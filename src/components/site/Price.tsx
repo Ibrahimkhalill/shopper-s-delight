@@ -57,7 +57,7 @@ export function Price({
   return (
     <span
       className={cn(
-        "inline-flex items-baseline gap-[3px] font-bold tabular-nums",
+        "inline-flex min-w-0 items-baseline gap-[3px] font-bold tabular-nums",
         wrap,
         tone === "default" && !muted && "text-foreground",
         muted && "text-muted-foreground",

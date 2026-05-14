@@ -6,12 +6,14 @@ import { BottomNav } from "./BottomNav";
 
 export function Layout({ children, hideTrust = false }: { children: ReactNode; hideTrust?: boolean }) {
   return (
-    <div className="flex min-h-screen min-w-0 flex-col bg-background">
-      <Header />
-      <main className="min-w-0 flex-1 pb-16 lg:pb-0">{children}</main>
-      {!hideTrust && <TrustStrip />}
-      <Footer />
+    <>
+      <div className="flex min-h-screen w-full min-w-0 flex-col overflow-x-clip bg-background">
+        <Header />
+        <main className="min-w-0 w-full flex-1 overflow-x-clip pb-16 lg:pb-0">{children}</main>
+        {!hideTrust && <TrustStrip />}
+        <Footer />
+      </div>
       <BottomNav />
-    </div>
+    </>
   );
 }

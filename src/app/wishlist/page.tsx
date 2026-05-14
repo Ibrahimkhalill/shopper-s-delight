@@ -71,6 +71,7 @@ function WishlistPage() {
     <Layout>
       <PageHeader
         centered
+        color="oklch(0.96 0 0)"
         title="Your Wishlist"
         subtitle="Explore your saved favorites, manage your wishlist effortlessly, and keep track of the items you love most."
         crumbs={[{ label: "Home", to: "/" }, { label: "Wishlist" }]}

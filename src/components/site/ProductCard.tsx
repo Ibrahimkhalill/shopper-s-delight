@@ -10,6 +10,7 @@ export type Product = {
   id: string;
   name: string;
   category: string;
+  subcategory?: string;
   brand: string;
   /** Fabric / build — compare & detail */
   material?: string;

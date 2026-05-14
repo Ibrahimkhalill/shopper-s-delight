@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, Search, ShoppingCart, Heart, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 
@@ -14,8 +14,9 @@ const tabs = [
 ] as const;
 
 export function BottomNav() {
-  const { cartCount, wishlist } = useStore();
+  const { cartCount, wishlist, user, openAuthModal } = useStore();
   const pathname = usePathname();
+  const router = useRouter();
 
   if (pathname === "/checkout" || pathname === "/cart") return null;
 
@@ -28,41 +29,48 @@ export function BottomNav() {
     return null;
   };
 
+  const handleAccountClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      openAuthModal("login");
+    }
+  };
+
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t safe-bottom">
-      <div className="flex items-stretch h-16">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-50 w-full max-w-full overflow-x-hidden border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md supports-backdrop-filter:bg-background/90 lg:hidden"
+      aria-label="Primary"
+    >
+      <div className="flex h-16 min-h-16 w-full items-stretch">
         {tabs.map((tab) => {
           const { to, icon: Icon, label } = tab;
           const badge = "badge" in tab ? tab.badge : undefined;
           const active = isActive(to);
           const count = getBadge(badge);
+          const isAccount = to === "/profile";
           return (
             <Link
               key={to}
               href={to}
+              onClick={isAccount ? handleAccountClick : undefined}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 relative tap-highlight-none"
             >
-              {/* Active indicator pill */}
               {active && (
                 <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-accent" />
               )}
-
-              {/* Icon wrapper */}
               <span className="relative">
                 <Icon
-                  className={`size-[22px] transition-all duration-200 ${
+                  className={`size-5.5 transition-all duration-200 ${
                     active ? "text-accent scale-110" : "text-muted-foreground"
                   }`}
                   strokeWidth={active ? 2.25 : 1.75}
                 />
                 {count !== null && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 rounded-full bg-accent text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                  <span className="absolute -top-1.5 -right-2 min-w-4 h-4 rounded-full bg-accent text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
                     {count > 9 ? "9+" : count}
                   </span>
                 )}
               </span>
-
-              {/* Label */}
               <span className={`text-[11px] font-medium leading-tight sm:text-xs ${active ? "text-accent" : "text-muted-foreground"}`}>
                 {label}
               </span>

@@ -16,6 +16,8 @@ export type Order = {
   name: string;
   phone: string;
   email?: string;
+  discount?: number;
+  shippingCost?: number;
 };
 export type Review = { id: string; productId: string; user: string; rating: number; text: string; createdAt: number };
 export type User = { name: string; phone: string; email?: string };

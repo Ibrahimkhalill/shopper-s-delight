@@ -34,3 +34,9 @@ dist-ssr
 
 # Claude (local-only agent settings)
 .claude/settings.local.json
+
+# Playwright screenshots & logs (dev only)
+*.png
+*.jpg
+*.jpeg
+.playwright-mcp/

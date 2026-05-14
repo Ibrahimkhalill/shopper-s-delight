@@ -107,7 +107,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full min-w-0 bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/70">
+      <header className="sticky top-0 z-40 w-full min-w-0 overflow-x-clip bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/70">
 
         {/* ── Top bar ── */}
         <div className="bg-black text-xs text-white lg:text-[13px]">
@@ -126,7 +126,7 @@ export function Header() {
 
         {/* ── Main bar ── */}
         <div className="border-b bg-background">
-          <div className="mx-auto flex h-[3.75rem] min-w-0 max-w-7xl items-center gap-3 px-4 sm:h-16 lg:h-20 lg:gap-5 lg:px-6">
+          <div className="relative mx-auto flex h-[3.75rem] min-w-0 max-w-7xl items-center gap-3 px-4 sm:h-16 lg:h-20 lg:gap-5 lg:px-6">
 
             {/* Hamburger — mobile only */}
             <button
@@ -179,7 +179,7 @@ export function Header() {
                   {userMenu && (
                     <div className="absolute right-0 top-full z-50 mt-2 w-56 animate-slide-down rounded-2xl border bg-card py-2 shadow-xl lg:w-64">
                       <Link href="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><User className="size-4 lg:size-[18px]" /> {t("user.profile")}</Link>
-                      <Link href="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Package className="size-4 lg:size-[18px]" /> {t("user.orders")}</Link>
+                      <Link href="/profile?tab=orders" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Package className="size-4 lg:size-[18px]" /> {t("user.orders")}</Link>
                       <Link href="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Heart className="size-4 lg:size-[18px]" /> {t("user.wishlist")}</Link>
                       <div className="my-1.5 border-t" />
                       <button onClick={() => { logout(); setUserMenu(false); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-accent hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]">
@@ -255,7 +255,7 @@ export function Header() {
         </div>
 
         {/* ── Category nav bar ── */}
-        <nav className="border-b bg-background">
+        <nav className="overflow-x-clip border-b bg-background">
           <div className="relative">
             <div className="mx-auto flex h-11 w-full min-w-0 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm no-scrollbar lg:h-14 lg:gap-9 lg:px-6 lg:text-[17px]">
               {categories.map((c) => {
@@ -265,13 +265,13 @@ export function Header() {
                 <Link
                   key={c.name}
                   href={c.to}
-                  className={`whitespace-nowrap transition-colors ${catActive ? `text-foreground font-semibold ${lang === "bn" ? "font-bn" : ""}` : `text-muted-foreground hover:text-foreground ${lang === "bn" ? "font-bn" : ""}`}`}
+                  className={`shrink-0 whitespace-nowrap transition-colors ${catActive ? `text-foreground font-semibold ${lang === "bn" ? "font-bn" : ""}` : `text-muted-foreground hover:text-foreground ${lang === "bn" ? "font-bn" : ""}`}`}
                 >
                   {c.name}
                 </Link>
                 );
               })}
-              <Link href="/track" className={`ml-auto whitespace-nowrap font-semibold text-accent ${lang === "bn" ? "font-bn" : ""}`}>
+              <Link href="/track" className={`ml-auto hidden shrink-0 whitespace-nowrap font-semibold text-accent md:block ${lang === "bn" ? "font-bn" : ""}`}>
                 {t("nav.track")}
               </Link>
             </div>
@@ -396,10 +396,10 @@ export function Header() {
                   <nav className="space-y-0.5">
                     {[
                       { to: "/profile",  icon: User,     label: "My Profile" },
-                      { to: "/profile",  icon: Package,  label: "My Orders" },
-                      { to: "/profile",  icon: MapPin,   label: "My Addresses" },
+                      { to: "/profile?tab=orders",    icon: Package,  label: "My Orders" },
+                      { to: "/profile?tab=addresses", icon: MapPin,   label: "My Addresses" },
                       { to: "/wishlist", icon: Heart,    label: "Wishlist" },
-                      { to: "/profile",  icon: Settings, label: "Settings" },
+                      { to: "/profile?tab=settings", icon: Settings, label: "Settings" },
                     ].map((item) => (
                       <Link key={item.label} href={item.to} onClick={() => setMenu(false)}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition group"

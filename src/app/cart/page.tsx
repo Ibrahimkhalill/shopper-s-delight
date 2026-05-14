@@ -63,6 +63,7 @@ function CartPage() {
     <Layout>
       <PageHeader
         centered
+        color="oklch(0.96 0 0)"
         title="Shopping cart"
         subtitle="Review your items, adjust quantities, and continue to checkout when you are ready."
         crumbs={[{ label: "Home", to: "/" }, { label: "Cart" }]}
@@ -305,7 +306,7 @@ function CartPage() {
         </div>
 
         {/* ── Quality / trust banner ──────────────────────────────────────── */}
-        <QualityBanner />
+        {/* <QualityBanner /> */}
 
         {/* ── You may also like (full-width, after the trust banner) ──── */}
         {recommended.length > 0 && (

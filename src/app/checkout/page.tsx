@@ -97,6 +97,8 @@ function CheckoutPage() {
         name:    form.name,
         phone:   form.phone,
         email:   form.email.trim(),
+        discount,
+        shippingCost,
       });
       toast.success("Order placed!", { description: `Order ID: ${order.id}` });
       router.push(`/order/${order.id}`);
@@ -250,6 +252,7 @@ function CheckoutPage() {
     <Layout hideTrust>
       <PageHeader
         centered
+        color="oklch(0.96 0 0)"
         title="Checkout"
         subtitle="Review your order, enter delivery details, and pay securely."
         crumbs={[{ label: "Home", to: "/" }, { label: "Checkout" }]}
@@ -537,18 +540,6 @@ function CheckoutPage() {
                 )}
               </button>
 
-              <div className="flex items-center justify-center gap-5 pt-1 lg:gap-7">
-                {[
-                  { icon: ShieldCheck, label: "Secure" },
-                  { icon: Truck,       label: "Fast delivery" },
-                  { icon: RotateCcw,   label: "7-day return" },
-                ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex items-center gap-1.5 text-muted-foreground">
-                    <Icon className="size-[13px]" strokeWidth={2} />
-                    <span className="text-[11px] font-semibold lg:text-xs">{label}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </form>

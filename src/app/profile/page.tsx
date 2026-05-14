@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Layout } from "@/components/site/Layout";
 import { useStore } from "@/lib/store";
 import type { Address } from "@/lib/store";
@@ -12,31 +12,35 @@ import {
   User as UserIcon,
   Plus, Pencil, Trash2, Star, X, Menu,
 } from "lucide-react";
-import { ProductCard } from "@/components/site/ProductCard";
 import { Price } from "@/components/site/Price";
 import { toast } from "sonner";
 
-type Tab = "dashboard" | "orders" | "notifications" | "addresses" | "wishlist" | "cart" | "settings";
+type Tab = "dashboard" | "orders" | "notifications" | "addresses" | "settings";
 
-const NAV = [
-  { id: "dashboard" as Tab,     label: "Dashboard",      icon: LayoutDashboard },
-  { id: "orders" as Tab,        label: "Order History",  icon: Package },
-  { id: "notifications" as Tab, label: "Notifications",  icon: Bell },
-  { id: "addresses" as Tab,     label: "My Addresses",   icon: MapPin },
-  { id: "wishlist" as Tab,      label: "Wishlist",       icon: Heart },
-  { id: "cart" as Tab,          label: "Shopping Cart",  icon: ShoppingCart },
-  { id: "settings" as Tab,      label: "Settings",       icon: Settings },
+const NAV: { id: Tab; label: string; icon: React.ElementType }[] = [
+  { id: "dashboard",     label: "Dashboard",     icon: LayoutDashboard },
+  { id: "orders",        label: "Order History", icon: Package },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "addresses",     label: "My Addresses",  icon: MapPin },
+  { id: "settings",      label: "Settings",      icon: Settings },
+];
+
+const NAV_LINKS = [
+  { href: "/wishlist", label: "Wishlist",      icon: Heart },
+  { href: "/cart",     label: "Shopping Cart", icon: ShoppingCart },
 ];
 
 function ProfilePage() {
-  const { user, orders, wishlist, cart, logout, resolveProduct, openAuthModal } = useStore();
+  const { user, orders, logout, resolveProduct } = useStore();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("dashboard");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as Tab | null) ?? "dashboard";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) openAuthModal("login");
-  }, [user, openAuthModal]);
+    if (!user) router.replace("/");
+  }, [user, router]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -67,7 +71,7 @@ function ProfilePage() {
 
   return (
     <Layout hideTrust>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-secondary/40">
         <div className="mx-auto max-w-7xl px-4 py-5 lg:px-6 lg:py-8">
 
           {/* Breadcrumb */}
@@ -90,15 +94,15 @@ function ProfilePage() {
               aria-label="Open account navigation"
             >
               <span className="flex items-center gap-2.5 min-w-0">
-                <span className="size-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                <span className="size-9 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                   <activeItem.icon className="size-[18px] text-black" strokeWidth={2} />
                 </span>
                 <span className="text-left min-w-0">
-                  <span className="block text-[10px] uppercase tracking-[0.16em] text-gray-400 font-semibold">My Account</span>
+                  <span className="block text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70 font-semibold">My Account</span>
                   <span className="block text-[13px] font-bold truncate">{activeItem.label}</span>
                 </span>
               </span>
-              <span className="size-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+              <span className="size-9 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                 <Menu className="size-[18px]" strokeWidth={2} />
               </span>
             </button>
@@ -140,8 +144,6 @@ function ProfilePage() {
               {tab === "orders" && <OrdersTab orders={orders} resolveProduct={resolveProduct} />}
               {tab === "notifications" && <NotificationsTab />}
               {tab === "addresses" && <AddressesTab />}
-              {tab === "wishlist" && <WishlistTab wishlist={wishlist} resolveProduct={resolveProduct} />}
-              {tab === "cart" && <CartTab cart={cart} resolveProduct={resolveProduct} />}
               {tab === "settings" && <SettingsTab user={user} />}
             </div>
           </div>
@@ -169,14 +171,14 @@ function SidebarPanel({
           {user.name[0]?.toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-gray-400 font-semibold">Signed in</p>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70 font-semibold">Signed in</p>
           <p className="text-[13px] lg:text-sm font-bold truncate">{user.name}</p>
         </div>
         {onClose && (
           <button
             onClick={onClose}
             aria-label="Close navigation"
-            className="size-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition lg:hidden"
+            className="size-9 rounded-xl bg-secondary hover:bg-border flex items-center justify-center transition lg:hidden"
           >
             <X className="size-[18px]" strokeWidth={2} />
           </button>
@@ -197,23 +199,41 @@ function SidebarPanel({
                 transition-all duration-200 ease-out
                 active:scale-[0.985]
                 ${active
-                  ? "text-black font-semibold bg-red-50"
-                  : "text-gray-600 hover:text-black hover:bg-gray-50"}
+                  ? "text-black font-semibold bg-accent/10"
+                  : "text-muted-foreground hover:text-black hover:bg-secondary/60"}
               `}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-red-600" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-accent" />
               )}
               <span className={`size-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                active ? "bg-red-600 text-white" : "bg-gray-100 text-gray-500"
+                active ? "bg-accent text-white" : "bg-secondary text-muted-foreground"
               }`}>
                 <item.icon className="size-[18px]" strokeWidth={2} />
               </span>
               <span className="truncate text-left">{item.label}</span>
-              {active && <ChevronRight className="size-3.5 text-red-600 ml-auto shrink-0" />}
+              {active && <ChevronRight className="size-3.5 text-accent ml-auto shrink-0" />}
             </button>
           );
         })}
+
+        {/* External page links */}
+        <div className="mt-1 pt-1 border-t border-border/60">
+          {NAV_LINKS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2.5 my-0.5 rounded-xl text-[13px] lg:text-sm font-medium text-muted-foreground hover:text-black hover:bg-secondary/60 transition-all duration-200"
+            >
+              <span className="size-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                <item.icon className="size-[18px]" strokeWidth={2} />
+              </span>
+              <span className="truncate">{item.label}</span>
+              <ChevronRight className="size-3.5 ml-auto shrink-0 opacity-40" />
+            </Link>
+          ))}
+        </div>
       </nav>
 
       {/* Logout */}
@@ -222,13 +242,13 @@ function SidebarPanel({
           onClick={onLogout}
           className="
             w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl
-            text-[13px] lg:text-sm font-medium text-gray-600
-            hover:text-red-600 hover:bg-red-50
+            text-[13px] lg:text-sm font-medium text-muted-foreground
+            hover:text-accent hover:bg-accent/10
             active:scale-[0.985]
             transition-all duration-200 ease-out
           "
         >
-          <span className="size-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+          <span className="size-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
             <LogOut className="size-[18px]" strokeWidth={2} />
           </span>
           Log out
@@ -237,6 +257,14 @@ function SidebarPanel({
     </>
   );
 }
+
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  placed:    { label: "Placed",     cls: "bg-accent text-white" },
+  packed:    { label: "Packed",     cls: "bg-foreground text-background" },
+  shipped:   { label: "Delivering", cls: "bg-foreground text-background" },
+  delivered: { label: "Delivered",  cls: "bg-black text-white" },
+  cancelled: { label: "Cancelled",  cls: "bg-border text-foreground" },
+};
 
 /* ── Dashboard Tab ────────────────────────────────────────────────── */
 function DashboardTab({ user, orders, resolveProduct, setTab }: {
@@ -259,11 +287,11 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
     <div className="space-y-4 lg:space-y-5 animate-fade-up">
       {/* ── Welcome banner ─────────────────────────────────────────── */}
       <section className="bg-white rounded-2xl border shadow-[0_1px_3px_oklch(0_0_0/0.04)] p-5 sm:p-6 lg:p-7">
-        <p className="text-[10.5px] uppercase tracking-[0.16em] text-gray-400 font-bold">Dashboard</p>
+        <p className="text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground/70 font-bold">Dashboard</p>
         <h1 className="mt-1.5 text-[18px] sm:text-[20px] lg:text-[24px] font-bold tracking-tight leading-[1.15]">
           Welcome back, {user.name.split(" ")[0]}
         </h1>
-        <p className="mt-2 text-[13px] sm:text-sm lg:text-[15px] text-gray-500 leading-relaxed max-w-2xl">
+        <p className="mt-2 text-[13px] sm:text-sm lg:text-[15px] text-muted-foreground leading-relaxed max-w-2xl">
           View your recent orders, manage your shipping and billing addresses, and edit your password and account details from one place.
         </p>
       </section>
@@ -282,13 +310,13 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
               p-4 sm:p-5
             "
           >
-            <div className="size-10 lg:size-11 rounded-xl bg-gray-100 text-black flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.05]">
+            <div className="size-10 lg:size-11 rounded-xl bg-secondary text-black flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.05]">
               <s.icon className="size-[18px] lg:size-5" strokeWidth={2} />
             </div>
             <p className="mt-3 lg:mt-4 text-[20px] sm:text-[22px] lg:text-[26px] font-bold tracking-tight leading-none">
               {s.value}
             </p>
-            <p className="mt-1 text-[12px] sm:text-[13px] lg:text-sm text-gray-500 font-medium">
+            <p className="mt-1 text-[12px] sm:text-[13px] lg:text-sm text-muted-foreground font-medium">
               {s.label}
             </p>
           </div>
@@ -300,7 +328,7 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
         {/* Account Info */}
         <div className="bg-white rounded-2xl border shadow-[0_1px_3px_oklch(0_0_0/0.04)] p-5 sm:p-6 flex flex-col">
           <div className="flex items-center gap-2.5 mb-4 lg:mb-5">
-            <div className="size-9 lg:size-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+            <div className="size-9 lg:size-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
               <UserIcon className="size-[18px] lg:size-5 text-black" strokeWidth={2} />
             </div>
             <h2 className="text-[15px] sm:text-base lg:text-lg font-bold tracking-tight">Account Info</h2>
@@ -312,13 +340,13 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
             </div>
             <div className="min-w-0">
               <p className="text-sm lg:text-[15px] font-bold truncate">{user.name}</p>
-              {user.email && <p className="text-xs lg:text-[13px] text-gray-500 truncate mt-0.5">{user.email}</p>}
-              {user.phone && <p className="text-xs lg:text-[13px] text-gray-500 mt-0.5">{user.phone}</p>}
+              {user.email && <p className="text-xs lg:text-[13px] text-muted-foreground truncate mt-0.5">{user.email}</p>}
+              {user.phone && <p className="text-xs lg:text-[13px] text-muted-foreground mt-0.5">{user.phone}</p>}
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t pt-3.5 mt-auto">
-            <span className="text-xs lg:text-sm text-gray-500">Account Status</span>
+            <span className="text-xs lg:text-sm text-muted-foreground">Account Status</span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black text-white text-[11px] font-semibold">
               <span className="size-1.5 rounded-full bg-white animate-pulse" />
               Active
@@ -329,7 +357,7 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
         {/* Billing Address */}
         <div className="bg-white rounded-2xl border shadow-[0_1px_3px_oklch(0_0_0/0.04)] p-5 sm:p-6 flex flex-col">
           <div className="flex items-center gap-2.5 mb-4 lg:mb-5">
-            <div className="size-9 lg:size-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+            <div className="size-9 lg:size-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
               <MapPin className="size-[18px] lg:size-5 text-black" strokeWidth={2} />
             </div>
             <h2 className="text-[15px] sm:text-base lg:text-lg font-bold tracking-tight">Billing Address</h2>
@@ -338,18 +366,18 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
           {defaultAddr ? (
             <div className="space-y-0.5 flex-1">
               <p className="text-sm lg:text-[15px] font-bold">{defaultAddr.name}</p>
-              <p className="text-xs lg:text-[13px] text-gray-500">
+              <p className="text-xs lg:text-[13px] text-muted-foreground">
                 {defaultAddr.line1}{defaultAddr.line2 ? `, ${defaultAddr.line2}` : ""}
               </p>
-              <p className="text-xs lg:text-[13px] text-gray-500">{defaultAddr.city}, {defaultAddr.district}</p>
-              <p className="text-xs lg:text-[13px] text-gray-500">{defaultAddr.phone}</p>
+              <p className="text-xs lg:text-[13px] text-muted-foreground">{defaultAddr.city}, {defaultAddr.district}</p>
+              <p className="text-xs lg:text-[13px] text-muted-foreground">{defaultAddr.phone}</p>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center flex-1 py-5 text-center gap-2.5">
-              <div className="size-10 rounded-xl bg-gray-100 flex items-center justify-center">
-                <MapPin className="size-5 text-gray-400" strokeWidth={2} />
+              <div className="size-10 rounded-xl bg-secondary flex items-center justify-center">
+                <MapPin className="size-5 text-muted-foreground/70" strokeWidth={2} />
               </div>
-              <p className="text-xs lg:text-[13px] text-gray-500 max-w-[14rem]">
+              <p className="text-xs lg:text-[13px] text-muted-foreground max-w-[14rem]">
                 {"You haven't set up a default billing address yet."}
               </p>
             </div>
@@ -375,7 +403,7 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
         <section className="bg-white rounded-2xl border shadow-[0_1px_3px_oklch(0_0_0/0.04)] overflow-hidden">
           <div className="px-5 lg:px-6 py-4 lg:py-5 border-b flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="size-9 lg:size-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+              <div className="size-9 lg:size-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                 <Package className="size-[18px] lg:size-5 text-black" strokeWidth={2} />
               </div>
               <h2 className="text-[15px] sm:text-base lg:text-lg font-bold tracking-tight truncate">
@@ -386,7 +414,7 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
               onClick={() => setTab("orders")}
               className="
                 shrink-0 inline-flex items-center gap-1
-                text-xs lg:text-[13px] text-red-600 font-semibold
+                text-xs lg:text-[13px] text-accent font-semibold
                 hover:underline underline-offset-4
               "
             >
@@ -395,45 +423,42 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
           </div>
 
           <div className="divide-y">
-            {orders.slice(0, 3).map((o) => (
-              <Link
-                key={o.id}
-                href={`/order/${o.id}`}
-                className="
-                  flex items-center gap-3 px-5 lg:px-6 py-3.5 lg:py-4
-                  hover:bg-gray-50 transition-colors group
-                "
-              >
-                <div className="flex items-center -space-x-2 shrink-0">
-                  {o.items.slice(0, 3).map((it) => {
-                    const p = resolveProduct(it.id);
-                    return p ? (
-                      <img
-                        key={it.id}
-                        src={p.image}
-                        className="size-9 lg:size-10 rounded-lg object-cover border-2 border-white shadow-sm"
-                        alt=""
-                      />
-                    ) : null;
-                  })}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] lg:text-sm font-semibold truncate">
-                    Order <span className="font-mono text-gray-500">{o.id}</span>
-                  </p>
-                  <p className="text-[11px] lg:text-xs text-gray-500 mt-0.5">
-                    {o.items.length} {o.items.length === 1 ? "item" : "items"} · {new Date(o.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <Price amount={o.total} size="sm" className="!font-bold" />
-                  <span className="mt-1 inline-block text-[10px] px-2 py-0.5 rounded-full bg-gray-100 capitalize font-semibold">
-                    {o.status}
-                  </span>
-                </div>
-                <ChevronRight className="size-4 text-gray-300 group-hover:text-black transition-colors shrink-0" />
-              </Link>
-            ))}
+            {orders.slice(0, 3).map((o) => {
+              const meta = STATUS_META[o.status] ?? STATUS_META.placed;
+              return (
+                <Link
+                  key={o.id}
+                  href={`/order/${o.id}/details`}
+                  className="flex items-center gap-3 px-5 lg:px-6 py-3.5 lg:py-4 hover:bg-secondary/60 transition-colors group"
+                >
+                  <div className="flex items-center -space-x-2 shrink-0">
+                    {o.items.slice(0, 3).map((it) => {
+                      const p = resolveProduct(it.id);
+                      return p ? (
+                        <img key={it.id} src={p.image}
+                          className="size-9 lg:size-10 rounded-lg object-cover border-2 border-white shadow-sm"
+                          alt="" />
+                      ) : null;
+                    })}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] lg:text-sm font-semibold truncate">
+                      Order <span className="font-mono text-muted-foreground">{o.id}</span>
+                    </p>
+                    <p className="text-[11px] lg:text-xs text-muted-foreground mt-0.5">
+                      {o.items.length} {o.items.length === 1 ? "item" : "items"} · {new Date(o.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                    <Price amount={o.total} size="sm" className="!font-bold" />
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${meta.cls}`}>
+                      {meta.label}
+                    </span>
+                  </div>
+                  <ChevronRight className="size-4 text-border group-hover:text-black transition-colors shrink-0" />
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
@@ -445,15 +470,15 @@ function DashboardTab({ user, orders, resolveProduct, setTab }: {
 type OrderFilter = "all" | "processing" | "delivering" | "completed" | "cancelled";
 
 const ORDER_FILTERS: { id: OrderFilter; label: string }[] = [
-  { id: "all",         label: "All" },
-  { id: "processing",  label: "Processing" },
-  { id: "delivering",  label: "Delivering" },
-  { id: "completed",   label: "Completed" },
-  { id: "cancelled",   label: "Cancelled" },
+  { id: "all",        label: "All" },
+  { id: "processing", label: "Processing" },
+  { id: "delivering", label: "Delivering" },
+  { id: "completed",  label: "Completed" },
+  { id: "cancelled",  label: "Cancelled" },
 ];
 
 function matchesFilter(status: string, filter: OrderFilter) {
-  if (filter === "all") return true;
+  if (filter === "all")        return true;
   if (filter === "processing") return status === "placed" || status === "packed";
   if (filter === "delivering") return status === "shipped";
   if (filter === "completed")  return status === "delivered";
@@ -470,67 +495,79 @@ function OrdersTab({ orders, resolveProduct }: {
 
   return (
     <div className="space-y-4 animate-fade-up">
-      {/* Title */}
-      <SectionTitle icon={Package}>Orders History</SectionTitle>
-
-      {/* Filter tabs */}
-      <div className="bg-white rounded-2xl border shadow-[0_1px_3px_oklch(0_0_0/0.04)] px-2.5 py-2 lg:px-3 lg:py-2.5 flex items-center gap-1 overflow-x-auto no-scrollbar">
-        {ORDER_FILTERS.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`shrink-0 h-9 lg:h-10 px-3.5 lg:px-4 rounded-xl text-[13px] lg:text-sm font-medium transition-all duration-200 active:scale-[0.97] ${
-              filter === f.id
-                ? "bg-red-50 text-red-600 font-semibold"
-                : "text-gray-500 hover:text-black hover:bg-gray-50"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* Filter tabs — scrollable, no overflow cut-off */}
+      <div className="no-scrollbar overflow-x-auto">
+        <div className="flex items-center gap-1.5 min-w-max px-0.5 pb-1">
+          {ORDER_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`shrink-0 h-9 px-4 rounded-full text-[13px] font-medium border transition-all duration-200 active:scale-[0.97] ${
+                filter === f.id
+                  ? "bg-foreground text-background border-foreground font-semibold"
+                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground bg-white"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Orders list or empty */}
+      {/* Orders list */}
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border shadow-sm py-14 text-center">
-          <p className="text-gray-400 text-sm">No orders found.</p>
+        <div className="bg-white rounded-2xl border py-14 text-center">
+          <Package className="size-10 mx-auto text-muted-foreground/30 mb-3" strokeWidth={1.5} />
+          <p className="font-semibold text-sm">No orders here</p>
+          <p className="text-muted-foreground text-xs mt-1">Orders matching this filter will appear here.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((o) => (
-            <Link key={o.id} href={`/order/${o.id}`}
-              className="group block bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md hover:border-black/20 transition"
-            >
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <p className="font-bold text-sm">{o.id}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {new Date(o.createdAt).toLocaleDateString()} · {o.items.length} {o.items.length === 1 ? "item" : "items"}
+        <div className="space-y-2.5">
+          {filtered.map((o) => {
+            const meta = STATUS_META[o.status] ?? STATUS_META.placed;
+            return (
+              <Link
+                key={o.id}
+                href={`/order/${o.id}/details`}
+                className="bg-white rounded-2xl border overflow-hidden hover:shadow-md transition-shadow flex items-center gap-3 px-4 py-4 group"
+              >
+                {/* Order thumb stack */}
+                <div className="flex items-center -space-x-2 shrink-0">
+                  {o.items.slice(0, 3).map((it) => {
+                    const p = resolveProduct(it.id);
+                    return p ? (
+                      <img key={it.id} src={p.image}
+                        className="size-10 rounded-xl object-cover border-2 border-white shadow-sm"
+                        alt="" />
+                    ) : null;
+                  })}
+                  {o.items.length > 3 && (
+                    <span className="size-10 rounded-xl bg-secondary border-2 border-white flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                      +{o.items.length - 3}
+                    </span>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold truncate">{o.id}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {new Date(o.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                    {" · "}{o.items.length} item{o.items.length !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold capitalize ${
-                    o.status === "delivered" ? "bg-black text-white"
-                    : o.status === "shipped"  ? "bg-gray-800 text-white"
-                    : "bg-red-600 text-white"
-                  }`}>{o.status}</span>
-                  <ChevronRight className="size-4 text-gray-400 group-hover:text-black transition" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-2">
-                {o.items.slice(0, 5).map((it) => {
-                  const p = resolveProduct(it.id);
-                  return p ? <img key={it.id} src={p.image} className="size-11 rounded-xl object-cover border shrink-0" alt="" /> : null;
-                })}
-                {o.items.length > 5 && (
-                  <span className="size-11 rounded-xl bg-gray-100 border flex items-center justify-center text-xs text-gray-500 shrink-0">
-                    +{o.items.length - 5}
+
+                {/* Status + total + chevron */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wide ${meta.cls}`}>
+                    {meta.label}
                   </span>
-                )}
-                <Price amount={o.total} size="sm" className="ml-auto" />
-              </div>
-            </Link>
-          ))}
+                  <Price amount={o.total} size="sm" className="!font-bold hidden sm:inline-flex" />
+                  <ChevronRight className="size-4 text-muted-foreground group-hover:text-black transition-colors" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
@@ -541,7 +578,6 @@ function OrdersTab({ orders, resolveProduct }: {
 function NotificationsTab() {
   return (
     <div className="animate-fade-up">
-      <SectionTitle icon={Bell}>Notifications</SectionTitle>
       <EmptyState icon={Bell} title="No notifications" desc={"You're all caught up! We'll notify you about orders and offers."} />
     </div>
   );
@@ -577,37 +613,25 @@ function AddressesTab() {
 
   return (
     <div className="animate-fade-up space-y-4 lg:space-y-5">
-      {/* Header row */}
-      <div className="bg-white rounded-2xl border shadow-[0_1px_3px_oklch(0_0_0/0.04)] px-5 lg:px-6 py-4 lg:py-5 flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-start gap-2.5 flex-1 min-w-0">
-          <div className="size-9 lg:size-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-            <MapPin className="size-[18px] lg:size-5 text-black" strokeWidth={2} />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-[15px] sm:text-base lg:text-lg font-bold tracking-tight">My Addresses</h2>
-            <p className="text-xs lg:text-[13px] text-gray-500 mt-0.5 leading-relaxed">
-              Manage your{" "}
-              <span className="text-red-600 font-medium">shipping</span> and{" "}
-              <span className="text-red-600 font-medium">billing</span> addresses to streamline your checkout process.
-            </p>
-          </div>
-        </div>
+      {/* Action bar */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">Saved addresses for faster checkout</p>
         <button
           onClick={openAdd}
-          className="shrink-0 h-10 lg:h-11 px-4 lg:px-5 rounded-xl bg-black text-white text-xs lg:text-sm font-semibold hover:bg-red-600 active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2"
+          className="shrink-0 h-9 px-3.5 rounded-xl bg-black text-white text-xs font-semibold hover:bg-accent active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-1.5"
         >
-          <Plus className="size-4" strokeWidth={2} /> Add New Address
+          <Plus className="size-3.5" strokeWidth={2} /> Add New
         </button>
       </div>
 
       {/* List or empty state */}
       {addresses.length === 0 ? (
         <div className="bg-white rounded-2xl border shadow-sm py-16 text-center">
-          <div className="mx-auto size-16 rounded-full bg-gray-100 flex items-center justify-center mb-5">
-            <MapPin className="size-7 text-gray-400" />
+          <div className="mx-auto size-16 rounded-full bg-secondary flex items-center justify-center mb-5">
+            <MapPin className="size-7 text-muted-foreground/70" />
           </div>
           <p className="font-bold text-base">No Addresses Found</p>
-          <p className="text-sm text-gray-500 mt-2 max-w-xs mx-auto">
+          <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
             {"You haven't saved any addresses yet. Add one now for a faster checkout experience."}
           </p>
           <button
@@ -627,21 +651,21 @@ function AddressesTab() {
                 </span>
               )}
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+                <span className="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-secondary text-muted-foreground">
                   {a.label}
                 </span>
               </div>
               <div>
                 <p className="font-bold">{a.name}</p>
-                <p className="text-sm text-gray-500 mt-0.5">{a.line1}{a.line2 ? `, ${a.line2}` : ""}</p>
-                <p className="text-sm text-gray-500">{a.city}, {a.district}</p>
-                <p className="text-sm text-gray-500 mt-0.5">{a.phone}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{a.line1}{a.line2 ? `, ${a.line2}` : ""}</p>
+                <p className="text-sm text-muted-foreground">{a.city}, {a.district}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{a.phone}</p>
               </div>
               <div className="flex items-center gap-2 pt-1 border-t mt-auto">
                 {!a.isDefault && (
                   <button
                     onClick={() => setDefaultAddress(a.id)}
-                    className="flex items-center gap-1.5 text-xs text-black font-semibold hover:text-red-600 transition"
+                    className="flex items-center gap-1.5 text-xs text-black font-semibold hover:text-accent transition"
                   >
                     <Star className="size-3.5" /> Set default
                   </button>
@@ -649,13 +673,13 @@ function AddressesTab() {
                 <div className="ml-auto flex items-center gap-1">
                   <button
                     onClick={() => openEdit(a)}
-                    className="size-8 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-black transition"
+                    className="size-8 rounded-xl hover:bg-secondary flex items-center justify-center text-muted-foreground/70 hover:text-black transition"
                   >
                     <Pencil className="size-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(a.id)}
-                    className="size-8 rounded-xl hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-600 transition"
+                    className="size-8 rounded-xl hover:bg-accent/10 flex items-center justify-center text-muted-foreground/70 hover:text-accent transition"
                   >
                     <Trash2 className="size-3.5" />
                   </button>
@@ -667,7 +691,7 @@ function AddressesTab() {
           {/* Add new card */}
           <button
             onClick={openAdd}
-            className="bg-white rounded-2xl border border-dashed shadow-sm p-5 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-black hover:text-black transition min-h-40"
+            className="bg-white rounded-2xl border border-dashed shadow-sm p-5 flex flex-col items-center justify-center gap-2 text-muted-foreground/70 hover:border-black hover:text-black transition min-h-40"
           >
             <Plus className="size-7 opacity-40" />
             <p className="text-sm font-medium">Add new address</p>
@@ -719,7 +743,7 @@ function AddressFormModal({ initial, onSave, onClose }: {
         {/* Modal header */}
         <div className="flex items-center justify-between px-6 py-5 border-b">
           <h2 className="font-bold text-lg">{initial ? "Edit Address" : "Add New Address"}</h2>
-          <button onClick={onClose} className="size-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition">
+          <button onClick={onClose} className="size-8 rounded-full bg-secondary flex items-center justify-center hover:bg-border transition">
             <X className="size-4" />
           </button>
         </div>
@@ -727,7 +751,7 @@ function AddressFormModal({ initial, onSave, onClose }: {
         <form onSubmit={submit} className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Label selector */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2 block">Address Type</label>
+            <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2 block">Address Type</label>
             <div className="flex gap-2">
               {LABELS.map((l) => (
                 <button
@@ -758,7 +782,7 @@ function AddressFormModal({ initial, onSave, onClose }: {
           <label className="flex items-center gap-3 cursor-pointer select-none pt-1">
             <div
               onClick={() => set("isDefault", !form.isDefault)}
-              className={`w-10 h-5 rounded-full relative transition ${form.isDefault ? "bg-black" : "bg-gray-300"}`}
+              className={`w-10 h-5 rounded-full relative transition ${form.isDefault ? "bg-black" : "bg-border"}`}
             >
               <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${form.isDefault ? "left-5" : "left-0.5"}`} />
             </div>
@@ -767,12 +791,12 @@ function AddressFormModal({ initial, onSave, onClose }: {
         </form>
 
         <div className="px-6 pb-6 flex gap-3">
-          <button type="button" onClick={onClose} className="flex-1 h-11 rounded-full border border-gray-300 text-sm font-semibold hover:bg-gray-50 transition">
+          <button type="button" onClick={onClose} className="flex-1 h-11 rounded-full border border-gray-300 text-sm font-semibold hover:bg-secondary/60 transition">
             Cancel
           </button>
           <button
             onClick={submit}
-            className="flex-1 h-11 rounded-full bg-black text-white text-sm font-semibold hover:bg-red-600 transition"
+            className="flex-1 h-11 rounded-full bg-black text-white text-sm font-semibold hover:bg-accent transition"
           >
             {initial ? "Save Changes" : "Add Address"}
           </button>
@@ -787,81 +811,13 @@ function FormField({ label, value, onChange, placeholder }: {
 }) {
   return (
     <div>
-      <label className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1.5 block">{label}</label>
+      <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1.5 block">{label}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full h-11 px-4 rounded-xl border bg-gray-50 text-sm outline-none focus:border-black transition"
+        className="w-full h-11 px-4 rounded-xl border bg-secondary/60 text-sm outline-none focus:border-black transition"
       />
-    </div>
-  );
-}
-
-/* ── Wishlist Tab ─────────────────────────────────────────────────── */
-function WishlistTab({ wishlist, resolveProduct }: {
-  wishlist: string[];
-  resolveProduct: ReturnType<typeof useStore>["resolveProduct"];
-}) {
-  if (wishlist.length === 0) {
-    return (
-      <div className="animate-fade-up">
-        <SectionTitle icon={Heart}>Wishlist</SectionTitle>
-        <EmptyState icon={Heart} title="Your wishlist is empty" desc="Save items you love for later." cta={{ to: "/", label: "Discover products" }} />
-      </div>
-    );
-  }
-  return (
-    <div className="animate-fade-up">
-      <SectionTitle icon={Heart}>
-        Wishlist <span className="text-gray-400 font-normal text-sm lg:text-base">({wishlist.length})</span>
-      </SectionTitle>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {wishlist.map(resolveProduct).filter(Boolean).map((p) => p && <ProductCard key={p.id} p={p} />)}
-      </div>
-    </div>
-  );
-}
-
-/* ── Cart Tab ─────────────────────────────────────────────────────── */
-function CartTab({ cart, resolveProduct }: {
-  cart: ReturnType<typeof useStore>["cart"];
-  resolveProduct: ReturnType<typeof useStore>["resolveProduct"];
-}) {
-  if (cart.length === 0) {
-    return (
-      <div className="animate-fade-up">
-        <SectionTitle icon={ShoppingCart}>Shopping Cart</SectionTitle>
-        <EmptyState icon={ShoppingCart} title="Your cart is empty" desc="Add items to your cart to see them here." cta={{ to: "/", label: "Shop now" }} />
-      </div>
-    );
-  }
-  return (
-    <div className="animate-fade-up">
-      <SectionTitle icon={ShoppingCart}>
-        Shopping Cart <span className="text-gray-400 font-normal text-sm lg:text-base">({cart.length} items)</span>
-      </SectionTitle>
-      <div className="bg-white rounded-2xl border shadow-[0_1px_3px_oklch(0_0_0/0.04)] divide-y overflow-hidden">
-        {cart.map((it) => {
-          const p = resolveProduct(it.id);
-          if (!p) return null;
-          return (
-            <div key={it.id} className="flex items-center gap-3 px-5 py-3.5 lg:py-4">
-              <img src={p.image} className="size-12 lg:size-14 rounded-xl object-cover border shrink-0" alt="" />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[13px] lg:text-sm truncate">{p.name}</p>
-                <p className="text-[11px] lg:text-xs text-gray-500 mt-0.5">Qty: {it.qty}</p>
-              </div>
-              <Price amount={p.price * it.qty} size="sm" className="shrink-0 !font-bold" />
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-4 flex justify-end">
-        <Link href="/cart" className="h-10 lg:h-11 px-5 lg:px-6 rounded-xl bg-black text-white text-sm font-semibold hover:bg-red-600 active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2">
-          <ShoppingCart className="size-4" strokeWidth={2} /> View full cart
-        </Link>
-      </div>
     </div>
   );
 }
@@ -912,7 +868,6 @@ function SettingsTab({ user }: { user: { name: string; phone: string; email?: st
 
   return (
     <div className="animate-fade-up space-y-4 lg:space-y-5">
-      <SectionTitle icon={Settings}>Settings</SectionTitle>
 
       {/* ── Account Settings ─────────────────────────────────────── */}
       <form
@@ -957,7 +912,7 @@ function SettingsTab({ user }: { user: { name: string; phone: string; email?: st
             mt-6 inline-flex items-center justify-center
             h-10 lg:h-11 px-5 lg:px-6 rounded-full
             bg-black text-white text-xs lg:text-sm font-semibold
-            hover:bg-red-600 active:scale-[0.98]
+            hover:bg-accent active:scale-[0.98]
             transition-all duration-200 ease-out
           "
         >
@@ -1010,7 +965,7 @@ function SettingsTab({ user }: { user: { name: string; phone: string; email?: st
             mt-6 inline-flex items-center justify-center
             h-10 lg:h-11 px-5 lg:px-6 rounded-full
             bg-black text-white text-xs lg:text-sm font-semibold
-            hover:bg-red-600 active:scale-[0.98]
+            hover:bg-accent active:scale-[0.98]
             transition-all duration-200 ease-out
           "
         >
@@ -1049,7 +1004,7 @@ function SettingsField({
         className="
           w-full h-10 lg:h-11 px-3.5 lg:px-4
           rounded-xl border border-gray-200 bg-white
-          text-sm placeholder:text-gray-400
+          text-sm placeholder:text-muted-foreground/70
           outline-none transition-all duration-200
           hover:border-gray-300
           focus:border-black focus:ring-4 focus:ring-black/5
@@ -1070,7 +1025,7 @@ function SectionTitle({
   return (
     <div className="flex items-center gap-2.5 mb-4 lg:mb-5">
       {Icon && (
-        <div className="size-9 lg:size-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+        <div className="size-9 lg:size-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
           <Icon className="size-[18px] lg:size-5 text-black" strokeWidth={2} />
         </div>
       )}
@@ -1089,13 +1044,13 @@ function EmptyState({ icon: Icon, title, desc, cta }: {
 }) {
   return (
     <div className="bg-white rounded-2xl border shadow-[0_1px_3px_oklch(0_0_0/0.04)] py-12 lg:py-14 px-6 text-center">
-      <div className="mx-auto size-12 lg:size-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-        <Icon className="size-6 lg:size-7 text-gray-400" strokeWidth={2} />
+      <div className="mx-auto size-12 lg:size-14 rounded-2xl bg-secondary flex items-center justify-center mb-4">
+        <Icon className="size-6 lg:size-7 text-muted-foreground/70" strokeWidth={2} />
       </div>
       <p className="text-[15px] lg:text-base font-bold">{title}</p>
-      <p className="mt-1 text-[13px] lg:text-sm text-gray-500 max-w-sm mx-auto leading-relaxed">{desc}</p>
+      <p className="mt-1 text-[13px] lg:text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">{desc}</p>
       {cta && (
-        <Link href={cta.to} className="inline-block mt-5 h-10 px-6 rounded-xl bg-black text-white text-sm font-semibold leading-[40px] hover:bg-red-600 active:scale-[0.98] transition-all duration-200">
+        <Link href={cta.to} className="inline-block mt-5 h-10 px-6 rounded-xl bg-black text-white text-sm font-semibold leading-[40px] hover:bg-accent active:scale-[0.98] transition-all duration-200">
           {cta.label}
         </Link>
       )}

@@ -5,10 +5,19 @@ import { Layout } from "@/components/site/Layout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { ProductCard } from "@/components/site/ProductCard";
 import { PRODUCTS } from "@/lib/products";
-import { Search as SearchIcon, X } from "lucide-react";
+import { Search as SearchIcon, X, Smartphone, Shirt, Home as HomeIcon, Sparkles, ShoppingBasket, Tag } from "lucide-react";
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { DataPagination } from "@/components/site/DataPagination";
+
+const POPULAR_CATEGORIES = [
+  { label: "Gadgets",       href: "/category/gadgets", icon: Smartphone },
+  { label: "Fashion",       href: "/category/fashion",  icon: Shirt },
+  { label: "Home & Living", href: "/category/home",     icon: HomeIcon },
+  { label: "Beauty",        href: "/category/beauty",   icon: Sparkles },
+  { label: "Grocery",       href: "/category/grocery",  icon: ShoppingBasket },
+  { label: "Deals",         href: "/category/deals",    icon: Tag },
+];
 
 const PAGE_SIZE = 4;
 
@@ -54,6 +63,14 @@ function SearchPageContent() {
 
   return (
     <Layout>
+      {/* Search page is mobile-only — desktop uses the header search bar */}
+      <div className="hidden md:flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+        <SearchIcon className="size-12 text-muted-foreground/20 mb-4" strokeWidth={1} />
+        <p className="text-lg font-bold">Use the search bar above</p>
+        <p className="text-sm text-muted-foreground mt-1">The search bar in the header works on desktop</p>
+      </div>
+
+      <div className="md:hidden">
       <PageHeader
         title="Search"
         subtitle={`${results.length} ${results.length === 1 ? "result" : "results"}${q ? ` for "${q}"` : ""}`}
@@ -80,11 +97,50 @@ function SearchPageContent() {
 
         {/* Results */}
         {results.length === 0 ? (
-          <div className="mt-16 text-center">
-            <SearchIcon className="size-12 mx-auto text-muted-foreground/30 mb-4" strokeWidth={1} />
-            <p className="font-semibold">No products found</p>
-            <p className="text-sm text-muted-foreground mt-1">Try a different keyword</p>
-            <Link href="/" className="inline-block mt-4 text-accent text-sm font-medium hover:underline">Browse all products</Link>
+          <div className="mt-10 space-y-10">
+            {/* Empty state hero */}
+            <div className="flex flex-col items-center text-center py-10 px-4">
+              <div className="size-20 rounded-full bg-secondary flex items-center justify-center mb-5">
+                <SearchIcon className="size-9 text-muted-foreground/40" strokeWidth={1.5} />
+              </div>
+              <h2 className="text-xl font-bold tracking-tight">No results for &ldquo;{q}&rdquo;</h2>
+              <p className="text-sm text-muted-foreground mt-2 max-w-xs">
+                Check the spelling or try a more general keyword
+              </p>
+              <button
+                onClick={() => setQ("")}
+                className="mt-5 h-10 px-6 rounded-full bg-black text-white text-sm font-semibold hover:bg-accent transition"
+              >
+                Clear search
+              </button>
+            </div>
+
+            {/* Popular categories */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Browse by Category</p>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+                {POPULAR_CATEGORIES.map(({ label, href, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="flex flex-col items-center gap-2 rounded-2xl border bg-card py-4 px-2 text-center hover:border-foreground hover:shadow-sm transition group"
+                  >
+                    <span className="size-11 rounded-xl bg-secondary flex items-center justify-center group-hover:bg-foreground transition-colors">
+                      <Icon className="size-5 text-muted-foreground group-hover:text-background transition-colors" strokeWidth={1.75} />
+                    </span>
+                    <span className="text-[12px] font-semibold leading-tight">{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Trending products */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Trending Right Now</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {PRODUCTS.slice(0, 5).map((p) => <ProductCard key={p.id} p={p} />)}
+              </div>
+            </div>
           </div>
         ) : (
           <>
@@ -103,6 +159,7 @@ function SearchPageContent() {
             />
           </>
         )}
+      </div>
       </div>
     </Layout>
   );
