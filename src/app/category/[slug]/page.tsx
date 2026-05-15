@@ -376,7 +376,7 @@ function CategoryPage() {
               {pageItems.map((p) => <ListCard key={p.id} p={p} />)}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
               {pageItems.map((p) => <ProductCard key={p.id} p={p} />)}
             </div>
           )}

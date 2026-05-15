@@ -17,6 +17,7 @@ import {
   RotateCcw,
   ShieldCheck,
 } from "lucide-react";
+import { ProductCard } from "@/components/site/ProductCard";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Price } from "@/components/site/Price";
@@ -24,7 +25,7 @@ import { Price } from "@/components/site/Price";
 const FREE_SHIP_THRESHOLD = 1500;
 
 function CartPage() {
-  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, toggleWishlist, addToCart } =
+  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, toggleWishlist } =
     useStore();
   const items = cart.map((it) => ({ ...it, p: resolveProduct(it.id)! })).filter((x) => x.p);
 
@@ -328,49 +329,8 @@ function CartPage() {
 
             <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 no-scrollbar sm:gap-4 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-5 lg:overflow-visible lg:px-0">
               {recommended.slice(0, 4).map((p) => (
-                <div
-                  key={p.id}
-                  className="
-                    group flex w-[10.5rem] shrink-0 flex-col rounded-2xl border border-border/70 bg-card p-3
-                    shadow-[0_1px_3px_oklch(0_0_0/0.04)]
-                    transition-all duration-300 ease-out
-                    hover:-translate-y-[2px] hover:shadow-[0_18px_36px_-20px_oklch(0_0_0/0.14)]
-                    sm:w-48 lg:w-auto lg:p-4
-                  "
-                >
-                  <Link
-                    href={`/product/${p.id}`}
-                    className="block aspect-square overflow-hidden rounded-xl bg-secondary"
-                  >
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      className="size-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                    />
-                  </Link>
-                  <Link
-                    href={`/product/${p.id}`}
-                    className="mt-2.5 line-clamp-2 min-h-[2.5rem] text-[13px] font-medium leading-snug text-foreground transition-colors hover:text-accent lg:mt-3 lg:min-h-[2.75rem] lg:text-sm"
-                  >
-                    {p.name}
-                  </Link>
-                  <Price
-                    amount={p.price}
-                    size="sm"
-                    className="mt-1 !font-bold lg:mt-1.5 lg:!text-base"
-                    symbolClassName="lg:!text-[0.78rem]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      addToCart(p.id, { qty: 1 });
-                      toast.success("Added to cart");
-                    }}
-                    className="mt-auto flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-foreground text-[13px] font-semibold text-background transition hover:opacity-90 active:scale-[0.98] lg:mt-3 lg:h-10 lg:text-sm"
-                  >
-                    <Plus className="size-3.5 lg:size-4" strokeWidth={2.25} />
-                    Add to Cart
-                  </button>
+                <div key={p.id} className="w-42 shrink-0 sm:w-48 lg:w-auto">
+                  <ProductCard p={p} />
                 </div>
               ))}
             </div>

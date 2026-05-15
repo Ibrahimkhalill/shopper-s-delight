@@ -137,14 +137,14 @@ function SearchPageContent() {
             {/* Trending products */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Trending Right Now</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
                 {PRODUCTS.slice(0, 5).map((p) => <ProductCard key={p.id} p={p} />)}
               </div>
             </div>
           </div>
         ) : (
           <>
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
               {pageItems.map((p) => <ProductCard key={p.id} p={p} />)}
             </div>
             <DataPagination

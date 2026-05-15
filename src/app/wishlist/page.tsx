@@ -90,7 +90,7 @@ function WishlistPage() {
 
       {/* ── Product grid ── */}
       <div className="mx-auto max-w-7xl px-4 py-8 pb-16">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
           {items.map((p, i) => {
             const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
             const isRemoving = removed.includes(p.id);
@@ -158,9 +158,9 @@ function WishlistPage() {
                   {/* Price + CTA */}
                   <div className="mt-3 pt-3 border-t flex items-center justify-between gap-2">
                     <div className="flex flex-col gap-0.5">
-                      <Price amount={p.price} size="sm" className="!font-black" />
+                      <Price amount={p.price} size="sm" className="font-black!" />
                       {p.oldPrice && (
-                        <Price amount={p.oldPrice} size="xs" muted struck className="!text-[10px]" />
+                        <Price amount={p.oldPrice} size="xs" muted struck className="text-[10px]!" />
                       )}
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -194,7 +194,7 @@ function WishlistPage() {
               <span className="font-semibold text-foreground text-base">{items.length} items</span> in your wishlist
               {savings > 0 && (
                 <span className="ml-2 inline-flex items-baseline gap-1 font-semibold text-accent">
-                  · You save <Price amount={savings} size="sm" tone="inherit" className="!font-semibold" />
+                  · You save <Price amount={savings} size="sm" tone="inherit" className="font-semibold!" />
                 </span>
               )}
             </div>
@@ -212,7 +212,7 @@ function WishlistPage() {
                 <ShoppingCart className="size-4" />
                 <span className="inline-flex items-baseline gap-1">
                   Add all to cart ·{" "}
-                  <Price amount={total} size="sm" tone="inherit" className="!font-bold" />
+                  <Price amount={total} size="sm" tone="inherit" className="font-bold!" />
                 </span>
               </button>
             </div>

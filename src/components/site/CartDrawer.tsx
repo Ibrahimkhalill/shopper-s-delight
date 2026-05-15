@@ -17,9 +17,11 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     const fn = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", fn);
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", fn);
       document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [open, onClose]);
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { Heart, ShoppingCart } from "lucide-react";
+import { useState } from "react";
+import { Heart, ShoppingCart, ArrowLeftRight, Eye } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -18,6 +19,8 @@ export type Product = {
   price: number;
   oldPrice?: number;
   image: string;
+  images?: string[];
+  colorImages?: string[];
   badge?: { label: string; tone: "new" | "sale" | "trending" };
   colors: string[];
   liked?: boolean;
@@ -37,8 +40,17 @@ const toneClass: Record<NonNullable<Product["badge"]>["tone"], string> = {
 
 export function ProductCard({ p }: { p: Product }) {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
-  const { addToCart, toggleWishlist, wishlist } = useStore();
+  const { addToCart, toggleWishlist, wishlist, addToCompare, removeFromCompare, compareList } = useStore();
   const liked = wishlist.includes(p.id);
+  const inCompare = compareList.includes(p.id);
+  const [hoveredColor, setHoveredColor] = useState<number | null>(null);
+  const [cardHovered, setCardHovered] = useState(false);
+
+  // On card hover: show second image (images[1]). On color dot hover: show that color's image.
+  const hoverImage = hoveredColor !== null && p.colorImages?.[hoveredColor]
+    ? p.colorImages[hoveredColor]
+    : (p.images?.[1] ?? p.image);
+  const displayImage = (cardHovered || hoveredColor !== null) ? hoverImage : p.image;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -56,6 +68,8 @@ export function ProductCard({ p }: { p: Product }) {
 
   return (
     <article
+      onMouseEnter={() => setCardHovered(true)}
+      onMouseLeave={() => { setCardHovered(false); setHoveredColor(null); }}
       className="
         group relative flex h-full flex-col overflow-hidden
         rounded-[1.5rem] border border-border/70 bg-card
@@ -71,14 +85,36 @@ export function ProductCard({ p }: { p: Product }) {
         aria-label={p.name}
         className="relative block aspect-square w-full overflow-hidden bg-secondary/60"
       >
+        {/* Second image fades in on hover */}
         <img
           src={p.image}
           alt={p.name}
           loading="lazy"
           width={800}
           height={800}
-          className="size-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.05]"
+          className="absolute inset-0 size-full object-cover transition-opacity duration-500 ease-out"
+          style={{ opacity: cardHovered || hoveredColor !== null ? 0 : 1 }}
         />
+        <img
+          src={displayImage}
+          alt={p.name}
+          loading="lazy"
+          width={800}
+          height={800}
+          className="absolute inset-0 size-full object-cover transition-opacity duration-500 ease-out"
+          style={{ opacity: cardHovered || hoveredColor !== null ? 1 : 0 }}
+        />
+
+        {/* Quick Add — slides up from bottom on hover */}
+        <div className="absolute bottom-0 left-0 right-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0 px-3 pb-3">
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="w-full bg-white/95 backdrop-blur-sm py-2.5 text-xs font-bold text-foreground rounded-xl hover:bg-foreground hover:text-background transition-colors duration-200"
+          >
+            Quick Add
+          </button>
+        </div>
 
         {/* Badge stack — vertical, top-left. Never collides with wishlist. */}
         <div className="pointer-events-none absolute left-2.5 top-2.5 z-10 flex flex-col items-start gap-1 lg:left-3 lg:top-3 lg:gap-1.5">
@@ -96,28 +132,55 @@ export function ProductCard({ p }: { p: Product }) {
           )}
         </div>
 
-        {/* Wishlist — fixed 36 / 40px circle, top-right, soft. */}
-        <button
-          type="button"
-          onClick={handleLike}
-          aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
-          aria-pressed={liked}
-          className={`
-            absolute right-2.5 top-2.5 z-10 inline-flex size-9 items-center justify-center rounded-full
-            border border-border/40 bg-background/85 backdrop-blur-md
-            shadow-[0_1px_3px_oklch(0_0_0/0.05)]
-            transition-all duration-200 ease-out
-            hover:scale-[1.08] hover:border-border hover:bg-background hover:shadow-[0_4px_12px_-4px_oklch(0_0_0/0.12)]
-            active:scale-95
-            lg:right-3 lg:top-3 lg:size-10
-            ${liked ? "text-accent" : "text-foreground/70 hover:text-accent"}
-          `}
-        >
-          <Heart
-            className={`size-[15px] transition-transform duration-200 lg:size-4 ${liked ? "fill-current scale-110" : ""}`}
-            strokeWidth={2}
-          />
-        </button>
+        {/* Action icons — stacked right, slide in on hover */}
+        <div className="absolute right-2.5 top-2.5 z-10 flex flex-col gap-2 lg:right-3 lg:top-3">
+          {[
+            {
+              label: liked ? "Remove from wishlist" : "Add to wishlist",
+              icon: <Heart className={`size-3.75 lg:size-4 transition-transform duration-200 ${liked ? "fill-current scale-110" : ""}`} strokeWidth={2} />,
+              onClick: handleLike,
+              active: liked,
+              delay: "delay-0",
+            },
+            {
+              label: inCompare ? "Remove from compare" : "Add to compare",
+              icon: <ArrowLeftRight className="size-3.75 lg:size-4" strokeWidth={2} />,
+              onClick: (e: React.MouseEvent) => {
+                e.preventDefault(); e.stopPropagation();
+                if (inCompare) { removeFromCompare(p.id); toast("Removed from compare"); }
+                else { addToCompare(p.id); toast.success("Added to compare"); }
+              },
+              active: inCompare,
+              delay: "delay-75",
+            },
+            {
+              label: "Quick view",
+              icon: <Eye className="size-3.75 lg:size-4" strokeWidth={2} />,
+              onClick: (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/product/${p.id}`; },
+              active: false,
+              delay: "delay-150",
+            },
+          ].map(({ label, icon, onClick, active, delay }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={onClick}
+              aria-label={label}
+              className={`
+                inline-flex size-9 items-center justify-center rounded-full lg:size-10
+                border border-border/40 bg-background/90 backdrop-blur-md
+                shadow-[0_1px_3px_oklch(0_0_0/0.08)]
+                transition-all duration-200 ease-out ${delay}
+                translate-x-10 opacity-0 group-hover:translate-x-0 group-hover:opacity-100
+                hover:scale-110 hover:bg-background hover:shadow-[0_4px_12px_-4px_oklch(0_0_0/0.15)]
+                active:scale-95
+                ${active ? "text-accent" : "text-foreground/70 hover:text-accent"}
+              `}
+            >
+              {icon}
+            </button>
+          ))}
+        </div>
       </Link>
 
       {/* ── Content ──────────────────────────────────────────────────────── */}
@@ -154,7 +217,8 @@ export function ProductCard({ p }: { p: Product }) {
               key={i}
               aria-hidden="true"
               style={{ background: c }}
-              className="box-border size-4 shrink-0 rounded-full border border-border/80 transition-colors duration-200 group-hover:border-border lg:size-[18px]"
+             
+              className={`box-border size-4 shrink-0 rounded-full border transition-all duration-200 lg:size-4.5 ${hoveredColor === i ? "border-foreground scale-110" : "border-border/80 group-hover:border-border"}`}
             />
           ))}
         </div>
@@ -188,7 +252,7 @@ export function ProductCard({ p }: { p: Product }) {
               rounded-xl bg-foreground text-sm font-semibold tracking-tight text-background
               transition-all duration-200 ease-out
               hover:opacity-[0.92] hover:shadow-[0_8px_22px_-10px_oklch(0_0_0/0.45)]
-              active:scale-[0.98]
+              active:scale-[0.98] lg:hidden
               lg:h-11
             "
           >

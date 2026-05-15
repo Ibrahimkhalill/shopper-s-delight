@@ -16,6 +16,18 @@ export const PRODUCTS: Product[] = [
     sizes: ["S", "M", "L", "XL"],
     price: 1200, oldPrice: 1500,
     image: U("photo-1521572163474-6864f9cf17ab"),
+    images: [
+      U("photo-1521572163474-6864f9cf17ab"),
+      U("photo-1583743814966-8936f5b7be1a"),
+      U("photo-1618354691373-d851c5c3a990"),
+      U("photo-1529374255404-311a2a4f1fd9"),
+    ],
+    colorImages: [
+      U("photo-1521572163474-6864f9cf17ab"),   // pink
+      U("photo-1583743814966-8936f5b7be1a"),   // blue
+      U("photo-1618354691373-d851c5c3a990"),   // white
+      U("photo-1529374255404-311a2a4f1fd9"),   // black
+    ],
     badge: { label: "New", tone: "new" },
     colors: ["#f5b6c8", "#7d8ce0", "#ffffff", "#000000"],
   },
@@ -29,6 +41,16 @@ export const PRODUCTS: Product[] = [
     sizes: ["S", "M", "L", "XL"],
     price: 4800, oldPrice: 5500,
     image: U("photo-1539109136881-3be0616acf4b"),
+    images: [
+      U("photo-1539109136881-3be0616acf4b"),
+      U("photo-1548454782-15b189d129ab"),
+      U("photo-1607345366928-199ea26cfe3e"),
+      U("photo-1591047139829-d91aecb6caea"),
+    ],
+    colorImages: [
+      U("photo-1539109136881-3be0616acf4b"),   // brown
+      U("photo-1548454782-15b189d129ab"),       // black
+    ],
     badge: { label: "Sale", tone: "sale" },
     colors: ["#a06b48", "#2c2c2c"],
   },
@@ -42,6 +64,17 @@ export const PRODUCTS: Product[] = [
     sizes: ["39", "40", "41", "42", "43"],
     price: 5500, oldPrice: 6200,
     image: U("photo-1542291026-7eec264c27ff"),
+    images: [
+      U("photo-1542291026-7eec264c27ff"),
+      U("photo-1595950653106-6c9ebd614d3a"),
+      U("photo-1608231387042-66d1773070a5"),
+      U("photo-1560769629-975ec94e6a86"),
+    ],
+    colorImages: [
+      U("photo-1542291026-7eec264c27ff"),       // black
+      U("photo-1595950653106-6c9ebd614d3a"),    // red/pink
+      U("photo-1608231387042-66d1773070a5"),    // white
+    ],
     colors: ["#000000", "#d96a7a", "#ffffff"],
   },
   {
@@ -54,6 +87,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["S", "M", "L"],
     price: 1200, oldPrice: 1400,
     image: U("photo-1558769132-cb1aea458c5e"),
+    images: [
+      U("photo-1558769132-cb1aea458c5e"),
+      U("photo-1515886657613-9f3515b0c78f"),
+      U("photo-1572804013309-59a88b7e92f1"),
+      U("photo-1554568218-0f1715e72254"),
+    ],
     badge: { label: "New", tone: "new" },
     colors: ["#ffffff", "#d4b3ff", "#f5b6c8"],
   },
@@ -67,6 +106,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["S", "M", "L", "XL"],
     price: 3200, oldPrice: 3800,
     image: U("photo-1576871337622-98d48d1cf531"),
+    images: [
+      U("photo-1576871337622-98d48d1cf531"),
+      U("photo-1551537482-f2075a1d41f2"),
+      U("photo-1611312449408-fcece27cdbb7"),
+      U("photo-1598033129183-c4f50c736f10"),
+    ],
     badge: { label: "Trending", tone: "trending" },
     colors: ["#4a6fa5", "#2c2c2c"],
   },
@@ -80,6 +125,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["S", "M", "L", "XL"],
     price: 1800, oldPrice: 2200,
     image: U("photo-1602810316693-3667c854239a"),
+    images: [
+      U("photo-1602810316693-3667c854239a"),
+      U("photo-1620012253295-c15cc3e65df4"),
+      U("photo-1563630423918-b58f07336ac9"),
+      U("photo-1604695573706-53170668f6a6"),
+    ],
     colors: ["#ffffff", "#add8e6", "#d3d3d3"],
   },
 
@@ -94,6 +145,17 @@ export const PRODUCTS: Product[] = [
     sizes: ["One size"],
     price: 6800, oldPrice: 7800,
     image: U("photo-1505740420928-5e560c06d30e"),
+    images: [
+      U("photo-1505740420928-5e560c06d30e"),
+      U("photo-1583394838336-acd977736f90"),
+      U("photo-1546435770-a3e426bf472b"),
+      U("photo-1484704849700-f032a568e944"),
+    ],
+    colorImages: [
+      U("photo-1505740420928-5e560c06d30e"),    // black
+      U("photo-1583394838336-acd977736f90"),    // blue/purple
+      U("photo-1546435770-a3e426bf472b"),       // orange
+    ],
     badge: { label: "Trending", tone: "trending" },
     colors: ["#000000", "#7d8ce0", "#f08c6e"],
   },
@@ -107,6 +169,17 @@ export const PRODUCTS: Product[] = [
     sizes: ["One size"],
     price: 9200, oldPrice: 10500,
     image: U("photo-1523275335684-37898b6baf30"),
+    images: [
+      U("photo-1523275335684-37898b6baf30"),
+      U("photo-1434493789847-2f02dc6ca35d"),
+      U("photo-1508685096489-7aacd43bd3b1"),
+      U("photo-1617043786394-f977fa12eddf"),
+    ],
+    colorImages: [
+      U("photo-1523275335684-37898b6baf30"),    // black
+      U("photo-1434493789847-2f02dc6ca35d"),    // purple
+      U("photo-1508685096489-7aacd43bd3b1"),    // silver
+    ],
     badge: { label: "New", tone: "new" },
     colors: ["#000000", "#c8b5ff", "#c8c8c8"],
   },
@@ -120,6 +193,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["128GB", "256GB"],
     price: 52000, oldPrice: 58000,
     image: U("photo-1598327105666-5b89351aff97"),
+    images: [
+      U("photo-1598327105666-5b89351aff97"),
+      U("photo-1565849904461-04a58ad377e0"),
+      U("photo-1512941937669-90a1b58e7e9c"),
+      U("photo-1580910051074-3eb694886505"),
+    ],
     badge: { label: "New", tone: "new" },
     colors: ["#000000", "#1a1a2e", "#c8c8c8"],
   },
@@ -133,6 +212,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["8GB/256GB", "16GB/512GB"],
     price: 78000, oldPrice: 85000,
     image: U("photo-1496181133206-80ce9b88a853"),
+    images: [
+      U("photo-1496181133206-80ce9b88a853"),
+      U("photo-1525547719571-a2d4ac8945e2"),
+      U("photo-1541807084-5c52b6b3adef"),
+      U("photo-1593642632559-0c6d3fc62b89"),
+    ],
     badge: { label: "Sale", tone: "sale" },
     colors: ["#c0c0c0", "#2c2c2c"],
   },
@@ -146,6 +231,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["One size"],
     price: 3500, oldPrice: 4200,
     image: U("photo-1590658268037-6bf12165a8df"),
+    images: [
+      U("photo-1590658268037-6bf12165a8df"),
+      U("photo-1572536147248-ac59a8abfa4b"),
+      U("photo-1606220945770-b5b6c2c55bf1"),
+      U("photo-1598986646512-9330bcc4c0dc"),
+    ],
     colors: ["#ffffff", "#000000"],
   },
   {
@@ -158,6 +249,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["32GB", "64GB"],
     price: 28000, oldPrice: 32000,
     image: U("photo-1544244015-0df4b3ffc6b0"),
+    images: [
+      U("photo-1544244015-0df4b3ffc6b0"),
+      U("photo-1589739900266-43b2843f4c12"),
+      U("photo-1561154464-82e9adf32764"),
+      U("photo-1527698266440-12104e498b76"),
+    ],
     badge: { label: "Sale", tone: "sale" },
     colors: ["#c0c0c0", "#2c2c2c"],
   },
@@ -173,6 +270,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["Single", "Double", "King"],
     price: 2800, oldPrice: 3500,
     image: U("photo-1564019472231-4586c552dc27"),
+    images: [
+      U("photo-1564019472231-4586c552dc27"),
+      U("photo-1522771739844-6a9f6d5f14af"),
+      U("photo-1556909114-f6e7ad7d3136"),
+      U("photo-1631049307264-da0ec9d70304"),
+    ],
     badge: { label: "New", tone: "new" },
     colors: ["#ffffff", "#f5f0e8", "#b8d4e8"],
   },
@@ -186,6 +289,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["One size"],
     price: 1500, oldPrice: 1800,
     image: U("photo-1621177555452-bedbe4c28879"),
+    images: [
+      U("photo-1621177555452-bedbe4c28879"),
+      U("photo-1507473885765-e6ed057f782c"),
+      U("photo-1513506003901-1e6a35d4c4e0"),
+      U("photo-1572635196237-14b3f281503f"),
+    ],
     colors: ["#ffffff", "#000000"],
   },
   {
@@ -198,6 +307,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["45×45cm", "50×50cm"],
     price: 950, oldPrice: 1200,
     image: U("photo-1629949008265-af1bcaf59786"),
+    images: [
+      U("photo-1629949008265-af1bcaf59786"),
+      U("photo-1616627451515-cbc80e5ece5a"),
+      U("photo-1555041469-a586c61ea9bc"),
+      U("photo-1493809842364-78817add7ffb"),
+    ],
     badge: { label: "Trending", tone: "trending" },
     colors: ["#d4c5b0", "#8b7355", "#ffffff"],
   },
@@ -211,6 +326,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["One size"],
     price: 4200, oldPrice: 5000,
     image: U("photo-1518291344630-4857135fb581"),
+    images: [
+      U("photo-1518291344630-4857135fb581"),
+      U("photo-1585515320310-259814833e62"),
+      U("photo-1556909114-f6e7ad7d3136"),
+      U("photo-1574269909862-7e1d70bb8078"),
+    ],
     badge: { label: "Sale", tone: "sale" },
     colors: ["#2c2c2c", "#c0392b"],
   },
@@ -226,6 +347,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["One size"],
     price: 2400, oldPrice: 2900,
     image: U("photo-1591130901921-3f0652bb3915"),
+    images: [
+      U("photo-1591130901921-3f0652bb3915"),
+      U("photo-1556228720-195a672e8a03"),
+      U("photo-1571781926291-c477ebfd024b"),
+      U("photo-1608248543803-ba4f8c70ae0b"),
+    ],
     badge: { label: "New", tone: "new" },
     colors: ["#fde8d8", "#ffffff"],
   },
@@ -239,6 +366,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["One size"],
     price: 1800, oldPrice: 2200,
     image: U("photo-1512496015851-a90fb38ba796"),
+    images: [
+      U("photo-1512496015851-a90fb38ba796"),
+      U("photo-1586495777744-4e6b23b48a54"),
+      U("photo-1631214503851-25e29e571968"),
+      U("photo-1522335789203-aabd1fc54bc9"),
+    ],
     badge: { label: "Trending", tone: "trending" },
     colors: ["#c0392b", "#8b0000", "#ff69b4"],
   },
@@ -252,6 +385,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["50ml", "100ml"],
     price: 3200, oldPrice: 3800,
     image: U("photo-1541643600914-78b084683601"),
+    images: [
+      U("photo-1541643600914-78b084683601"),
+      U("photo-1592945403407-9caf930d03b0"),
+      U("photo-1585386959984-a4155224a1ad"),
+      U("photo-1563170351-be82bc888aa4"),
+    ],
     colors: ["#c8a96e", "#2c2c2c"],
   },
 
@@ -266,6 +405,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["250g", "500g", "1kg"],
     price: 650, oldPrice: 800,
     image: U("photo-1587049352846-4a222e784d38"),
+    images: [
+      U("photo-1587049352846-4a222e784d38"),
+      U("photo-1558642452-9d2a7deb7f62"),
+      U("photo-1471943311424-646960669fbc"),
+      U("photo-1534470397394-7f370f4b09c0"),
+    ],
     badge: { label: "New", tone: "new" },
     colors: ["#f5a623"],
   },
@@ -279,6 +424,12 @@ export const PRODUCTS: Product[] = [
     sizes: ["2kg", "5kg", "10kg"],
     price: 850, oldPrice: 1000,
     image: U("photo-1586201375761-83865001e31c"),
+    images: [
+      U("photo-1586201375761-83865001e31c"),
+      U("photo-1536304929831-ee1ca9d44906"),
+      U("photo-1574226516831-e1dff420e562"),
+      U("photo-1550989460-0adf9ea622e2"),
+    ],
     colors: ["#f5f0e8"],
   },
 ];

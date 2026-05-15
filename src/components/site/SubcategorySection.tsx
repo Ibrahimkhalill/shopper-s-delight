@@ -13,7 +13,7 @@ export function SubcategorySection({ slug, title }: { slug: string; title: strin
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-accent mb-0.5">Shop by</p>
-          <h3 className="text-lg font-bold tracking-tight">{title}</h3>
+          <h3 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-[2rem]">{title}</h3>
         </div>
         <Link
           href={`/category/${slug}`}

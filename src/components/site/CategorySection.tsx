@@ -48,8 +48,8 @@ export function CategorySection({
         </div>
 
         <div className={`relative mx-auto max-w-7xl px-4 lg:px-6 ${lang === "bn" ? "font-bn" : ""}`}>
-          <div className="flex flex-col items-center text-center">
-            <div className="inline-block rounded-full bg-background px-6 py-2 shadow-sm">
+          <div className="flex flex-col">
+            <div className="inline-block rounded-full bg-background px-6 py-2 shadow-sm self-start">
               <p className="text-[11px] font-bold uppercase tracking-widest text-accent sm:text-xs">{t(eyebrowKey)}</p>
             </div>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-[2rem]">{t(titleKey)}</h2>

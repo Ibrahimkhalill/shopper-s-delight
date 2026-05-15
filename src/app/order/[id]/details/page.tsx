@@ -1,252 +1,225 @@
 "use client";
 
-import React from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Layout } from "@/components/site/Layout";
+import { ProfileShell } from "@/components/site/ProfileShell";
 import { useStore } from "@/lib/store";
-import TakaSvg from "@/assets/TakaSvg";
-import { MapPin, Phone, Mail, ChevronLeft, Truck, ShoppingBag, Receipt } from "lucide-react";
-import { PageHeader } from "@/components/site/PageHeader";
+import { Price } from "@/components/site/Price";
+import {
+  ChevronLeft, RotateCcw, User, Phone, MapPin,
+  Check, Package, CreditCard,
+} from "lucide-react";
 
-function Price({ amount, className }: { amount: number | string; className?: string }) {
-  const num = typeof amount === "number" ? amount.toLocaleString() : amount;
-  return (
-    <span className={`inline-flex items-baseline gap-px ${className ?? ""}`}>
-      <span className="text-[0.82em] font-bold leading-none translate-y-px"><TakaSvg /></span>
-      <span>{num}</span>
-    </span>
-  );
-}
+const TIMELINE_STEPS: { key: string; label: string; desc: string }[] = [
+  { key: "placed",    label: "Order Placed",  desc: "Thank you for your order! We've successfully received it and will begin preparing everything to ensure a smooth and timely delivery." },
+  { key: "placed",    label: "Processing",    desc: "We're currently reviewing your order details and checking the availability of the items. Hang tight — we'll start packing soon!" },
+  { key: "packed",    label: "Payment",       desc: "Your payment is being securely processed and verified. This may take a few moments. We'll notify you as soon as it's confirmed." },
+  { key: "packed",    label: "Packing",       desc: "Our team is now carefully packing your items to make sure everything arrives in perfect condition. Quality is our priority!" },
+  { key: "shipped",   label: "Delivering",    desc: "Your order is on the move! It's currently being delivered to your address. Keep an eye out — it's almost there." },
+  { key: "delivered", label: "Delivered",     desc: "Your order has been successfully delivered! We hope you love your purchase. Thank you for shopping with us." },
+];
 
-const STATUS_META: Record<string, { label: string; cls: string }> = {
-  placed:    { label: "Order Placed",  cls: "bg-accent text-white" },
-  packed:    { label: "Packed",        cls: "bg-foreground text-background" },
-  shipped:   { label: "Delivering",   cls: "bg-foreground text-background" },
-  delivered: { label: "Delivered",    cls: "bg-black text-white" },
-  cancelled: { label: "Cancelled",    cls: "bg-border text-foreground" },
-};
+const STATUS_RANK: Record<string, number> = { placed: 0, packed: 1, shipped: 2, delivered: 3 };
 
-function OrderDetailsPage() {
-  const params = useParams<{ id: string }>();
-  const id = params.id ?? "";
+export default function OrderDetailsPage() {
+  const { id } = useParams<{ id: string }>();
   const { orders, resolveProduct } = useStore();
   const order = orders.find((o) => o.id === id);
 
-  const createdDate = order
-    ? new Date(order.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-    : "—";
-
   if (!order) {
     return (
-      <Layout hideTrust>
-        <PageHeader
-          centered
-          color="oklch(0.96 0 0)"
-          title="Order Details"
-          crumbs={[{ label: "Home", to: "/" }, { label: "Account", to: "/profile" }, { label: "Order" }]}
-        />
-        <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4 text-center px-4">
-          <Receipt className="size-12 text-muted-foreground/30" strokeWidth={1.5} />
+      <ProfileShell>
+        <div className="bg-white rounded-2xl border py-16 text-center">
+          <Package className="size-10 mx-auto text-muted-foreground/30 mb-3" strokeWidth={1.5} />
           <p className="font-bold text-base">Order not found</p>
-          <p className="text-sm text-muted-foreground">This order doesn&apos;t exist or may have been removed.</p>
-          <Link href="/profile" className="mt-2 h-10 px-6 rounded-full bg-black text-white text-sm font-semibold inline-flex items-center hover:bg-accent transition">
-            Back to Account
+          <p className="text-sm text-muted-foreground mt-2">This order doesn't exist or may have been removed.</p>
+          <Link href="/profile/orders" className="mt-6 h-10 px-6 rounded-full bg-black text-white text-sm font-semibold inline-flex items-center hover:bg-accent transition">
+            Back to Orders
           </Link>
         </div>
-      </Layout>
+      </ProfileShell>
     );
   }
 
+  const rank = STATUS_RANK[order.status] ?? 0;
   const subtotal = order.items.reduce((sum, it) => {
     const p = resolveProduct(it.id);
     return sum + (p ? p.price * it.qty : 0);
   }, 0);
-
-  const shippingCost = order.shippingCost ?? (order.total - subtotal + (order.discount ?? 0));
+  const shippingCost = order.shippingCost ?? Math.max(0, order.total - subtotal + (order.discount ?? 0));
   const discount = order.discount ?? 0;
-  const meta = STATUS_META[order.status] ?? STATUS_META.placed;
 
   return (
-    <Layout hideTrust>
-      <PageHeader
-        centered
-        color="oklch(0.96 0 0)"
-        title="Order Details"
-        subtitle="Complete breakdown of your order including items, charges, and delivery info."
-        crumbs={[{ label: "Home", to: "/" }, { label: "Account", to: "/profile" }, { label: "Order Details" }]}
-      />
+    <ProfileShell activeLabel="Order Details" activeIcon={Package}>
+      <div className="animate-fade-up space-y-4">
 
-      <div className="bg-secondary/20 min-h-screen pb-16">
-        <div className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-
-          {/* Back + Track links */}
-          <div className="flex items-center justify-between">
-            <Link
-              href="/profile"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition"
-            >
-              <ChevronLeft className="size-4" /> My Account
-            </Link>
-            <Link
-              href={`/order/${id}`}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground hover:text-accent transition"
-            >
-              <Truck className="size-4" /> Track Order
-            </Link>
+        {/* Page header */}
+        <div className="flex items-center gap-3">
+          <Link href="/profile/orders"
+            className="size-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition shrink-0">
+            <ChevronLeft className="size-4" strokeWidth={2.5} />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground font-medium">Order ID</p>
+            <p className="font-mono font-bold text-sm">#{id.slice(0, 16).toUpperCase()}</p>
           </div>
+          <button
+            type="button"
+            title="Refresh"
+            className="size-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition shrink-0"
+          >
+            <RotateCcw className="size-4" strokeWidth={2} />
+          </button>
+        </div>
 
-          {/* Order meta card */}
-          <div className="bg-card rounded-2xl border shadow-sm p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-3 mb-5">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Order ID</p>
-                <p className="font-mono font-bold text-base">#{id.slice(0, 12).toUpperCase()}</p>
-              </div>
-              <span className={`text-[11px] px-3 py-1.5 rounded-full font-bold uppercase tracking-wide shrink-0 ${meta.cls}`}>
-                {meta.label}
+        {/* Timeline */}
+        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b">
+            <h3 className="font-bold text-base">Timeline</h3>
+          </div>
+          <div className="px-5 py-5 space-y-0">
+            {TIMELINE_STEPS.map((step, i) => {
+              const stepRank = STATUS_RANK[step.key] ?? 0;
+              const done = stepRank <= rank;
+              const isLast = i === TIMELINE_STEPS.length - 1;
+
+              return (
+                <div key={i} className="flex gap-4">
+                  {/* Left: date/status + connector */}
+                  <div className="flex flex-col items-center gap-0 w-16 shrink-0">
+                    <div className={`size-8 rounded-full flex items-center justify-center shrink-0 z-10 ${
+                      done ? "bg-foreground text-white" : "border-2 border-border bg-white"
+                    }`}>
+                      {done ? <Check className="size-3.5" strokeWidth={3} /> : null}
+                    </div>
+                    {!isLast && (
+                      <div className={`w-px flex-1 min-h-6 ${done ? "bg-foreground/30" : "bg-border"}`} />
+                    )}
+                  </div>
+
+                  {/* Right: label + description */}
+                  <div className={`pb-5 min-w-0 flex-1 ${isLast ? "pb-2" : ""}`}>
+                    <p className={`text-sm font-bold leading-tight ${done ? "text-foreground" : "text-muted-foreground/60"}`}>
+                      {step.label}
+                    </p>
+                    <p className={`text-xs leading-relaxed mt-1 ${done ? "text-muted-foreground" : "text-muted-foreground/40"}`}>
+                      {step.desc}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Shipment Address */}
+        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b">
+            <h3 className="font-bold text-base">Shipment Address</h3>
+          </div>
+          <div className="px-5 py-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <User className="size-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
+              <span className="text-sm font-semibold">{order.name}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Phone className="size-4 text-muted-foreground shrink-0" strokeWidth={1.75} />
+              <span className="text-sm text-muted-foreground">{order.phone}</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <MapPin className="size-4 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.75} />
+              <span className="text-sm text-muted-foreground">{order.address}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Order Items */}
+        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b">
+            <h3 className="font-bold text-base">Order Items</h3>
+          </div>
+          <div className="divide-y">
+            {order.items.map((it) => {
+              const p = resolveProduct(it.id);
+              if (!p) return null;
+              return (
+                <Link key={it.id} href={`/product/${it.id}`}
+                  className="flex items-center gap-4 px-5 py-4 hover:bg-secondary/40 transition-colors">
+                  <div className="size-14 rounded-xl bg-secondary overflow-hidden shrink-0">
+                    <img src={p.image} alt={p.name} className="size-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold line-clamp-2">{p.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Product</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <Price amount={p.price * it.qty} size="sm" className="font-bold!" />
+                    <p className="text-xs text-muted-foreground mt-0.5">Quantity : {it.qty}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Order Information */}
+        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b">
+            <h3 className="font-bold text-base">Order Information</h3>
+          </div>
+          <div className="px-5 py-5 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Order</span>
+              <span className="font-mono font-semibold text-xs">#{id.slice(0, 16).toUpperCase()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Order At</span>
+              <span className="font-semibold">
+                {new Date(order.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
               </span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-border">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Order Date</p>
-                <p className="text-sm font-semibold">{createdDate}</p>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Subtotal (MRP)</span>
+              <Price amount={subtotal} size="sm" className="font-semibold!" />
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-sm text-accent">
+                <span>Discount</span>
+                <span className="font-semibold">−<Price amount={discount} size="sm" /></span>
               </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Payment</p>
-                <p className="text-sm font-semibold uppercase">{order.payment}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Items</p>
-                <p className="text-sm font-semibold">{order.items.length} {order.items.length === 1 ? "item" : "items"}</p>
-              </div>
+            )}
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Delivery Charge</span>
+              {shippingCost === 0
+                ? <span className="text-sm font-semibold text-green-600">Free</span>
+                : <Price amount={shippingCost} size="sm" className="font-semibold!" />
+              }
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">VAT</span>
+              <span className="font-semibold">৳ 0.00</span>
+            </div>
+
+            <div className="flex justify-between items-center border-t pt-3 mt-1">
+              <span className="font-bold text-base">Total Payable</span>
+              <Price amount={order.total} size="lg" className="font-bold!" />
             </div>
           </div>
 
-          {/* Items list */}
-          <div className="bg-card rounded-2xl border shadow-sm overflow-hidden">
-            <div className="px-5 sm:px-6 py-4 border-b border-border">
-              <h3 className="font-bold text-base">Items Ordered</h3>
-            </div>
-            <div className="divide-y divide-border">
-              {order.items.map((it) => {
-                const p = resolveProduct(it.id);
-                if (!p) return null;
-                return (
-                  <Link
-                    key={it.id}
-                    href={`/product/${it.id}`}
-                    className="flex items-center gap-4 px-5 sm:px-6 py-4 hover:bg-secondary/40 transition-colors"
-                  >
-                    <div className="w-16 h-16 sm:w-18 sm:h-18 bg-secondary rounded-xl overflow-hidden shrink-0">
-                      <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm leading-snug line-clamp-2">{p.name}</p>
-                      {it.size && <p className="text-xs text-muted-foreground mt-0.5">Size: {it.size}</p>}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        <Price amount={p.price} className="inline" /> × {it.qty}
-                      </p>
-                    </div>
-                    <Price amount={p.price * it.qty} className="font-extrabold text-sm shrink-0" />
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Order Summary */}
-            <div className="px-5 sm:px-6 py-5 border-t border-border bg-secondary/20 space-y-2.5">
-              <h4 className="text-sm font-bold mb-3">Order Summary</h4>
-
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal ({order.items.length} items)</span>
-                <Price amount={subtotal} className="font-semibold" />
-              </div>
-
-              {discount > 0 && (
-                <div className="flex justify-between text-sm text-accent">
-                  <span>Discount</span>
-                  <span className="font-semibold flex items-baseline gap-0.5">
-                    <span>−</span>
-                    <Price amount={discount} className="font-semibold" />
-                  </span>
-                </div>
-              )}
-
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Delivery Charge</span>
-                <span className="font-semibold">
-                  {shippingCost === 0
-                    ? <span className="text-green-600">Free</span>
-                    : <Price amount={shippingCost} />}
-                </span>
-              </div>
-
-              <div className="flex justify-between text-base font-extrabold pt-3 border-t border-border">
-                <span>Total</span>
-                <Price amount={order.total} />
-              </div>
-
-              <div className="flex justify-between text-sm pt-3 border-t border-border">
-                <span className="text-muted-foreground">
-                  {order.payment === "cod" ? "Amount Due (COD)" : "Amount Paid"}
-                </span>
-                <Price
-                  amount={order.total}
-                  className={`font-semibold ${order.payment === "cod" ? "text-accent" : "text-green-600"}`}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Shipping Address */}
-          <div className="bg-card rounded-2xl border shadow-sm p-5 sm:p-6">
-            <h3 className="font-bold text-base mb-4">Delivery Address</h3>
-            <div className="flex items-start gap-4">
-              <div className="w-11 h-11 bg-secondary rounded-full flex items-center justify-center shrink-0">
-                <MapPin size={18} className="text-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-sm">{order.name}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed mt-0.5">{order.address}</p>
-                <div className="flex flex-col gap-1.5 mt-3 text-sm font-semibold">
-                  <div className="flex items-center gap-2">
-                    <Phone size={13} className="text-muted-foreground shrink-0" />
-                    {order.phone}
-                  </div>
-                  {order.email && (
-                    <div className="flex items-center gap-2 font-medium text-muted-foreground">
-                      <Mail size={13} className="shrink-0" />
-                      <a href={`mailto:${order.email}`} className="hover:text-foreground hover:underline truncate">
-                        {order.email}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Link
-              href={`/order/${id}`}
-              className="h-12 flex items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold hover:border-foreground transition"
+          {/* Download invoice */}
+          <div className="px-5 pb-5">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="w-full h-11 rounded-full border-2 border-foreground text-sm font-bold hover:bg-foreground hover:text-white transition flex items-center justify-center gap-2"
             >
-              <Truck size={15} /> Track Order
-            </Link>
-            <Link
-              href="/"
-              className="h-12 flex items-center justify-center gap-2 rounded-xl bg-foreground text-background text-sm font-bold hover:opacity-80 transition"
-            >
-              <ShoppingBag size={15} /> Continue Shopping
-            </Link>
+              <CreditCard className="size-4" strokeWidth={2} />
+              Download your invoice
+            </button>
           </div>
-
         </div>
+
       </div>
-    </Layout>
+    </ProfileShell>
   );
 }
-
-export default OrderDetailsPage;

@@ -41,14 +41,28 @@ export function Header() {
   const pathname = usePathname();
   const searchRef = useRef<HTMLDivElement>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const [searchPopover, setSearchPopover] = useState<{ top: number; left: number; width: number } | null>(null);
 
   useEffect(() => setMounted(true), []);
 
+  // close user dropdown on outside click
+  useEffect(() => {
+    if (!userMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [userMenu]);
+
   // lock body scroll when drawer open
   useEffect(() => {
     document.body.style.overflow = menu ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    document.documentElement.style.overflow = menu ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; document.documentElement.style.overflow = ""; };
   }, [menu]);
 
   const results = q.trim()
@@ -165,7 +179,7 @@ export function Header() {
 
               {/* Desktop: user menu */}
               {user ? (
-                <div className="relative hidden md:block">
+                <div ref={userMenuRef} className="relative hidden md:block">
                   <button
                     onClick={() => setUserMenu(!userMenu)}
                     className="flex h-10 items-center gap-2 rounded-full px-3 text-sm hover:bg-secondary lg:h-12 lg:gap-2.5 lg:px-4 lg:text-[15px]"
@@ -179,7 +193,7 @@ export function Header() {
                   {userMenu && (
                     <div className="absolute right-0 top-full z-50 mt-2 w-56 animate-slide-down rounded-2xl border bg-card py-2 shadow-xl lg:w-64">
                       <Link href="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><User className="size-4 lg:size-[18px]" /> {t("user.profile")}</Link>
-                      <Link href="/profile?tab=orders" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Package className="size-4 lg:size-[18px]" /> {t("user.orders")}</Link>
+                      <Link href="/profile/orders" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Package className="size-4 lg:size-[18px]" /> {t("user.orders")}</Link>
                       <Link href="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Heart className="size-4 lg:size-[18px]" /> {t("user.wishlist")}</Link>
                       <div className="my-1.5 border-t" />
                       <button onClick={() => { logout(); setUserMenu(false); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-accent hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]">
@@ -396,10 +410,10 @@ export function Header() {
                   <nav className="space-y-0.5">
                     {[
                       { to: "/profile",  icon: User,     label: "My Profile" },
-                      { to: "/profile?tab=orders",    icon: Package,  label: "My Orders" },
-                      { to: "/profile?tab=addresses", icon: MapPin,   label: "My Addresses" },
-                      { to: "/wishlist", icon: Heart,    label: "Wishlist" },
-                      { to: "/profile?tab=settings", icon: Settings, label: "Settings" },
+                      { to: "/profile/orders",        icon: Package,  label: "My Orders" },
+                      { to: "/profile/addresses",     icon: MapPin,   label: "My Addresses" },
+                      { to: "/wishlist",              icon: Heart,    label: "Wishlist" },
+                      { to: "/profile/settings",      icon: Settings, label: "Settings" },
                     ].map((item) => (
                       <Link key={item.label} href={item.to} onClick={() => setMenu(false)}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition group"

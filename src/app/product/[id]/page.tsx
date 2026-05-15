@@ -84,6 +84,7 @@ function ProductPage() {
   const [zoom, setZoom] = useState({ active: false, x: 0, y: 0 });
   const [thumb, setThumb] = useState(0);
   const [added, setAdded] = useState(false);
+  const [hoveredColor, setHoveredColor] = useState<number | null>(null);
   const imgRef = useRef<HTMLDivElement>(null);
 
   const productReviews = useMemo(() => reviews.filter((r) => r.productId === id), [reviews, id]);
@@ -171,7 +172,10 @@ function ProductPage() {
     toast.success("Review posted!");
   };
 
-  const thumbs = [p.image, p.image, p.image, p.image];
+  const thumbs = p.images && p.images.length > 1 ? p.images : [p.image, p.image, p.image, p.image];
+  const activeColorIdx = hoveredColor ?? color;
+  const colorImage = p.colorImages?.[activeColorIdx];
+  const activeImage = colorImage ?? thumbs[thumb];
 
   return (
     <Layout>
@@ -224,7 +228,7 @@ function ProductPage() {
               >
                 {/* Base image */}
                 <img
-                  src={thumbs[thumb]}
+                  src={activeImage}
                   alt={p.name}
                   className="size-full object-cover transition duration-500"
                 />
@@ -272,7 +276,7 @@ function ProductPage() {
                   style={{
                     left: "calc(100% + 2.5rem)",
                     width: "100%",
-                    backgroundImage: `url(${thumbs[thumb]})`,
+                    backgroundImage: `url(${activeImage})`,
                     backgroundSize: `${bgSize}%`,
                     backgroundPosition: `${bgX}% ${bgY}%`,
                     backgroundRepeat: "no-repeat",
@@ -438,7 +442,9 @@ function ProductPage() {
                 <button
                   key={i}
                   type="button"
-                  onClick={() => setColor(i)}
+                  onClick={() => { setColor(i); setThumb(0); setHoveredColor(null); }}
+                  onMouseEnter={() => setHoveredColor(i)}
+                  onMouseLeave={() => setHoveredColor(null)}
                   aria-label={`Color ${colorLabelFromHex(c)}`}
                   aria-pressed={color === i}
                   className={`relative size-16 shrink-0 overflow-hidden rounded-lg border-2 bg-secondary/60 p-1 transition-all duration-200 active:scale-[0.98] sm:size-[4.5rem] ${
@@ -446,12 +452,17 @@ function ProductPage() {
                   }`}
                 >
                   <span className="relative block size-full overflow-hidden rounded-md bg-white">
-                    <img src={p.image} alt="" className="absolute inset-0 size-full object-cover" />
-                    <span
-                      className="absolute inset-0 mix-blend-multiply opacity-85"
-                      style={{ backgroundColor: c }}
-                      aria-hidden
-                    />
+                    {p.colorImages?.[i]
+                      ? <img src={p.colorImages[i]} alt="" className="absolute inset-0 size-full object-cover" />
+                      : <img src={p.image} alt="" className="absolute inset-0 size-full object-cover" />
+                    }
+                    {!p.colorImages?.[i] && (
+                      <span
+                        className="absolute inset-0 mix-blend-multiply opacity-85"
+                        style={{ backgroundColor: c }}
+                        aria-hidden
+                      />
+                    )}
                   </span>
                 </button>
               ))}
@@ -922,7 +933,7 @@ function ProductPage() {
         </div>
 
         {/* Desktop: grid */}
-        <div className="hidden sm:grid grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {related.map((rp) => (
             <ProductCard key={rp.id} p={rp} />
           ))}

@@ -38,8 +38,8 @@ export function FeaturedGrid() {
 
         <div className={`relative mx-auto max-w-7xl px-4 lg:px-6 ${lang === "bn" ? "font-bn" : ""}`}>
           {/* Section title — white pill on coloured bg like Sellzy */}
-          <div className="mb-6 flex flex-col items-center text-center sm:mb-8">
-            <div className="inline-block rounded-full bg-background px-6 py-2 shadow-sm">
+          <div className="mb-6 flex flex-col sm:mb-8">
+            <div className="inline-block rounded-full bg-background px-6 py-2 shadow-sm self-start">
               <p className="text-[11px] font-bold uppercase tracking-widest text-accent sm:text-xs">{t("sec.featured.eyebrow")}</p>
             </div>
             <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl lg:text-[2rem]">
@@ -49,7 +49,7 @@ export function FeaturedGrid() {
           </div>
 
           {/* Tab filters */}
-          <div className="no-scrollbar mb-6 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-8 sm:justify-center">
+          <div className="no-scrollbar mb-6 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-8">
             {TABS.map(({ label, filter }) => (
               <button
                 key={label}
