@@ -613,7 +613,7 @@ function ProductPage() {
       <div className="mx-auto max-w-7xl px-4 pb-16">
         <div className="overflow-hidden rounded-2xl border border-border/80 bg-card">
           {/* Tab header — text + thick underline (reference) */}
-          <div className="flex border-b border-border/70 bg-background overflow-x-auto no-scrollbar">
+          <div className="flex border-b justify-between border-border/70 bg-background overflow-x-auto no-scrollbar">
             {[
               { id: "desc" as const, label: "Description" },
               { id: "reviews" as const, label: "Customer Reviews" },
@@ -623,7 +623,7 @@ function ProductPage() {
                 key={m.id}
                 type="button"
                 onClick={() => setTab(m.id)}
-                className={`relative flex-1 min-w-[8rem] px-4 py-3.5 text-center text-sm font-semibold whitespace-nowrap transition-colors sm:px-6 sm:py-4 sm:text-[15px] ${
+                className={`relative flex-1  px-4 py-3.5 text-center text-sm font-semibold whitespace-nowrap transition-colors sm:px-6 sm:py-4 sm:text-[15px] ${
                   tab === m.id
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground/80"

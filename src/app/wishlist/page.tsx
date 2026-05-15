@@ -98,7 +98,7 @@ function WishlistPage() {
               <article
                 key={p.id}
                 style={{ animationDelay: `${i * 50}ms` }}
-                className={`group relative flex flex-col rounded-2xl border bg-card overflow-hidden transition-all duration-300 animate-fade-up ${
+                className={`group relative flex flex-col rounded-lg border bg-card overflow-hidden transition-all duration-300 animate-fade-up ${
                   isRemoving ? "opacity-0 scale-95 pointer-events-none" : "hover:-translate-y-1 hover:shadow-xl hover:border-foreground/20"
                 }`}
               >
@@ -143,15 +143,15 @@ function WishlistPage() {
                   {/* Star placeholder */}
                   <div className="mt-1.5 flex items-center gap-1">
                     {[1,2,3,4,5].map((n) => (
-                      <Star key={n} className={`size-3 ${n <= 4 ? "fill-amber-400 text-amber-400" : "fill-border text-border"}`} />
+                      <Star key={n} className={`size-3.5 ${n <= 4 ? "fill-amber-400 text-amber-400" : "fill-border text-border"}`} />
                     ))}
-                    <span className="text-[10px] text-muted-foreground ml-0.5">4.0</span>
+                    <span className="text-[11px] text-muted-foreground ml-0.5">4.0</span>
                   </div>
 
                   {/* Color swatches */}
                   <div className="mt-2 flex items-center gap-1">
                     {p.colors.map((c, idx) => (
-                      <span key={idx} className="box-border size-3 shrink-0 rounded-full border border-border" style={{ background: c }} />
+                      <span key={idx} className="box-border size-3.5 shrink-0 rounded-full border border-border" style={{ background: c }} />
                     ))}
                   </div>
 
@@ -188,36 +188,7 @@ function WishlistPage() {
         </div>
 
         {/* Bottom summary bar */}
-        {items.length > 1 && (
-          <div className="mt-10 rounded-2xl border bg-card p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-muted-foreground text-center sm:text-left">
-              <span className="font-semibold text-foreground text-base">{items.length} items</span> in your wishlist
-              {savings > 0 && (
-                <span className="ml-2 inline-flex items-baseline gap-1 font-semibold text-accent">
-                  · You save <Price amount={savings} size="sm" tone="inherit" className="font-semibold!" />
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href={`/category/${"all"}`}
-                className="h-11 px-5 rounded-full border text-sm font-medium hover:border-foreground transition"
-              >
-                Continue shopping
-              </Link>
-              <button
-                onClick={moveAllToCart}
-                className="h-11 px-6 rounded-full bg-accent text-white text-sm font-bold hover:opacity-90 transition inline-flex items-center gap-2 shadow-sm"
-              >
-                <ShoppingCart className="size-4" />
-                <span className="inline-flex items-baseline gap-1">
-                  Add all to cart ·{" "}
-                  <Price amount={total} size="sm" tone="inherit" className="font-bold!" />
-                </span>
-              </button>
-            </div>
-          </div>
-        )}
+       
       </div>
     </Layout>
   );

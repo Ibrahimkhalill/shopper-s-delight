@@ -72,7 +72,7 @@ export function ProductCard({ p }: { p: Product }) {
       onMouseLeave={() => { setCardHovered(false); setHoveredColor(null); }}
       className="
         group relative flex h-full flex-col overflow-hidden
-        rounded-[1.5rem] border border-border/70 bg-card
+        rounded-lg border border-border/70 bg-card
         transition-all duration-300 ease-out
         hover:-translate-y-[3px] hover:border-border
         [box-shadow:0_1px_2px_-1px_oklch(0_0_0/0.04)]

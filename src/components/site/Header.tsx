@@ -119,6 +119,19 @@ export function Header() {
     if (q.trim()) { router.push(`/search?q=${encodeURIComponent(q)}`); setSearchOpen(false); }
   };
 
+  const [navHidden, setNavHidden] = useState(false);
+const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const current = window.scrollY;
+      setNavHidden(current > lastScrollY.current && current > 80);
+      lastScrollY.current = current;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full min-w-0 overflow-x-clip bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/70">
@@ -163,7 +176,7 @@ export function Header() {
             {/* Desktop search */}
             <div ref={searchRef} className="relative mx-auto hidden max-w-2xl flex-1 md:block">
               <form onSubmit={submit}>
-                <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground lg:left-5 lg:size-[18px]" />
+                <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground lg:left-5 lg:size-[16px]" />
                 <input
                   value={q}
                   onChange={(e) => { setQ(e.target.value); setSearchOpen(true); }}
@@ -269,9 +282,13 @@ export function Header() {
         </div>
 
         {/* ── Category nav bar ── */}
-        <nav className="overflow-x-clip border-b bg-background">
+       <nav className={`overflow-x-clip border-b bg-background transition-all duration-300 ease-in-out ${
+  navHidden
+    ? "h-0 opacity-0 pointer-events-none border-transparent"
+    : "h-11 lg:h-14 opacity-100"
+}`}>
           <div className="relative">
-            <div className="mx-auto flex h-11 w-full min-w-0 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm no-scrollbar lg:h-14 lg:gap-9 lg:px-6 lg:text-[17px]">
+            <div className="mx-auto flex h-11 w-full min-w-0 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm no-scrollbar lg:h-14 lg:gap-9 lg:px-6 lg:text-[16px]">
               {categories.map((c) => {
                 const catActive =
                   pathname === c.to || (c.to !== "/" && pathname.startsWith(c.to));

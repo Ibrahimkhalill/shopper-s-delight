@@ -19,7 +19,7 @@ export function SubcategorySection({ slug, title }: { slug: string; title: strin
           href={`/category/${slug}`}
           className="text-xs font-semibold text-muted-foreground hover:text-foreground transition"
         >
-          View all →
+          View all 
         </Link>
       </div>
 
