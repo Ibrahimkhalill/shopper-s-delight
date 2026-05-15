@@ -18,7 +18,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (pathname === "/checkout" || pathname === "/cart") return null;
+  if (pathname === "/checkout") return null;
 
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
