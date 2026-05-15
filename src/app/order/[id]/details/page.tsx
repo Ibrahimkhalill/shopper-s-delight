@@ -32,7 +32,7 @@ export default function OrderDetailsPage() {
         <div className="bg-white rounded-2xl border py-16 text-center">
           <Package className="size-10 mx-auto text-muted-foreground/30 mb-3" strokeWidth={1.5} />
           <p className="font-bold text-base">Order not found</p>
-          <p className="text-sm text-muted-foreground mt-2">This order doesn't exist or may have been removed.</p>
+          <p className="text-sm text-muted-foreground mt-2">  {"This order doesn't exist or may have been removed."}</p>
           <Link href="/profile/orders" className="mt-6 h-10 px-6 rounded-full bg-black text-white text-sm font-semibold inline-flex items-center hover:bg-accent transition">
             Back to Orders
           </Link>
