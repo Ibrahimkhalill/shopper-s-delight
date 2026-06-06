@@ -119,14 +119,23 @@ export function Header() {
     if (q.trim()) { router.push(`/search?q=${encodeURIComponent(q)}`); setSearchOpen(false); }
   };
 
+
   const [navHidden, setNavHidden] = useState(false);
-const lastScrollY = useRef(0);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   useEffect(() => {
     const onScroll = () => {
-      const current = window.scrollY;
-      setNavHidden(current > lastScrollY.current && current > 80);
-      lastScrollY.current = current;
+      if (ticking.current) return;
+      ticking.current = true;
+      requestAnimationFrame(() => {
+        const current = window.scrollY;
+        const delta = current - lastScrollY.current;
+        if (delta > 6 && current > 100) setNavHidden(true);
+        else if (delta < -6) setNavHidden(false);
+        lastScrollY.current = current;
+        ticking.current = false;
+      });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -282,11 +291,10 @@ const lastScrollY = useRef(0);
         </div>
 
         {/* ── Category nav bar ── */}
-       <nav className={`overflow-x-clip border-b bg-background transition-all duration-300 ease-in-out ${
-  navHidden
-    ? "h-0 opacity-0 pointer-events-none border-transparent"
-    : "h-11 lg:h-14 opacity-100"
-}`}>
+        <nav
+          style={{ maxHeight: navHidden ? "0px" : "56px", overflow: "hidden" }}
+          className={`bg-background transition-[max-height,opacity] duration-300 ease-in-out ${navHidden ? "opacity-0 pointer-events-none" : "opacity-100 border-b"}`}
+        >
           <div className="relative">
             <div className="mx-auto flex h-11 w-full min-w-0 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm no-scrollbar lg:h-14 lg:gap-9 lg:px-6 lg:text-[16px]">
               {categories.map((c) => {
