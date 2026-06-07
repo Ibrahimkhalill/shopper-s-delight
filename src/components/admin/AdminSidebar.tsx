@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Package, ShoppingCart, Users, Tag, X,
-  BarChart2, Settings, LogOut, ChevronDown, ChevronRight,
+  LayoutDashboard, Package, ShoppingCart, Users, X,
+  BarChart2, LogOut, Layers, Palette, Ruler, Award, Percent, Store,
+  Image, Layout, Home,
 } from "lucide-react";
 import { useAdminStore } from "@/lib/admin-store";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 const NAV = [
   {
@@ -18,20 +18,38 @@ const NAV = [
   {
     label: "PRODUCT MANAGEMENT",
     items: [
-      { icon: Package, label: "Products", href: "/admin/products" },
-      { icon: Tag, label: "Categories & Brands", href: "/admin/categories" },
+      { icon: Package,  label: "Products",    href: "/admin/products" },
+      { icon: Layers,   label: "Categories",  href: "/admin/categories" },
+      { icon: Store,    label: "Brands",      href: "/admin/brands" },
+      { icon: Ruler,    label: "Sizes",       href: "/admin/sizes" },
+      { icon: Palette,  label: "Colors",      href: "/admin/colors" },
+      { icon: Award,    label: "Badges",      href: "/admin/badges" },
+    ],
+  },
+  {
+    label: "CONTENT",
+    items: [
+      { icon: Image,   label: "Hero Slider",    href: "/admin/banners" },
+      { icon: Layout,  label: "Promo Banners",  href: "/admin/promos" },
+      { icon: Home,    label: "Homepage Config", href: "/admin/homepage" },
+    ],
+  },
+  {
+    label: "SALES",
+    items: [
+      { icon: Percent, label: "Offers & Coupons", href: "/admin/offers" },
     ],
   },
   {
     label: "ORDER MANAGEMENT",
     items: [
-      { icon: ShoppingCart, label: "Orders", href: "/admin/orders" },
+      { icon: ShoppingCart, label: "Orders",  href: "/admin/orders" },
     ],
   },
   {
     label: "CUSTOMERS",
     items: [
-      { icon: Users, label: "All Customers", href: "/admin/customers" },
+      { icon: Users,        label: "All Customers", href: "/admin/customers" },
     ],
   },
 ];
@@ -54,7 +72,7 @@ export function AdminSidebar({ open, onClose }: Props) {
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
+      <div className="flex items-center justify-between px-5 py-5 border-b border-white/10 shrink-0">
         <Link href="/admin/dashboard" className="flex items-center gap-2">
           <span className="text-xl font-bold text-[#ef4444]">SHOP</span>
           <span className="text-xl font-bold text-white">.BD</span>
@@ -88,7 +106,7 @@ export function AdminSidebar({ open, onClose }: Props) {
                           : "text-white/60 hover:text-white hover:bg-white/10"
                       }`}
                     >
-                      <item.icon className="size-4.5 shrink-0" strokeWidth={active ? 2.5 : 2} />
+                      <item.icon className="size-4 shrink-0" strokeWidth={active ? 2.5 : 2} />
                       {item.label}
                     </Link>
                   </li>
@@ -100,23 +118,23 @@ export function AdminSidebar({ open, onClose }: Props) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-white/10 p-3 space-y-1">
+      <div className="border-t border-white/10 p-3 space-y-1 shrink-0">
         <Link
           href="/"
           target="_blank"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition"
         >
-          <BarChart2 className="size-4.5" strokeWidth={2} />
+          <BarChart2 className="size-4" strokeWidth={2} />
           View Store
         </Link>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/60 hover:text-red-400 hover:bg-red-500/10 transition"
         >
-          <LogOut className="size-4.5" strokeWidth={2} />
+          <LogOut className="size-4" strokeWidth={2} />
           Logout
         </button>
-        <div className="flex items-center gap-3 px-3 py-2.5 mt-2">
+        <div className="flex items-center gap-3 px-3 py-2.5 mt-1">
           <div className="size-8 rounded-full bg-[#ef4444] flex items-center justify-center text-white text-xs font-bold shrink-0">
             A
           </div>

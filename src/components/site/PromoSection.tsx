@@ -1,63 +1,56 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { getAdminPromoBanners } from "@/lib/admin-config";
+import type { PromoBanner } from "@/lib/admin-store";
 
-const U = (id: string) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=480&h=480&q=80`;
-
-const cards = [
+// Static fallback (shown until localStorage is read)
+const FALLBACK_BANNERS: PromoBanner[] = [
   {
-    href: "/category/beauty",
-    bg: "bg-[#e8f5f0]",
-    eyebrow: "Premium",
-    title: "Skincare & Beauty\nEssentials",
-    sub: "Get Extra 30% Off",
-    img: U("photo-1591130901921-3f0652bb3915"),
-    imgAlt: "Skincare products",
-    imgPos: "right-0 bottom-0 h-[85%]",
+    id: "f1", eyebrow: "Premium",
+    title: "Skincare & Beauty\nEssentials", subtitle: "Get Extra 30% Off",
+    image: "https://images.unsplash.com/photo-1591130901921-3f0652bb3915?auto=format&fit=crop&w=480&h=480&q=80",
+    href: "/category/beauty", bg: "#e8f5f0", active: true, order: 0,
   },
   {
-    href: "/category/grocery",
-    bg: "bg-[#fff9e6]",
-    eyebrow: "Premium",
-    title: "Healthy Food Habits\nfor Everyday Life",
-    sub: "Get Extra 50% Off",
-    img: U("photo-1587049352846-4a222e784d38"),
-    imgAlt: "Honey jar grocery",
-    imgPos: "right-2 bottom-0 h-[88%]",
+    id: "f2", eyebrow: "Premium",
+    title: "Healthy Food Habits\nfor Everyday Life", subtitle: "Get Extra 50% Off",
+    image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=480&h=480&q=80",
+    href: "/category/grocery", bg: "#fff9e6", active: true, order: 1,
   },
   {
-    href: "/category/gadgets",
-    bg: "bg-[#eef2ff]",
-    eyebrow: "New Arrival",
-    title: "Smart Gadgets\nfor Modern Life",
-    sub: "Up to 40% Off",
-    img: U("photo-1523275335684-37898b6baf30"),
-    imgAlt: "Smart watch",
-    imgPos: "right-2 bottom-0 h-[90%]",
+    id: "f3", eyebrow: "New Arrival",
+    title: "Smart Gadgets\nfor Modern Life", subtitle: "Up to 40% Off",
+    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=480&h=480&q=80",
+    href: "/category/gadgets", bg: "#eef2ff", active: true, order: 2,
   },
   {
-    href: "/category/fashion",
-    bg: "bg-[#fdf2f0]",
-    eyebrow: "Trending",
-    title: "Fashion Made\nfor You",
-    sub: "New styles every week",
-    img: U("photo-1542291026-7eec264c27ff"),
-    imgAlt: "Fashion shoes",
-    imgPos: "right-0 bottom-0 h-[85%]",
+    id: "f4", eyebrow: "Trending",
+    title: "Fashion Made\nfor You", subtitle: "New styles every week",
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=480&h=480&q=80",
+    href: "/category/fashion", bg: "#fdf2f0", active: true, order: 3,
   },
 ];
 
 export function PromoSection() {
+  const [banners, setBanners] = useState<PromoBanner[]>(FALLBACK_BANNERS);
+
+  useEffect(() => {
+    const loaded = getAdminPromoBanners();
+    if (loaded.length > 0) setBanners(loaded);
+  }, []);
+
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:py-10 lg:px-6">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-        {cards.map((c) => (
+        {banners.slice(0, 4).map((c) => (
           <Link
-            key={c.href + c.title}
+            key={c.id}
             href={c.href}
-            className={`group relative flex min-h-[190px] sm:min-h-[220px] overflow-hidden rounded-2xl ${c.bg} p-6 sm:p-7`}
+            className="group relative flex min-h-[190px] sm:min-h-[220px] overflow-hidden rounded-2xl p-6 sm:p-7"
+            style={{ backgroundColor: c.bg }}
           >
             {/* Text */}
             <div className="relative z-10 flex flex-col justify-between h-full max-w-[55%]">
@@ -69,7 +62,7 @@ export function PromoSection() {
                   {c.title}
                 </h3>
                 <p className="mt-2 text-[13px] font-semibold text-foreground/60">
-                  {c.sub}
+                  {c.subtitle}
                 </p>
               </div>
               <div className="mt-5">
@@ -82,15 +75,17 @@ export function PromoSection() {
               </div>
             </div>
 
-            {/* Product image — floats right */}
-            <div className={`absolute ${c.imgPos} w-[48%] pointer-events-none`}>
-              <img
-                src={c.img}
-                alt={c.imgAlt}
-                className="w-full h-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-[1.04] group-hover:-translate-y-1"
-                loading="lazy"
-              />
-            </div>
+            {/* Product image */}
+            {c.image && (
+              <div className="absolute right-0 bottom-0 h-[85%] w-[48%] pointer-events-none">
+                <img
+                  src={c.image}
+                  alt={c.title.replace("\n", " ")}
+                  className="w-full h-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-[1.04] group-hover:-translate-y-1"
+                  loading="lazy"
+                />
+              </div>
+            )}
           </Link>
         ))}
       </div>

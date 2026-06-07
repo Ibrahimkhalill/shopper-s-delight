@@ -2,198 +2,315 @@
 
 import { useState, useMemo } from "react";
 import { useAdminStore } from "@/lib/admin-store";
-import { Plus, Pencil, Trash2, X, Check, Tag } from "lucide-react";
+import type { AdminCategory } from "@/lib/admin-store";
+import { Plus, Pencil, Trash2, X, Check, AlertTriangle, Search, Layers, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
-type Tab = "categories" | "brands" | "colors" | "sizes" | "badges";
+const emptyForm = (): Omit<AdminCategory, "id" | "createdAt"> => ({
+  name: "", slug: "", parentId: null, image: "", status: "active",
+});
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "categories", label: "Categories" },
-  { id: "brands",     label: "Brands" },
-  { id: "colors",     label: "Colors" },
-  { id: "sizes",      label: "Sizes" },
-  { id: "badges",     label: "Badges" },
-];
+function slugify(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
 
 export default function CategoriesPage() {
-  const { products } = useAdminStore();
-  const [tab, setTab] = useState<Tab>("categories");
+  const { categories, addCategory, updateCategory, deleteCategory } = useAdminStore();
 
-  // Derive all data from products
-  const categories = useMemo(() => {
-    const map = new Map<string, number>();
-    products.forEach((p) => map.set(p.category, (map.get(p.category) ?? 0) + 1));
-    return Array.from(map.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
-  }, [products]);
+  const [search, setSearch]     = useState("");
+  const [view, setView]         = useState<"parents" | "subcategories" | "tree">("parents");
+  const [modal, setModal]       = useState<"add" | "edit" | "delete" | null>(null);
+  const [editing, setEditing]   = useState<AdminCategory | null>(null);
+  const [form, setForm]         = useState(emptyForm());
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const brands = useMemo(() => {
-    const map = new Map<string, { count: number; category: string }>();
-    products.forEach((p) => {
-      const ex = map.get(p.brand);
-      if (ex) ex.count++;
-      else map.set(p.brand, { count: 1, category: p.category });
-    });
-    return Array.from(map.entries()).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.count - a.count);
-  }, [products]);
+  const parents = useMemo(() => categories.filter((c) => !c.parentId), [categories]);
+  const subcategories = useMemo(() => categories.filter((c) => c.parentId), [categories]);
 
-  const colors = useMemo(() => {
-    const map = new Map<string, number>();
-    products.forEach((p) => p.colors.forEach((c) => map.set(c, (map.get(c) ?? 0) + 1)));
-    return Array.from(map.entries()).map(([hex, count]) => ({ hex, count })).sort((a, b) => b.count - a.count);
-  }, [products]);
+  const displayList = useMemo(() => {
+    const base = view === "parents" ? parents : view === "subcategories" ? subcategories : categories;
+    if (!search) return base;
+    return base.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
+  }, [view, parents, subcategories, categories, search]);
 
-  const sizes = useMemo(() => {
-    const map = new Map<string, number>();
-    products.forEach((p) => p.sizes.forEach((s) => map.set(s, (map.get(s) ?? 0) + 1)));
-    return Array.from(map.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
-  }, [products]);
+  const getParentName = (parentId: string | null) => {
+    if (!parentId) return null;
+    return categories.find((c) => c.id === parentId)?.name ?? null;
+  };
 
-  const badges = useMemo(() => {
-    const map = new Map<string, { tone: string; count: number }>();
-    products.forEach((p) => {
-      if (p.badge) {
-        const ex = map.get(p.badge.label);
-        if (ex) ex.count++;
-        else map.set(p.badge.label, { tone: p.badge.tone, count: 1 });
-      }
-    });
-    return Array.from(map.entries()).map(([label, v]) => ({ label, ...v }));
-  }, [products]);
+  const openAdd = (parentId?: string) => {
+    setForm({ ...emptyForm(), parentId: parentId ?? null });
+    setEditing(null);
+    setModal("add");
+  };
+
+  const openEdit = (cat: AdminCategory) => {
+    setEditing(cat);
+    setForm({ name: cat.name, slug: cat.slug, parentId: cat.parentId, image: cat.image, status: cat.status });
+    setModal("edit");
+  };
+
+  const openDelete = (id: string) => { setDeleteId(id); setModal("delete"); };
+  const closeModal = () => { setModal(null); setEditing(null); setDeleteId(null); };
+
+  const handleSave = () => {
+    if (!form.name.trim()) { toast.error("Category name is required"); return; }
+    const slug = form.slug.trim() || slugify(form.name);
+    if (modal === "add") {
+      addCategory({ ...form, slug });
+      toast.success("Category added successfully");
+    } else if (modal === "edit" && editing) {
+      updateCategory(editing.id, { ...form, slug });
+      toast.success("Category updated");
+    }
+    closeModal();
+  };
+
+  const handleDelete = () => {
+    if (!deleteId) return;
+    const hasSubs = categories.some((c) => c.parentId === deleteId);
+    if (hasSubs) { toast.error("Delete all subcategories first"); return; }
+    deleteCategory(deleteId);
+    toast.success("Category deleted");
+    closeModal();
+  };
+
+  const handleNameChange = (name: string) => {
+    setForm((f) => ({ ...f, name, slug: slugify(name) }));
+  };
+
+  const toggleStatus = (cat: AdminCategory) => {
+    updateCategory(cat.id, { status: cat.status === "active" ? "inactive" : "active" });
+    toast.success(`Category ${cat.status === "active" ? "deactivated" : "activated"}`);
+  };
 
   return (
     <div className="space-y-5 max-w-7xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800">Catalog Management</h2>
-        <p className="text-sm text-slate-400">Browse categories, brands, colors, sizes and badges used across your products</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`h-9 px-4 rounded-full text-sm font-semibold border transition ${
-              tab === t.id ? "bg-[#0f172a] text-white border-[#0f172a]" : "bg-white border-slate-200 text-slate-600 hover:border-slate-400"
-            }`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Categories */}
-      {tab === "categories" && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-800">All Categories <span className="text-slate-400 font-normal text-sm ml-1">({categories.length})</span></h3>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {categories.map((c) => (
-              <div key={c.name} className="flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition">
-                <div className="flex items-center gap-3">
-                  <div className="size-9 rounded-xl bg-red-50 flex items-center justify-center">
-                    <Tag className="size-4 text-red-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-800">{c.name}</p>
-                    <p className="text-xs text-slate-400">{c.count} products</p>
-                  </div>
-                </div>
-                <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">{c.count}</span>
-              </div>
-            ))}
-            {categories.length === 0 && <div className="py-12 text-center text-slate-400 text-sm">No categories found</div>}
-          </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Categories</h2>
+          <p className="text-sm text-slate-400">{categories.length} total categories ({parents.length} parents, {subcategories.length} subcategories)</p>
         </div>
-      )}
+        <button onClick={() => openAdd()} className="flex items-center gap-2 h-10 px-4 bg-[#ef4444] hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition shrink-0">
+          <Plus className="size-4" /> Add Category
+        </button>
+      </div>
 
-      {/* Brands */}
-      {tab === "brands" && (
+      {/* View tabs + Search */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col sm:flex-row gap-3">
+        <div className="flex gap-2">
+          {(["parents", "subcategories", "tree"] as const).map((v) => (
+            <button key={v} onClick={() => setView(v)}
+              className={`h-9 px-4 rounded-xl text-sm font-semibold border transition capitalize ${
+                view === v ? "bg-[#0f172a] text-white border-[#0f172a]" : "border-slate-200 text-slate-600 hover:border-slate-400"
+              }`}>
+              {v === "parents" ? `Parents (${parents.length})` : v === "subcategories" ? `Subcategories (${subcategories.length})` : "Tree View"}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1 max-w-sm ml-auto">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search categories..."
+            className="w-full h-9 pl-9 pr-4 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition" />
+        </div>
+      </div>
+
+      {/* Tree view */}
+      {view === "tree" ? (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-800">All Brands <span className="text-slate-400 font-normal text-sm ml-1">({brands.length})</span></h3>
+            <h3 className="font-semibold text-slate-800">Category Tree</h3>
           </div>
+          <div className="p-4 space-y-2">
+            {parents.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase())).map((parent) => {
+              const subs = subcategories.filter((s) => s.parentId === parent.id);
+              return (
+                <div key={parent.id} className="rounded-xl border border-slate-200 overflow-hidden">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-slate-50">
+                    <div className="size-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                      <Layers className="size-4 text-red-500" />
+                    </div>
+                    <span className="font-semibold text-slate-800 flex-1">{parent.name}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${parent.status === "active" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
+                      {parent.status}
+                    </span>
+                    <span className="text-xs text-slate-400">{subs.length} subs</span>
+                    <button onClick={() => openAdd(parent.id)} className="text-xs text-red-500 hover:underline font-medium">+ Sub</button>
+                    <button onClick={() => openEdit(parent)} className="size-7 flex items-center justify-center rounded-lg hover:bg-blue-50 text-blue-500"><Pencil className="size-3.5" /></button>
+                    <button onClick={() => openDelete(parent.id)} className="size-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="size-3.5" /></button>
+                  </div>
+                  {subs.length > 0 && (
+                    <div className="divide-y divide-slate-100">
+                      {subs.map((sub) => (
+                        <div key={sub.id} className="flex items-center gap-3 px-4 py-2.5 pl-12">
+                          <ChevronRight className="size-3.5 text-slate-300 shrink-0" />
+                          <span className="text-sm text-slate-700 flex-1">{sub.name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sub.status === "active" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
+                            {sub.status}
+                          </span>
+                          <button onClick={() => openEdit(sub)} className="size-7 flex items-center justify-center rounded-lg hover:bg-blue-50 text-blue-500"><Pencil className="size-3.5" /></button>
+                          <button onClick={() => openDelete(sub.id)} className="size-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-500"><Trash2 className="size-3.5" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        /* List view */
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Brand Name</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden sm:table-cell">Category</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Products</th>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">#</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden sm:table-cell">Slug</th>
+                  {view === "subcategories" && (
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Parent</th>
+                  )}
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Created</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {brands.map((b) => (
-                  <tr key={b.name} className="hover:bg-slate-50 transition">
-                    <td className="px-5 py-3.5">
+                {displayList.length === 0 && (
+                  <tr><td colSpan={7} className="text-center py-16 text-slate-400">No categories found</td></tr>
+                )}
+                {displayList.map((cat, i) => (
+                  <tr key={cat.id} className="hover:bg-slate-50 transition">
+                    <td className="px-4 py-3.5 text-slate-400 text-xs">{i + 1}</td>
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                          {b.name.charAt(0)}
+                        <div className="size-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                          <Layers className="size-4 text-red-500" />
                         </div>
-                        <span className="font-medium text-slate-800">{b.name}</span>
+                        <div>
+                          <p className="font-medium text-slate-800">{cat.name}</p>
+                          {getParentName(cat.parentId) && (
+                            <p className="text-xs text-slate-400">Sub of: {getParentName(cat.parentId)}</p>
+                          )}
+                        </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 hidden sm:table-cell">
-                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{b.category}</span>
+                    <td className="px-4 py-3.5 hidden sm:table-cell">
+                      <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{cat.slug}</span>
                     </td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-700">{b.count}</td>
+                    {view === "subcategories" && (
+                      <td className="px-4 py-3.5 hidden md:table-cell">
+                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{getParentName(cat.parentId) ?? "—"}</span>
+                      </td>
+                    )}
+                    <td className="px-4 py-3.5">
+                      <button onClick={() => toggleStatus(cat)}
+                        className={`text-xs px-3 py-1 rounded-full font-semibold transition ${cat.status === "active" ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                        {cat.status}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-slate-400 hidden md:table-cell">
+                      {new Date(cat.createdAt).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" })}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button onClick={() => openEdit(cat)} className="size-8 flex items-center justify-center rounded-lg hover:bg-blue-50 text-blue-500 transition">
+                          <Pencil className="size-3.5" />
+                        </button>
+                        <button onClick={() => openDelete(cat.id)} className="size-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-500 transition">
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
-                {brands.length === 0 && <tr><td colSpan={3} className="text-center py-12 text-slate-400">No brands found</td></tr>}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Colors */}
-      {tab === "colors" && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <h3 className="font-semibold text-slate-800 mb-4">All Colors <span className="text-slate-400 font-normal text-sm ml-1">({colors.length})</span></h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {colors.map((c) => (
-              <div key={c.hex} className="flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-100 hover:border-slate-300 transition">
-                <div className="size-10 rounded-full border-2 border-white shadow-md" style={{ background: c.hex }} />
-                <p className="text-xs font-mono text-slate-500 truncate w-full text-center">{c.hex}</p>
-                <span className="text-[10px] text-slate-400">{c.count} products</span>
+      {/* Add/Edit Modal */}
+      {(modal === "add" || modal === "edit") && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-800">{modal === "add" ? "Add Category" : "Edit Category"}</h3>
+              <button onClick={closeModal} className="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Category Name *</label>
+                <input value={form.name} onChange={(e) => handleNameChange(e.target.value)}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
+                  placeholder="e.g. Men's Clothing" />
               </div>
-            ))}
-            {colors.length === 0 && <div className="col-span-6 text-center py-12 text-slate-400 text-sm">No colors found</div>}
+              <div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Slug</label>
+                <input value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition font-mono"
+                  placeholder="mens-clothing" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Parent Category</label>
+                <select value={form.parentId ?? ""} onChange={(e) => setForm((f) => ({ ...f, parentId: e.target.value || null }))}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 bg-white transition">
+                  <option value="">None (Top-level category)</option>
+                  {parents.filter((p) => !editing || p.id !== editing.id).map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Image URL (optional)</label>
+                <div className="flex gap-2">
+                  <input value={form.image} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
+                    className="flex-1 h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
+                    placeholder="https://..." />
+                  {form.image && <img src={form.image} alt="" className="size-10 rounded-xl object-cover border border-slate-200 shrink-0" />}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Status</label>
+                <div className="flex gap-2">
+                  {(["active", "inactive"] as const).map((s) => (
+                    <button key={s} type="button" onClick={() => setForm((f) => ({ ...f, status: s }))}
+                      className={`h-9 px-4 rounded-xl text-sm font-semibold border transition capitalize ${form.status === s ? "bg-[#0f172a] text-white border-[#0f172a]" : "border-slate-200 text-slate-600 hover:border-slate-400"}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-slate-200">
+              <button onClick={closeModal} className="flex-1 h-10 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Cancel</button>
+              <button onClick={handleSave} className="flex-1 h-10 rounded-xl bg-[#ef4444] hover:bg-red-600 text-white text-sm font-semibold transition flex items-center justify-center gap-1.5">
+                <Check className="size-4" /> {modal === "add" ? "Add Category" : "Save Changes"}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Sizes */}
-      {tab === "sizes" && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <h3 className="font-semibold text-slate-800 mb-4">All Sizes <span className="text-slate-400 font-normal text-sm ml-1">({sizes.length})</span></h3>
-          <div className="flex flex-wrap gap-3">
-            {sizes.map((s) => (
-              <div key={s.name} className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 hover:border-slate-400 transition min-w-[70px]">
-                <span className="text-base font-bold text-slate-800">{s.name}</span>
-                <span className="text-xs text-slate-400">{s.count} products</span>
-              </div>
-            ))}
-            {sizes.length === 0 && <div className="text-center py-12 text-slate-400 text-sm w-full">No sizes found</div>}
-          </div>
-        </div>
-      )}
-
-      {/* Badges */}
-      {tab === "badges" && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <h3 className="font-semibold text-slate-800 mb-4">All Badges <span className="text-slate-400 font-normal text-sm ml-1">({badges.length})</span></h3>
-          <div className="flex flex-wrap gap-4">
-            {badges.map((b) => (
-              <div key={b.label} className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-slate-200 hover:border-slate-400 transition min-w-[120px]">
-                <span className={`text-sm font-bold px-4 py-1.5 rounded-full uppercase ${
-                  b.tone === "new"      ? "bg-slate-800 text-white" :
-                  b.tone === "sale"     ? "bg-red-100 text-red-600" :
-                  "bg-amber-100 text-amber-600"
-                }`}>{b.label}</span>
-                <span className="text-xs text-slate-400 capitalize">{b.tone} tone</span>
-                <span className="text-xs font-semibold text-slate-700">{b.count} products</span>
-              </div>
-            ))}
-            {badges.length === 0 && <div className="text-center py-12 text-slate-400 text-sm w-full">No badges assigned yet</div>}
+      {/* Delete Modal */}
+      {modal === "delete" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <div className="size-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="size-7 text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Delete Category?</h3>
+            <p className="text-sm text-slate-400 mb-6">This action cannot be undone. Subcategories must be deleted first.</p>
+            <div className="flex gap-3">
+              <button onClick={closeModal} className="flex-1 h-10 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition">Cancel</button>
+              <button onClick={handleDelete} className="flex-1 h-10 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition">Delete</button>
+            </div>
           </div>
         </div>
       )}

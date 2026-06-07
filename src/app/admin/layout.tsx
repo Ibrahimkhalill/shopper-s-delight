@@ -11,7 +11,15 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/products":   "Products",
   "/admin/orders":     "Orders",
   "/admin/customers":  "Customers",
-  "/admin/categories": "Categories & Brands",
+  "/admin/categories": "Categories",
+  "/admin/brands":     "Brands",
+  "/admin/sizes":      "Sizes",
+  "/admin/colors":     "Colors",
+  "/admin/badges":     "Badges",
+  "/admin/offers":    "Offers & Coupons",
+  "/admin/banners":   "Hero Slider",
+  "/admin/promos":    "Promo Banners",
+  "/admin/homepage":  "Homepage Config",
 };
 
 function AdminShell({ children }: { children: React.ReactNode }) {

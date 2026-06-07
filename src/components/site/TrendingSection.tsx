@@ -1,21 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import { PRODUCTS } from "@/lib/products";
 import { useT } from "@/lib/i18n";
+import { getAdminTrendingIds } from "@/lib/admin-config";
 
 export function TrendingSection() {
   const { t, lang } = useT();
-  const items = PRODUCTS.slice(0, 5).map((p) => ({
+  const [trendingIds, setTrendingIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setTrendingIds(getAdminTrendingIds());
+  }, []);
+
+  const basePool = trendingIds.length > 0
+    ? trendingIds.map((id) => PRODUCTS.find((p) => String(p.id) === String(id))).filter(Boolean) as typeof PRODUCTS
+    : PRODUCTS.slice(0, 5);
+
+  const items = basePool.slice(0, 5).map((p) => ({
     ...p,
     badge: { label: t("badge.trending"), tone: "trending" as const },
   }));
 
   return (
     <section className="w-full min-w-0 overflow-x-clip">
-      {/* Pink tinted bg — like Sellzy beauty section */}
+      {/* Pink tinted bg */}
       <div className="relative pt-10 pb-16 sm:pt-12 sm:pb-20" style={{ background: "oklch(0.95 0 0)" }}>
         {/* Wave at bottom */}
         <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none">

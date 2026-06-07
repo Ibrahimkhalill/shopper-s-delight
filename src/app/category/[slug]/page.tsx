@@ -12,12 +12,8 @@ import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { Price } from "@/components/site/Price";
 import { DataPagination } from "@/components/site/DataPagination";
-import {
-  uniqueBrands,
-  uniqueColorSwatches,
-  productHasAnyColor,
-  colorLabelFromHex,
-} from "@/lib/product-filters";
+import { productHasAnyColor } from "@/lib/product-filters";
+import { getAdminSizes, getAdminColors, getAdminBrands } from "@/lib/admin-config";
 
 const PRICE_BANDS = [
   { id: "u1k",   label: "Under ৳1,000",       test: (n: number) => n < 1000 },
@@ -36,10 +32,7 @@ const SORT_OPTIONS = [
 
 type SortKey = typeof SORT_OPTIONS[number]["value"];
 
-const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "1 size", "7", "8", "10", "BLK"];
 const ALL_CATEGORIES = [...new Set(PRODUCTS.map((p) => p.category))];
-const ALL_BRANDS = uniqueBrands(PRODUCTS);
-const COLOR_CATALOG = uniqueColorSwatches(PRODUCTS);
 const PAGE_SIZE = 4;
 
 function CategoryPage() {
@@ -58,6 +51,32 @@ function CategoryPage() {
   const [view, setView]           = useState<"grid" | "list">("grid");
   const [sortOpen, setSortOpen]   = useState(false);
   const [page, setPage]           = useState(1);
+
+  // Dynamic filter catalogs from admin
+  const [ALL_SIZES, setAllSizes]     = useState<string[]>(["XS","S","M","L","XL","XXL","1 size","7","8","10","BLK"]);
+  const [ALL_BRANDS, setAllBrands]   = useState<string[]>([]);
+  const [COLOR_CATALOG, setColorCatalog] = useState<{ hex: string; label: string }[]>([]);
+
+  useEffect(() => {
+    const adminSizes = getAdminSizes();
+    if (adminSizes.length > 0) setAllSizes(adminSizes.map((s) => s.name));
+    const adminBrands = getAdminBrands();
+    if (adminBrands.length > 0) setAllBrands(adminBrands.map((b) => b.name));
+    else setAllBrands([...new Set(PRODUCTS.map((p) => p.brand).filter(Boolean))] as string[]);
+    const adminColors = getAdminColors();
+    if (adminColors.length > 0) setColorCatalog(adminColors.map((c) => ({ hex: c.hex, label: c.name })));
+    else {
+      // Derive from products as final fallback
+      const seen = new Map<string, string>();
+      PRODUCTS.forEach((p) => {
+        (p.colors ?? []).forEach((col: { hex: string; label: string } | string) => {
+          if (typeof col === "string") { if (!seen.has(col)) seen.set(col, col); }
+          else { if (!seen.has(col.hex)) seen.set(col.hex, col.label); }
+        });
+      });
+      setColorCatalog(Array.from(seen.entries()).map(([hex, label]) => ({ hex, label })));
+    }
+  }, []);
 
   const toggleBand = (id: string) => setBands((b) => b.includes(id) ? b.filter((x) => x !== id) : [...b, id]);
   const toggleSize = (s: string)  => setSizes((v) => v.includes(s) ? v.filter((x) => x !== s) : [...v, s]);
@@ -195,7 +214,7 @@ function CategoryPage() {
         </div>
         <p className="mt-2 text-[11px] leading-snug text-muted-foreground">Shows items that use any selected colour.</p>
       </FilterGroup>
-
+vscode-webview://11ncm9foig8r3ollmv6tqeq242f9hns9ccnbsdbkoemeo587cfae/index.html?id=e4b9fdc5-8cce-493f-9433-1c56cf3c3131&parentId=1&origin=d6e55633-6840-4af4-b445-3b5cab33b456&swVersion=5&extensionId=Anthropic.claude-code&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app&purpose=webviewView&session=68c34535-6c82-4d03-b692-e93c73ac53cf#
       {/* Price */}
       <FilterGroup title="Price" onClear={bands.length ? () => setBands([]) : undefined}>
         <ul className="space-y-2 pt-1">
@@ -331,7 +350,7 @@ function CategoryPage() {
               {colorHexes.map((hex) => (
                 <Chip
                   key={hex}
-                  label={COLOR_CATALOG.find((c) => c.hex === hex)?.label ?? colorLabelFromHex(hex)}
+                  label={COLOR_CATALOG.find((c) => c.hex === hex)?.label ?? hex}
                   onRemove={() => toggleColor(hex)}
                 />
               ))}

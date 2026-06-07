@@ -1,10 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SUBCATEGORIES } from "@/lib/products";
+import { getAdminSubcategories } from "@/lib/admin-config";
+import type { AdminCategory } from "@/lib/admin-store";
+
+type SubItem = { label: string; image: string; slug?: string };
 
 export function SubcategorySection({ slug, title }: { slug: string; title: string }) {
-  const subs = SUBCATEGORIES[slug];
+  const [subs, setSubs] = useState<SubItem[] | null>(null);
+
+  useEffect(() => {
+    const adminSubs = getAdminSubcategories(slug);
+    if (adminSubs.length > 0) {
+      setSubs(adminSubs.map((c: AdminCategory) => ({ label: c.name, image: c.image, slug: c.slug })));
+    } else {
+      // Fall back to static data
+      const staticSubs = SUBCATEGORIES[slug];
+      setSubs(staticSubs ?? []);
+    }
+  }, [slug]);
+
   if (!subs || subs.length === 0) return null;
 
   return (
@@ -19,32 +36,36 @@ export function SubcategorySection({ slug, title }: { slug: string; title: strin
           href={`/category/${slug}`}
           className="text-xs font-semibold text-muted-foreground hover:text-foreground transition"
         >
-          View all 
+          View all
         </Link>
       </div>
 
       {/* Subcategory cards */}
       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-6 sm:gap-3">
-        {subs.map(({ label, image }) => (
+        {subs.map((sub) => (
           <Link
-            key={label}
-            href={`/category/${slug}?sub=${encodeURIComponent(label)}`}
+            key={sub.label}
+            href={`/category/${slug}?sub=${encodeURIComponent(sub.label)}`}
             className="group relative overflow-hidden rounded-2xl border border-border bg-card hover:border-foreground/30 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
           >
             {/* Image */}
             <div className="relative w-full aspect-4/3 overflow-hidden bg-secondary">
-              <img
-                src={image}
-                alt={label}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-              />
+              {sub.image ? (
+                <img
+                  src={sub.image}
+                  alt={sub.label}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-slate-200" />
+              )}
               {/* Dark overlay */}
               <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
-              {/* Label on image */}
+              {/* Label */}
               <div className="absolute inset-0 flex items-end p-2.5">
                 <span className="text-[11px] sm:text-xs font-bold text-white leading-tight drop-shadow-sm">
-                  {label}
+                  {sub.label}
                 </span>
               </div>
             </div>
