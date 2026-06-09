@@ -7,8 +7,9 @@ import { AdminStoreProvider } from "@/lib/admin-store";
 import { usePathname } from "next/navigation";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/admin/dashboard":  "Dashboard",
-  "/admin/products":   "Products",
+  "/admin/dashboard":       "Dashboard",
+  "/admin/products":        "Products",
+  "/admin/products/new":    "Add Product",
   "/admin/orders":     "Orders",
   "/admin/customers":  "Customers",
   "/admin/categories": "Categories",
@@ -26,7 +27,8 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const isLogin = pathname === "/admin/login";
-  const title = PAGE_TITLES[pathname] ?? "Admin";
+  const title = PAGE_TITLES[pathname]
+    ?? (pathname.endsWith("/edit") ? "Edit Product" : "Admin");
 
   if (isLogin) return <>{children}</>;
 
