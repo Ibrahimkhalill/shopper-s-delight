@@ -8,6 +8,7 @@ export const PRODUCTS: Product[] = [
   // ── Fashion ────────────────────────────────────────────────────────────────
   {
     id: "cotton-tshirt",
+    stock: 8,
     name: "Premium Cotton T-Shirt",
     category: "fashion",
     subcategory: "T-Shirts",
@@ -33,6 +34,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "plaid-coat",
+    stock: 3,
     name: "Plaid Trench Coat",
     category: "fashion",
     subcategory: "Outerwear",
@@ -56,6 +58,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "sport-shoes",
+    stock: 54,
     name: "Pro Sport Running Shoes",
     category: "fashion",
     subcategory: "Shoes",
@@ -79,6 +82,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "cotton-top",
+    stock: 48,
     name: "Floral Summer Top",
     category: "fashion",
     subcategory: "Tops",
@@ -98,6 +102,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "denim-jacket",
+    stock: 38,
     name: "Classic Denim Jacket",
     category: "fashion",
     subcategory: "Outerwear",
@@ -117,6 +122,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "formal-shirt",
+    stock: 29,
     name: "Slim Fit Formal Shirt",
     category: "fashion",
     subcategory: "Shirts",
@@ -137,6 +143,7 @@ export const PRODUCTS: Product[] = [
   // ── Gadgets ────────────────────────────────────────────────────────────────
   {
     id: "wireless-headphones",
+    stock: 25,
     name: "Wireless Over-Ear Headphones",
     category: "gadgets",
     subcategory: "Audio",
@@ -161,6 +168,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "smart-watch",
+    stock: 26,
     name: "Classic Smart Watch",
     category: "gadgets",
     subcategory: "Wearables",
@@ -185,6 +193,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "smartphone-pro",
+    stock: 48,
     name: "Flagship Smartphone Pro",
     category: "gadgets",
     subcategory: "Phones",
@@ -204,6 +213,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "laptop-slim",
+    stock: 33,
     name: "UltraSlim Laptop 14\"",
     category: "gadgets",
     subcategory: "Laptops",
@@ -223,6 +233,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "earbuds-tws",
+    stock: 32,
     name: "True Wireless Earbuds",
     category: "gadgets",
     subcategory: "Audio",
@@ -241,6 +252,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "tablet-hd",
+    stock: 45,
     name: "10\" HD Android Tablet",
     category: "gadgets",
     subcategory: "Tablets",
@@ -262,6 +274,7 @@ export const PRODUCTS: Product[] = [
   // ── Home & Living ──────────────────────────────────────────────────────────
   {
     id: "bedsheet-set",
+    stock: 55,
     name: "Premium Cotton Bedsheet Set",
     category: "home",
     subcategory: "Bedding",
@@ -281,6 +294,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "desk-lamp",
+    stock: 54,
     name: "LED Desk Lamp with USB",
     category: "home",
     subcategory: "Lighting",
@@ -299,6 +313,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "sofa-cushion",
+    stock: 20,
     name: "Nordic Throw Cushion Set (2pcs)",
     category: "home",
     subcategory: "Decor",
@@ -318,6 +333,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "cookware-set",
+    stock: 25,
     name: "Non-stick Cookware Set 5pcs",
     category: "home",
     subcategory: "Kitchen",
@@ -339,6 +355,7 @@ export const PRODUCTS: Product[] = [
   // ── Beauty ─────────────────────────────────────────────────────────────────
   {
     id: "skincare-kit",
+    stock: 10,
     name: "Daily Glow Skincare Kit",
     category: "beauty",
     subcategory: "Skincare",
@@ -358,6 +375,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "lipstick-set",
+    stock: 33,
     name: "Matte Lipstick Collection (6 shades)",
     category: "beauty",
     subcategory: "Makeup",
@@ -377,6 +395,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "perfume-bd",
+    stock: 53,
     name: "Oud Wood Eau de Parfum 100ml",
     category: "beauty",
     subcategory: "Fragrance",
@@ -397,6 +416,7 @@ export const PRODUCTS: Product[] = [
   // ── Grocery ─────────────────────────────────────────────────────────────────
   {
     id: "organic-honey",
+    stock: 14,
     name: "Pure Sundarban Honey 500g",
     category: "grocery",
     subcategory: "Organic",
@@ -416,6 +436,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: "rice-premium",
+    stock: 20,
     name: "Premium Basmati Rice 5kg",
     category: "grocery",
     subcategory: "Staples",

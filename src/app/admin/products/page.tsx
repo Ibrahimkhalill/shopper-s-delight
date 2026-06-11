@@ -3,12 +3,14 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useAdminStore } from "@/lib/admin-store";
+import { availableStock } from "@/lib/admin-store";
 import type { AdminProduct } from "@/lib/admin-store";
 import {
   Plus, Search, Pencil, Trash2, AlertTriangle,
   ChevronLeft, ChevronRight, Package,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useEscapeClose } from "@/hooks/use-escape-close";
 
 const PAGE_SIZE = 10;
 
@@ -19,6 +21,7 @@ export default function ProductsPage() {
   const [catFilter, setCatFilter]     = useState("All");
   const [page, setPage]               = useState(1);
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
+  useEscapeClose(deleteModal !== null, () => setDeleteModal(null));
 
   const parentCategories = useMemo(
     () => categories.filter((c) => c.status === "active" && !c.parentId),
@@ -78,6 +81,7 @@ export default function ProductsPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden sm:table-cell">Category</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Brand</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Price</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Stock</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Variants</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Status</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
@@ -85,7 +89,7 @@ export default function ProductsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {pageItems.length === 0 && (
-                <tr><td colSpan={7} className="text-center py-16 text-slate-400">No products found</td></tr>
+                <tr><td colSpan={8} className="text-center py-16 text-slate-400">No products found</td></tr>
               )}
               {pageItems.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50 transition group">
@@ -115,6 +119,15 @@ export default function ProductsPage() {
                   <td className="px-4 py-3">
                     <p className="font-bold text-slate-800">৳{p.price.toLocaleString()}</p>
                     {p.oldPrice && <p className="text-xs text-slate-400 line-through">৳{p.oldPrice.toLocaleString()}</p>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const stock = availableStock(p as AdminProduct);
+                      if (stock === null) return <span className="text-xs text-slate-400">—</span>;
+                      if (stock === 0) return <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-red-100 text-red-600">Out of stock</span>;
+                      if (stock <= 10) return <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-700">Low · {stock}</span>;
+                      return <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-700">{stock} in stock</span>;
+                    })()}
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <div className="flex items-center gap-1.5">
@@ -177,8 +190,8 @@ export default function ProductsPage() {
 
       {/* Delete confirm */}
       {deleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setDeleteModal(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="animate-scale-in bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
             <div className="size-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="size-7 text-red-500" />
             </div>

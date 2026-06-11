@@ -29,6 +29,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { getAdminProductStock } from "@/lib/admin-config";
 import { toast } from "sonner";
 import { Price } from "@/components/site/Price";
 import { colorLabelFromHex } from "@/lib/product-filters";
@@ -89,6 +90,9 @@ function ProductPage() {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   // Selected color pins its image until another image is chosen
   const [colorOverride, setColorOverride] = useState<string | null>(null);
+  // Available quantity managed from the admin panel (null = not tracked)
+  const [stock, setStock] = useState<number | null>(null);
+  useEffect(() => { setStock(getAdminProductStock(id)); }, [id]);
   // Gallery autoplay — pauses while zooming or hovering a color swatch
   const totalThumbs = p?.images && p.images.length > 1 ? p.images.length : 4;
   useEffect(() => {
@@ -367,9 +371,19 @@ function ProductPage() {
             <span className="text-border">·</span>
             <span className="text-[11px] font-medium text-muted-foreground">{p.brand}</span>
             <span className="text-border">·</span>
-            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
-              <BadgeCheck className="size-3.5" strokeWidth={2.25} /> In stock
-            </span>
+            {stock === 0 ? (
+              <span className="inline-flex items-center gap-1 text-[11px] text-red-600 font-semibold">
+                <BadgeCheck className="size-3.5" strokeWidth={2.25} /> Out of stock
+              </span>
+            ) : stock !== null && stock <= 10 ? (
+              <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 font-semibold">
+                <BadgeCheck className="size-3.5" strokeWidth={2.25} /> Only {stock} left!
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
+                <BadgeCheck className="size-3.5" strokeWidth={2.25} /> In stock{stock !== null ? ` · ${stock} available` : ""}
+              </span>
+            )}
           </div>
 
           {/* Title */}
@@ -571,8 +585,9 @@ function ProductPage() {
                 <span className="min-w-8 text-center text-sm font-bold tabular-nums">{qty}</span>
                 <button
                   type="button"
-                  onClick={() => setQty(qty + 1)}
-                  className="flex size-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-background"
+                  onClick={() => setQty(stock !== null ? Math.min(stock, qty + 1) : qty + 1)}
+                  disabled={stock !== null && qty >= stock}
+                  className="flex size-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-background disabled:opacity-30"
                   aria-label="Increase quantity"
                 >
                   <Plus className="size-4" strokeWidth={2.5} />
@@ -582,13 +597,16 @@ function ProductPage() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className={`flex h-12 w-full items-center justify-center rounded-full text-sm font-bold transition-all duration-200 active:scale-[0.98] sm:flex-1 ${
+                disabled={stock === 0}
+                className={`flex h-12 w-full items-center justify-center rounded-full text-sm font-bold transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-1 ${
                   added
                     ? "bg-emerald-500 text-white"
                     : "bg-foreground text-background hover:opacity-90"
                 }`}
               >
-                {added ? (
+                {stock === 0 ? (
+                  "Out of stock"
+                ) : added ? (
                   <>
                     <Check className="mr-1.5 size-4" strokeWidth={2.5} /> Added
                   </>
@@ -601,7 +619,8 @@ function ProductPage() {
             <button
               type="button"
               onClick={buyNow}
-              className="flex h-12 w-full items-center justify-center rounded-full bg-accent text-sm font-bold text-white shadow-md transition-all duration-200 hover:opacity-92 active:scale-[0.98]"
+              disabled={stock === 0}
+              className="flex h-12 w-full items-center justify-center rounded-full bg-accent text-sm font-bold text-white shadow-md transition-all duration-200 hover:opacity-92 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Buy it now
             </button>

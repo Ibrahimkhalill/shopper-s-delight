@@ -5,6 +5,7 @@ import { useAdminStore } from "@/lib/admin-store";
 import type { PromoBanner } from "@/lib/admin-store";
 import { Plus, Pencil, Trash2, X, Check, AlertTriangle, Eye, EyeOff, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { useEscapeClose } from "@/hooks/use-escape-close";
 import { SingleImageUpload } from "@/components/admin/SingleImageUpload";
 
 const emptyForm = (): Omit<PromoBanner, "id"> => ({
@@ -43,6 +44,7 @@ export default function PromosPage() {
   };
   const openDelete = (id: string) => { setDeleteId(id); setModal("delete"); };
   const closeModal = () => { setModal(null); setEditing(null); setDeleteId(null); };
+  useEscapeClose(modal !== null, closeModal);
 
   const handleSave = () => {
     if (!form.title.trim())    { toast.error("Title is required"); return; }
@@ -144,8 +146,8 @@ export default function PromosPage() {
 
       {/* Add/Edit Modal */}
       {(modal === "add" || modal === "edit") && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={closeModal}>
+          <div onClick={(e) => e.stopPropagation()} className="animate-scale-in bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
               <h3 className="text-lg font-bold text-slate-800">{modal === "add" ? "Add Promo Banner" : "Edit Promo Banner"}</h3>
               <button onClick={closeModal} className="size-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
@@ -256,8 +258,8 @@ export default function PromosPage() {
 
       {/* Delete Modal */}
       {modal === "delete" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={closeModal}>
+          <div onClick={(e) => e.stopPropagation()} className="animate-scale-in bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
             <div className="size-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="size-7 text-red-500" />
             </div>

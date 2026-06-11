@@ -25,6 +25,8 @@ export type Product = {
   badge?: { label: string; tone: "new" | "sale" | "trending" };
   colors: string[];
   liked?: boolean;
+  /** Available quantity; undefined = not tracked */
+  stock?: number;
 };
 
 /**

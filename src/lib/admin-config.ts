@@ -1,5 +1,6 @@
-import type { HeroSlide, PromoBanner, AdminCategory, AdminColor, AdminBrand, AdminSize } from "./admin-store";
-import { DEFAULT_HERO_SLIDES, DEFAULT_PROMO_BANNERS } from "./admin-store";
+import type { HeroSlide, PromoBanner, AdminCategory, AdminColor, AdminBrand, AdminSize, AdminProduct } from "./admin-store";
+import { DEFAULT_HERO_SLIDES, DEFAULT_PROMO_BANNERS, availableStock } from "./admin-store";
+import { PRODUCTS as STATIC_PRODUCTS } from "./products";
 
 const KEYS = {
   categories:  "shopbd:admin:categories",
@@ -59,6 +60,17 @@ export function getAdminSizes(): AdminSize[] {
 
 export function getAdminColors(): AdminColor[] {
   return readLS<AdminColor[]>(KEYS.colors, []).filter((c) => c.status === "active");
+}
+
+/**
+ * Available quantity for a product as managed in the admin panel.
+ * `null` when the admin never saved products or doesn't track stock for it.
+ */
+export function getAdminProductStock(productId: string): number | null {
+  const products = readLS<AdminProduct[] | null>("shopbd:admin:products", null);
+  const pool = products ?? (STATIC_PRODUCTS as AdminProduct[]);
+  const p = pool.find((x) => String(x.id) === String(productId));
+  return p ? availableStock(p) : null;
 }
 
 export function getAdminBrands(): AdminBrand[] {

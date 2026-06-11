@@ -5,6 +5,7 @@ import { useAdminStore } from "@/lib/admin-store";
 import { Search, X, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import type { Order } from "@/lib/store";
 import { toast } from "sonner";
+import { useEscapeClose } from "@/hooks/use-escape-close";
 
 const STATUS_OPTIONS: Order["status"][] = ["placed", "packed", "shipped", "delivered"];
 const STATUS_BADGE: Record<Order["status"], string> = {
@@ -21,6 +22,7 @@ export default function OrdersPage() {
   const [statusFilter, setStatus] = useState<Order["status"] | "all">("all");
   const [page, setPage]           = useState(1);
   const [selected, setSelected]   = useState<Order | null>(null);
+  useEscapeClose(selected !== null, () => setSelected(null));
 
   const filtered = useMemo(() => {
     let arr = [...orders].sort((a, b) => b.createdAt - a.createdAt);
@@ -142,8 +144,8 @@ export default function OrdersPage() {
 
       {/* Order Detail Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setSelected(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="animate-scale-in bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
               <div>
                 <h3 className="text-lg font-bold text-slate-800">Order Details</h3>

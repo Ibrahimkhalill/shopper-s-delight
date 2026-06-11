@@ -127,6 +127,18 @@ export type AdminProduct = Product & {
   tags?: string[];
 };
 
+/**
+ * Total purchasable quantity for a product: sum of variant stock when
+ * variants exist, else the product-level stock. `null` = not tracked.
+ */
+export function availableStock(p: AdminProduct): number | null {
+  if (p.variants && p.variants.length > 0) {
+    return p.variants.reduce((s, v) => s + (Number(v.stock) || 0), 0);
+  }
+  if (typeof p.stock === "number") return p.stock;
+  return null;
+}
+
 // ─── Default seed data ─────────────────────────────────────────────────────────
 const DEFAULT_CATEGORIES: AdminCategory[] = [
   { id: "cat-1", name: "Fashion",    slug: "fashion",    parentId: null, image: "", status: "active", createdAt: Date.now() - 86400000 * 30 },
