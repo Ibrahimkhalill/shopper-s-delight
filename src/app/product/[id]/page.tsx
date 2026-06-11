@@ -5,6 +5,7 @@ import { Layout } from "@/components/site/Layout";
 import { getProduct, PRODUCTS } from "@/lib/products";
 import { ProductCard } from "@/components/site/ProductCard";
 import {
+  ChevronLeft,
   ChevronRight,
   Heart,
   Truck,
@@ -25,7 +26,7 @@ import {
   Clock,
   Eye,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -85,6 +86,19 @@ function ProductPage() {
   const [thumb, setThumb] = useState(0);
   const [added, setAdded] = useState(false);
   const [hoveredColor, setHoveredColor] = useState<number | null>(null);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  // Selected color pins its image until another image is chosen
+  const [colorOverride, setColorOverride] = useState<string | null>(null);
+  // Gallery autoplay — pauses while zooming or hovering a color swatch
+  const totalThumbs = p?.images && p.images.length > 1 ? p.images.length : 4;
+  useEffect(() => {
+    if (zoom.active || hoveredColor !== null) return;
+    const t = setInterval(() => {
+      setColorOverride(null);
+      setThumb((v) => (v + 1) % totalThumbs);
+    }, 4000);
+    return () => clearInterval(t);
+  }, [zoom.active, hoveredColor, totalThumbs]);
   const imgRef = useRef<HTMLDivElement>(null);
 
   const productReviews = useMemo(() => reviews.filter((r) => r.productId === id), [reviews, id]);
@@ -173,9 +187,11 @@ function ProductPage() {
   };
 
   const thumbs = p.images && p.images.length > 1 ? p.images : [p.image, p.image, p.image, p.image];
-  const activeColorIdx = hoveredColor ?? color;
-  const colorImage = p.colorImages?.[activeColorIdx];
-  const activeImage = colorImage ?? thumbs[thumb];
+  // Hovering a color previews it; a clicked color shows until the user (or
+  // autoplay) picks another image; otherwise the carousel position rules.
+  const hoverImage = hoveredColor !== null ? p.colorImages?.[hoveredColor] : null;
+  const activeImage = hoverImage ?? colorOverride ?? thumbs[thumb];
+  const mainImgLoaded = loadedSrc === activeImage;
 
   return (
     <Layout>
@@ -208,8 +224,8 @@ function ProductPage() {
               {thumbs.map((img, i) => (
                 <button
                   key={i}
-                  onMouseEnter={() => setThumb(i)}
-                  onClick={() => setThumb(i)}
+                  onMouseEnter={() => { setColorOverride(null); setThumb(i); }}
+                  onClick={() => { setColorOverride(null); setThumb(i); }}
                   className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${i === thumb ? "border-foreground shadow-md scale-[1.03]" : "border-transparent hover:border-border"}`}
                 >
                   <img src={img} alt="" className="size-full object-cover" />
@@ -226,11 +242,22 @@ function ProductPage() {
                 onMouseMove={handleMove}
                 className="relative aspect-square rounded-2xl bg-secondary overflow-hidden border lg:cursor-crosshair"
               >
+                {/* Shimmer until the active image is loaded */}
+                {!mainImgLoaded && <span aria-hidden className="skeleton-shimmer absolute inset-0" />}
+
                 {/* Base image */}
                 <img
+                  key={activeImage}
                   src={activeImage}
                   alt={p.name}
-                  className="size-full object-cover transition duration-500"
+                  // ref covers images already loaded before hydration (onLoad won't fire then)
+                  ref={(el) => {
+                    if (el?.complete && el.naturalWidth > 0) {
+                      setLoadedSrc((prev) => (prev === activeImage ? prev : activeImage));
+                    }
+                  }}
+                  onLoad={() => setLoadedSrc(activeImage)}
+                  className={`size-full object-cover transition duration-500 ${mainImgLoaded ? "opacity-100" : "opacity-0"}`}
                 />
 
                 {/* Rectangular zoom lens — desktop only, follows the cursor */}
@@ -247,6 +274,29 @@ function ProductPage() {
                     }}
                   />
                 )}
+
+                {/* Carousel arrows */}
+                <button
+                  type="button"
+                  aria-label="Previous image"
+                  onClick={() => { setColorOverride(null); setThumb((v) => (v - 1 + thumbs.length) % thumbs.length); }}
+                  className="absolute left-2.5 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground/80 shadow-sm backdrop-blur transition hover:bg-background hover:text-foreground active:scale-95"
+                >
+                  <ChevronLeft className="size-4.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next image"
+                  onClick={() => { setColorOverride(null); setThumb((v) => (v + 1) % thumbs.length); }}
+                  className="absolute right-2.5 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground/80 shadow-sm backdrop-blur transition hover:bg-background hover:text-foreground active:scale-95"
+                >
+                  <ChevronRight className="size-4.5" />
+                </button>
+
+                {/* Image counter */}
+                <span className="absolute bottom-3 right-3 z-10 rounded-full bg-foreground/70 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-background backdrop-blur-sm">
+                  {thumb + 1}/{thumbs.length}
+                </span>
 
                 {/* Badges */}
                 <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
@@ -290,7 +340,7 @@ function ProductPage() {
                 {thumbs.map((img, i) => (
                   <button
                     key={i}
-                    onClick={() => setThumb(i)}
+                    onClick={() => { setColorOverride(null); setThumb(i); }}
                     aria-label={`Image ${i + 1}`}
                     className={`shrink-0 size-16 sm:size-[72px] rounded-lg sm:rounded-xl overflow-hidden bg-secondary transition-all duration-200 border-2 ${
                       i === thumb
@@ -442,7 +492,7 @@ function ProductPage() {
                 <button
                   key={i}
                   type="button"
-                  onClick={() => { setColor(i); setThumb(0); setHoveredColor(null); }}
+                  onClick={() => { setColor(i); setColorOverride(p.colorImages?.[i] ?? null); setHoveredColor(null); }}
                   onMouseEnter={() => setHoveredColor(i)}
                   onMouseLeave={() => setHoveredColor(null)}
                   aria-label={`Color ${colorLabelFromHex(c)}`}

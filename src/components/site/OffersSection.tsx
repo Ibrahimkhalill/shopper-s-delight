@@ -9,11 +9,15 @@ import { toast } from "sonner";
 import { Price } from "@/components/site/Price";
 
 function useCountdown(target: number) {
-  const [now, setNow] = useState(Date.now());
+  // `now` starts null on both server and client so SSR markup matches
+  // hydration exactly (Date.now() would differ and warn).
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+  if (now === null) return { h: null, m: null, s: null };
   const diff = Math.max(0, target - now);
   const h = Math.floor(diff / 3.6e6);
   const m = Math.floor((diff % 3.6e6) / 6e4);
@@ -21,11 +25,11 @@ function useCountdown(target: number) {
   return { h, m, s };
 }
 
-function Cell({ value, label }: { value: number; label: string }) {
+function Cell({ value, label }: { value: number | null; label: string }) {
   return (
     <div className="flex flex-col items-center">
       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white text-black flex items-center justify-center text-base sm:text-lg font-bold tabular-nums shadow-sm">
-        {String(value).padStart(2, "0")}
+        {value === null ? "--" : String(value).padStart(2, "0")}
       </div>
       <span className="mt-1.5 text-[10px] font-medium uppercase tracking-widest text-white/55 sm:text-[11px]">
         {label}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useT, dict } from "@/lib/i18n";
 import { getAdminParentCategories } from "@/lib/admin-config";
+import { CategoryStripSkeleton } from "./skeletons";
 import type { AdminCategory } from "@/lib/admin-store";
 import gadgets from "@/assets/cat-gadgets.jpg";
 import fashion from "@/assets/cat-fashion.jpg";
@@ -40,12 +41,15 @@ const DEFAULT_COLORS: Record<number, { bg: string; color: string }> = {
 
 export function CategoryStrip() {
   const { t, lang } = useT();
-  const [adminCats, setAdminCats] = useState<AdminCategory[] | null>(null);
+  const [adminCats, setAdminCats] = useState<AdminCategory[] | null | undefined>(undefined);
 
   useEffect(() => {
     const cats = getAdminParentCategories();
-    if (cats.length > 0) setAdminCats(cats);
+    setAdminCats(cats.length > 0 ? cats : null);
   }, []);
+
+  // Still reading config — shimmer placeholder, no static→admin flash.
+  if (adminCats === undefined) return <CategoryStripSkeleton />;
 
   // Admin categories available → render them
   if (adminCats && adminCats.length > 0) {

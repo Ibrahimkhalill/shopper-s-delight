@@ -172,7 +172,7 @@ export default function SearchPage() {
         <Layout>
           <PageHeader title="Search" subtitle="Loading…" crumbs={[{ label: "Home", to: "/" }, { label: "Search" }]} />
           <div className="mx-auto max-w-7xl px-4 py-6">
-            <div className="h-12 max-w-xl animate-pulse rounded-full bg-secondary" />
+            <div className="h-12 max-w-xl skeleton-shimmer rounded-full" />
           </div>
         </Layout>
       }

@@ -40,3 +40,4 @@ dist-ssr
 *.jpg
 *.jpeg
 .playwright-mcp/
+tsconfig.tsbuildinfo

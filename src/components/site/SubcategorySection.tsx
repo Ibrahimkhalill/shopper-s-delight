@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SUBCATEGORIES } from "@/lib/products";
 import { getAdminSubcategories } from "@/lib/admin-config";
 import type { AdminCategory } from "@/lib/admin-store";
+import { SubcategoryCardsSkeleton } from "./skeletons";
 
 type SubItem = { label: string; image: string; slug?: string };
 
@@ -22,7 +23,9 @@ export function SubcategorySection({ slug, title }: { slug: string; title: strin
     }
   }, [slug]);
 
-  if (!subs || subs.length === 0) return null;
+  // Still loading — shimmer placeholder keeps the layout stable.
+  if (subs === null) return <SubcategoryCardsSkeleton />;
+  if (subs.length === 0) return null;
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-6 lg:px-6">

@@ -6,18 +6,18 @@ import Link from "next/link";
 import heroImg from "@/assets/hero-shopping.png";
 import { getAdminHeroSlides } from "@/lib/admin-config";
 import type { HeroSlide } from "@/lib/admin-store";
+import { HeroSkeleton } from "./skeletons";
 
 export function HeroSlider() {
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [slides, setSlides] = useState<HeroSlide[] | null>(null);
   const [i, setI]           = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    const loaded = getAdminHeroSlides();
-    setSlides(loaded.length > 0 ? loaded : []);
+    setSlides(getAdminHeroSlides());
   }, []);
 
-  const total = slides.length;
+  const total = slides?.length ?? 0;
   const next = useCallback(() => setI((p) => (p + 1) % Math.max(total, 1)), [total]);
   const prev = useCallback(() => setI((p) => (p - 1 + Math.max(total, 1)) % Math.max(total, 1)), [total]);
 
@@ -26,6 +26,9 @@ export function HeroSlider() {
     const tm = setInterval(next, 5500);
     return () => clearInterval(tm);
   }, [next, paused, total]);
+
+  // Still reading config from storage — shimmer placeholder, no flash.
+  if (slides === null) return <HeroSkeleton />;
 
   if (slides.length === 0) {
     return (

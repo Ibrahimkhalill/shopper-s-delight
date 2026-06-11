@@ -237,6 +237,31 @@
 @keyframes bounce-soft { 0%, 100% { transform: scale(1) } 30% { transform: scale(1.18) } 60% { transform: scale(0.94) } }
 @keyframes progress-bar { from { width: 0% } to { width: 100% } }
 
+/* ── Shimmer skeleton ─────────────────────────────────────────────
+   A diagonal light sweep over a muted base. Used by <Skeleton /> and
+   any element that needs a loading placeholder. */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: oklch(from var(--muted) l c h / 0.8);
+}
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    oklch(from var(--background) l c h / 0.65) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after { animation: none; }
+}
+
 .hover-lift {
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
 }

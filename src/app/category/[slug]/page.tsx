@@ -214,7 +214,6 @@ function CategoryPage() {
         </div>
         <p className="mt-2 text-[11px] leading-snug text-muted-foreground">Shows items that use any selected colour.</p>
       </FilterGroup>
-vscode-webview://11ncm9foig8r3ollmv6tqeq242f9hns9ccnbsdbkoemeo587cfae/index.html?id=e4b9fdc5-8cce-493f-9433-1c56cf3c3131&parentId=1&origin=d6e55633-6840-4af4-b445-3b5cab33b456&swVersion=5&extensionId=Anthropic.claude-code&platform=electron&vscode-resource-base-authority=vscode-resource.vscode-cdn.net&parentOrigin=vscode-file%3A%2F%2Fvscode-app&purpose=webviewView&session=68c34535-6c82-4d03-b692-e93c73ac53cf#
       {/* Price */}
       <FilterGroup title="Price" onClear={bands.length ? () => setBands([]) : undefined}>
         <ul className="space-y-2 pt-1">

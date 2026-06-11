@@ -14,8 +14,14 @@ const sectionColors: Record<string, string> = {
   grocery: "oklch(0.97 0 0)",
 };
 
-// Alternate wave directions per section
-let waveIndex = 0;
+// Alternate wave directions per section — derived from the slug so server
+// and client render the same shape (a mutable counter caused hydration
+// mismatches because it kept incrementing across renders).
+const waveParity = (slug: string) => {
+  let n = 0;
+  for (let i = 0; i < slug.length; i++) n += slug.charCodeAt(i);
+  return n % 2;
+};
 
 export function CategorySection({
   titleKey,
@@ -33,7 +39,7 @@ export function CategorySection({
   const bg = sectionColors[slug] ?? "oklch(0.97 0 0)";
 
   // Alternate wave shape
-  const waveD = waveIndex++ % 2 === 0
+  const waveD = waveParity(slug) === 0
     ? "M0,56 L0,28 Q360,0 720,28 Q1080,56 1440,28 L1440,56 Z"
     : "M0,28 Q360,56 720,28 Q1080,0 1440,28 L1440,56 L0,56 Z";
 

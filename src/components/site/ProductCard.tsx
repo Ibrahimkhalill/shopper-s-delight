@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Heart, ShoppingCart, ArrowLeftRight, Eye } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Price } from "./Price";
@@ -40,11 +41,13 @@ const toneClass: Record<NonNullable<Product["badge"]>["tone"], string> = {
 
 export function ProductCard({ p }: { p: Product }) {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+  const router = useRouter();
   const { addToCart, toggleWishlist, wishlist, addToCompare, removeFromCompare, compareList } = useStore();
   const liked = wishlist.includes(p.id);
   const inCompare = compareList.includes(p.id);
   const [hoveredColor, setHoveredColor] = useState<number | null>(null);
   const [cardHovered, setCardHovered] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   // On card hover: show second image (images[1]). On color dot hover: show that color's image.
   const hoverImage = hoveredColor !== null && p.colorImages?.[hoveredColor]
@@ -85,6 +88,9 @@ export function ProductCard({ p }: { p: Product }) {
         aria-label={p.name}
         className="relative block aspect-square w-full overflow-hidden bg-secondary/60"
       >
+        {/* Shimmer placeholder until the primary image finishes loading */}
+        {!imgLoaded && <span aria-hidden className="skeleton-shimmer absolute inset-0 rounded-none" />}
+
         {/* Second image fades in on hover */}
         <img
           src={p.image}
@@ -92,8 +98,11 @@ export function ProductCard({ p }: { p: Product }) {
           loading="lazy"
           width={800}
           height={800}
+          // ref covers images already loaded before hydration (onLoad won't fire then)
+          ref={(el) => { if (el?.complete && el.naturalWidth > 0) setImgLoaded(true); }}
+          onLoad={() => setImgLoaded(true)}
           className="absolute inset-0 size-full object-cover transition-opacity duration-500 ease-out"
-          style={{ opacity: cardHovered || hoveredColor !== null ? 0 : 1 }}
+          style={{ opacity: cardHovered || hoveredColor !== null ? 0 : imgLoaded ? 1 : 0 }}
         />
         <img
           src={displayImage}
@@ -156,7 +165,7 @@ export function ProductCard({ p }: { p: Product }) {
             {
               label: "Quick view",
               icon: <Eye className="size-3.75 lg:size-4" strokeWidth={2} />,
-              onClick: (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/product/${p.id}`; },
+              onClick: (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); router.push(`/product/${p.id}`); },
               active: false,
               delay: "delay-150",
             },

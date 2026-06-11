@@ -10,9 +10,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Price } from "@/components/site/Price";
 
 function WishlistPage() {
+  const router = useRouter();
   const { wishlist, resolveProduct, toggleWishlist, addToCart } = useStore();
   const [removed, setRemoved] = useState<string[]>([]);
 
@@ -173,7 +175,7 @@ function WishlistPage() {
                         <ShoppingCart className="size-3.5" />
                       </button>
                       <button
-                        onClick={() => { addToCart(p.id, { size: p.sizes[0] }); window.location.href = "/checkout"; }}
+                        onClick={() => { addToCart(p.id, { size: p.sizes[0] }); router.push("/checkout"); }}
                         aria-label="Buy now"
                         className="size-8 rounded-full bg-accent text-white flex items-center justify-center hover:opacity-80 transition"
                       >
