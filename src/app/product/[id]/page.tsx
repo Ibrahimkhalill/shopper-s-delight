@@ -74,6 +74,9 @@ function ProductPage() {
     compareList,
     addToCompare,
     removeFromCompare,
+    addReviewReply,
+    hasPurchased,
+    openAuthModal,
   } = useStore();
   const router = useRouter();
   const [size, setSize] = useState(p?.sizes[0]);
@@ -83,6 +86,8 @@ function ProductPage() {
   const [reviewSort, setReviewSort] = useState<"recent" | "oldest" | "high" | "low">("recent");
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
   const [zoom, setZoom] = useState({ active: false, x: 0, y: 0 });
   const [thumb, setThumb] = useState(0);
   const [added, setAdded] = useState(false);
@@ -179,15 +184,41 @@ function ProductPage() {
     toast.success("Added to compare", { description: "Open compare to see side by side." });
   };
 
+  const canReview = !!user && hasPurchased(id);
+
   const submitReview = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      openAuthModal("login");
+      return;
+    }
+    if (!hasPurchased(id)) {
+      toast.error("Only customers who bought this product can review it");
+      return;
+    }
     if (!reviewText.trim()) {
       toast.error("Please write a review");
       return;
     }
-    addReview({ productId: p.id, user: user?.name ?? "Guest", rating, text: reviewText });
+    addReview({ productId: p.id, user: user.name, rating, text: reviewText, verified: true });
     setReviewText("");
     toast.success("Review posted!");
+  };
+
+  const submitReply = (reviewId: string) => {
+    if (!user) {
+      openAuthModal("login");
+      return;
+    }
+    const text = replyText.trim();
+    if (!text) {
+      toast.error("Please write a reply");
+      return;
+    }
+    addReviewReply(reviewId, { user: user.name, text });
+    setReplyText("");
+    setReplyingTo(null);
+    toast.success("Reply posted!");
   };
 
   const thumbs = p.images && p.images.length > 1 ? p.images : [p.image, p.image, p.image, p.image];
@@ -864,48 +895,92 @@ function ProductPage() {
                   </div>
                 </div>
 
-                <form
-                  id="write-review-form"
-                  onSubmit={submitReview}
-                  className="mt-8 rounded-xl border border-border/80 bg-secondary/20 p-4 sm:p-5"
-                >
-                  <p className="font-semibold text-foreground">Write a review</p>
-                  <div className="mt-3 flex flex-wrap items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((n) => (
+                {canReview ? (
+                  <form
+                    id="write-review-form"
+                    onSubmit={submitReview}
+                    className="mt-8 rounded-xl border border-border/80 bg-secondary/20 p-4 sm:p-5"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-foreground">Write a review</p>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                        <BadgeCheck className="size-3" /> Verified Purchase
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          type="button"
+                          key={n}
+                          onClick={() => setRating(n)}
+                          className="rounded p-0.5 transition hover:scale-110"
+                        >
+                          <Star
+                            className={`size-6 sm:size-7 ${n <= rating ? "fill-amber-400 text-amber-400" : "fill-border text-border"}`}
+                          />
+                        </button>
+                      ))}
+                      <span className="ml-2 text-xs text-muted-foreground sm:text-sm">
+                        {["", "Poor", "Fair", "Good", "Very good", "Excellent"][rating]}
+                      </span>
+                    </div>
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      rows={3}
+                      placeholder="Share your experience with this product..."
+                      className="mt-3 w-full resize-none rounded-lg border border-border bg-background p-3 text-sm outline-none transition focus:border-foreground"
+                    />
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs text-muted-foreground">Posting as {user!.name}</p>
                       <button
-                        type="button"
-                        key={n}
-                        onClick={() => setRating(n)}
-                        className="rounded p-0.5 transition hover:scale-110"
+                        type="submit"
+                        className="h-11 w-full rounded-full bg-foreground text-sm font-bold text-background transition hover:opacity-90 sm:w-auto sm:px-8"
                       >
-                        <Star
-                          className={`size-6 sm:size-7 ${n <= rating ? "fill-amber-400 text-amber-400" : "fill-border text-border"}`}
-                        />
+                        Write a review
                       </button>
-                    ))}
-                    <span className="ml-2 text-xs text-muted-foreground sm:text-sm">
-                      {["", "Poor", "Fair", "Good", "Very good", "Excellent"][rating]}
-                    </span>
+                    </div>
+                  </form>
+                ) : (
+                  <div
+                    id="write-review-form"
+                    className="mt-8 flex flex-col items-start gap-3 rounded-xl border border-border/80 bg-secondary/20 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                  >
+                    {user ? (
+                      <>
+                        <div>
+                          <p className="font-semibold text-foreground">Only verified buyers can review</p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            Purchase this product to share your experience — reviews come from real customers only.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddToCart}
+                          className="h-11 shrink-0 rounded-full bg-foreground px-6 text-sm font-bold text-background transition hover:opacity-90"
+                        >
+                          Add to cart
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="font-semibold text-foreground">Sign in to write a review</p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            Only customers who bought this product can review it.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openAuthModal("login")}
+                          className="h-11 shrink-0 rounded-full bg-foreground px-6 text-sm font-bold text-background transition hover:opacity-90"
+                        >
+                          Sign in
+                        </button>
+                      </>
+                    )}
                   </div>
-                  <textarea
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value)}
-                    rows={3}
-                    placeholder="Share your experience with this product..."
-                    className="mt-3 w-full resize-none rounded-lg border border-border bg-background p-3 text-sm outline-none transition focus:border-foreground"
-                  />
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      {user ? `Posting as ${user.name}` : "Posting as Guest"}
-                    </p>
-                    <button
-                      type="submit"
-                      className="h-11 w-full rounded-full bg-foreground text-sm font-bold text-background transition hover:opacity-90 sm:w-auto sm:px-8"
-                    >
-                      Write a review
-                    </button>
-                  </div>
-                </form>
+                )}
 
                 <div
                   id="reviews-list"
@@ -948,7 +1023,14 @@ function ProductPage() {
                               {r.user.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold">{r.user}</p>
+                              <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                                {r.user}
+                                {r.verified && (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">
+                                    <BadgeCheck className="size-3" /> Verified Purchase
+                                  </span>
+                                )}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {new Date(r.createdAt).toLocaleDateString("en-GB", {
                                   day: "numeric",
@@ -963,6 +1045,72 @@ function ProductPage() {
                         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                           {r.text}
                         </p>
+
+                        {/* Reply action */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!user) { openAuthModal("login"); return; }
+                            setReplyText("");
+                            setReplyingTo(replyingTo === r.id ? null : r.id);
+                          }}
+                          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+                        >
+                          <MessageSquare className="size-3.5" />
+                          {replyingTo === r.id ? "Cancel" : "Reply"}
+                          {(r.replies?.length ?? 0) > 0 && (
+                            <span className="text-muted-foreground/70 font-normal">
+                              · {r.replies!.length} {r.replies!.length === 1 ? "reply" : "replies"}
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Replies thread */}
+                        {(r.replies?.length ?? 0) > 0 && (
+                          <div className="mt-3 space-y-3 border-l-2 border-border/70 pl-4">
+                            {r.replies!.map((rep) => (
+                              <div key={rep.id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-bold">
+                                    {rep.user.charAt(0).toUpperCase()}
+                                  </div>
+                                  <p className="text-xs font-semibold">{rep.user}</p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {new Date(rep.createdAt).toLocaleDateString("en-GB", {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}
+                                  </p>
+                                </div>
+                                <p className="mt-1 pl-8 text-sm leading-relaxed text-muted-foreground">
+                                  {rep.text}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Reply composer */}
+                        {replyingTo === r.id && (
+                          <div className="mt-3 flex flex-col gap-2 border-l-2 border-border/70 pl-4 sm:flex-row">
+                            <input
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && submitReply(r.id)}
+                              autoFocus
+                              placeholder={`Reply to ${r.user}...`}
+                              className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-foreground"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => submitReply(r.id)}
+                              className="h-10 shrink-0 rounded-lg bg-foreground px-5 text-xs font-bold text-background transition hover:opacity-90"
+                            >
+                              Post reply
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

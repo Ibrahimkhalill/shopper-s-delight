@@ -19,7 +19,18 @@ export type Order = {
   discount?: number;
   shippingCost?: number;
 };
-export type Review = { id: string; productId: string; user: string; rating: number; text: string; createdAt: number };
+export type ReviewReply = { id: string; user: string; text: string; createdAt: number };
+export type Review = {
+  id: string;
+  productId: string;
+  user: string;
+  rating: number;
+  text: string;
+  createdAt: number;
+  /** True when the reviewer had actually ordered this product */
+  verified?: boolean;
+  replies?: ReviewReply[];
+};
 export type User = { name: string; phone: string; email?: string };
 export type Address = {
   id: string;
@@ -52,6 +63,9 @@ type StoreCtx = {
   clearCompare: () => void;
   placeOrder: (data: Omit<Order, "id" | "items" | "total" | "status" | "createdAt">) => Order;
   addReview: (r: Omit<Review, "id" | "createdAt">) => void;
+  addReviewReply: (reviewId: string, reply: Omit<ReviewReply, "id" | "createdAt">) => void;
+  /** Whether the signed-in user has an order containing this product */
+  hasPurchased: (productId: string) => boolean;
   login: (u: User) => void;
   logout: () => void;
   addAddress: (a: Omit<Address, "id">) => void;
@@ -72,18 +86,22 @@ const Ctx = createContext<StoreCtx | null>(null);
 const MAX_COMPARE = 4;
 
 function usePersist<T>(key: string, initial: T) {
-  const [v, setV] = useState<T>(() => {
-    if (typeof window === "undefined") return initial;
+  // Hydration-safe: first render always uses `initial` (matching the SSR
+  // markup), then localStorage is loaded after mount. Writes are skipped
+  // until that load completes so the stored value is never clobbered.
+  const [v, setV] = useState<T>(initial);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
-      return raw ? (JSON.parse(raw) as T) : initial;
-    } catch {
-      return initial;
-    }
-  });
+      if (raw) setV(JSON.parse(raw) as T);
+    } catch {}
+    setHydrated(true);
+  }, [key]);
   useEffect(() => {
+    if (!hydrated) return;
     try { localStorage.setItem(key, JSON.stringify(v)); } catch {}
-  }, [key, v]);
+  }, [key, v, hydrated]);
   return [v, setV] as const;
 }
 
@@ -166,6 +184,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addReview: StoreCtx["addReview"] = (r) =>
     setReviews((rs) => [{ ...r, id: crypto.randomUUID(), createdAt: Date.now() }, ...rs]);
 
+  const addReviewReply: StoreCtx["addReviewReply"] = (reviewId, reply) =>
+    setReviews((rs) => rs.map((r) =>
+      r.id === reviewId
+        ? { ...r, replies: [...(r.replies ?? []), { ...reply, id: crypto.randomUUID(), createdAt: Date.now() }] }
+        : r,
+    ));
+
+  // Purchase check for review gating. Orders are stored per browser and
+  // carry no account id, so any order containing the product counts.
+  const hasPurchased: StoreCtx["hasPurchased"] = (productId) =>
+    orders.some((o) => o.items.some((it) => String(it.id) === String(productId)));
+
   const login = (u: User) => setUser(u);
   const logout = () => setUser(null);
 
@@ -191,7 +221,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       cart, wishlist, compareList, orders, reviews, addresses, user,
       addToCart, removeFromCart, setQty, clearCart, toggleWishlist,
       addToCompare, removeFromCompare, toggleCompare, clearCompare,
-      placeOrder, addReview, login, logout,
+      placeOrder, addReview, addReviewReply, hasPurchased, login, logout,
       addAddress, updateAddress, deleteAddress, setDefaultAddress,
       cartCount, cartSubtotal, resolveProduct,
       authModalOpen, authModalTab, openAuthModal, closeAuthModal,

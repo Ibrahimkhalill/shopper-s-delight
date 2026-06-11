@@ -199,8 +199,9 @@ export function Header() {
             {/* Right icons */}
             <div className="ml-auto flex items-center gap-0.5 lg:gap-1.5">
 
-              {/* Desktop: user menu */}
-              {user ? (
+              {/* Desktop: user menu — gated on `mounted` because `user` comes
+                  from localStorage and would mismatch the SSR markup */}
+              {mounted && user ? (
                 <div ref={userMenuRef} className="relative hidden md:block">
                   <button
                     onClick={() => setUserMenu(!userMenu)}
@@ -349,7 +350,7 @@ export function Header() {
             </div>
 
             {/* User section */}
-            {user ? (
+            {mounted && user ? (
               <div className="px-5 py-4 border-b bg-secondary/40 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="size-11 rounded-full bg-foreground text-background flex items-center justify-center text-base font-semibold shrink-0">

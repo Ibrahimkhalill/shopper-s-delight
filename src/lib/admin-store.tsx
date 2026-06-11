@@ -308,16 +308,22 @@ const AdminCtx = createContext<AdminCtx | null>(null);
 
 // ─── Persist hook ─────────────────────────────────────────────────────────────
 function usePersist<T>(key: string, initial: T) {
-  const [v, setV] = useState<T>(() => {
-    if (typeof window === "undefined") return initial;
+  // Hydration-safe: first render always uses `initial` (matching the SSR
+  // markup), then localStorage is loaded after mount. Writes are skipped
+  // until that load completes so the stored value is never clobbered.
+  const [v, setV] = useState<T>(initial);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
-      return raw ? (JSON.parse(raw) as T) : initial;
-    } catch { return initial; }
-  });
+      if (raw) setV(JSON.parse(raw) as T);
+    } catch {}
+    setHydrated(true);
+  }, [key]);
   useEffect(() => {
+    if (!hydrated) return;
     try { localStorage.setItem(key, JSON.stringify(v)); } catch {}
-  }, [key, v]);
+  }, [key, v, hydrated]);
   return [v, setV] as const;
 }
 
