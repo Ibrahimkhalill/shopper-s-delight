@@ -5,6 +5,7 @@ import { useAdminStore } from "@/lib/admin-store";
 import type { PromoBanner } from "@/lib/admin-store";
 import { Plus, Pencil, Trash2, X, Check, AlertTriangle, Eye, EyeOff, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { SingleImageUpload } from "@/components/admin/SingleImageUpload";
 
 const emptyForm = (): Omit<PromoBanner, "id"> => ({
   eyebrow: "", title: "", subtitle: "", image: "", href: "/", bg: "#e8f5f0", active: true, order: 0,
@@ -199,10 +200,8 @@ export default function PromosPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Image URL <span className="text-slate-400 font-normal">(optional)</span></label>
-                <input value={form.image} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
-                  placeholder="https://images.unsplash.com/..." />
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Image <span className="text-slate-400 font-normal">(optional)</span></label>
+                <SingleImageUpload value={form.image} onChange={(image) => setForm((f) => ({ ...f, image }))} hint="Promo banner image — PNG, JPG, WebP up to 8MB" />
               </div>
 
               <div>

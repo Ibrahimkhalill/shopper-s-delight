@@ -5,6 +5,7 @@ import { useAdminStore } from "@/lib/admin-store";
 import type { AdminCategory } from "@/lib/admin-store";
 import { Plus, Pencil, Trash2, X, Check, AlertTriangle, Search, Layers, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { SingleImageUpload } from "@/components/admin/SingleImageUpload";
 
 const emptyForm = (): Omit<AdminCategory, "id" | "createdAt"> => ({
   name: "", slug: "", parentId: null, image: "", status: "active",
@@ -268,13 +269,8 @@ export default function CategoriesPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Image URL (optional)</label>
-                <div className="flex gap-2">
-                  <input value={form.image} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-                    className="flex-1 h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
-                    placeholder="https://..." />
-                  {form.image && <img src={form.image} alt="" className="size-10 rounded-xl object-cover border border-slate-200 shrink-0" />}
-                </div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Image (optional)</label>
+                <SingleImageUpload value={form.image} onChange={(image) => setForm((f) => ({ ...f, image }))} />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Status</label>

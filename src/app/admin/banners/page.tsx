@@ -5,6 +5,7 @@ import { useAdminStore } from "@/lib/admin-store";
 import type { HeroSlide } from "@/lib/admin-store";
 import { Plus, Pencil, Trash2, X, Check, AlertTriangle, GripVertical, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { SingleImageUpload } from "@/components/admin/SingleImageUpload";
 
 const emptyForm = (): Omit<HeroSlide, "id"> => ({
   badge: "", title: "", subtitle: "", cta: "Shop Now", slug: "",
@@ -214,10 +215,8 @@ export default function BannersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Background Image URL <span className="text-slate-400 font-normal">(optional)</span></label>
-                <input value={form.image} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
-                  placeholder="https://images.unsplash.com/..." />
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Slide Image <span className="text-slate-400 font-normal">(optional)</span></label>
+                <SingleImageUpload value={form.image} onChange={(image) => setForm((f) => ({ ...f, image }))} hint="Hero slide image — PNG, JPG, WebP up to 8MB" />
               </div>
 
               <div>
