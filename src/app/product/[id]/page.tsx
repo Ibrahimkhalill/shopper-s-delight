@@ -25,6 +25,8 @@ import {
   Ruler,
   Clock,
   Eye,
+  X,
+  ImagePlus,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
@@ -88,6 +90,8 @@ function ProductPage() {
   const [reviewText, setReviewText] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const reviewFileRef = useRef<HTMLInputElement>(null);
   const [zoom, setZoom] = useState({ active: false, x: 0, y: 0 });
   const [thumb, setThumb] = useState(0);
   const [added, setAdded] = useState(false);
@@ -200,9 +204,21 @@ function ProductPage() {
       toast.error("Please write a review");
       return;
     }
-    addReview({ productId: p.id, user: user.name, rating, text: reviewText, verified: true });
+    addReview({ productId: p.id, user: user.name, rating, text: reviewText, verified: true, images: reviewImages });
     setReviewText("");
+    setReviewImages([]);
     toast.success("Review posted!");
+  };
+
+  const addReviewImages = (files: FileList | null) => {
+    if (!files) return;
+    Array.from(files).slice(0, 3 - reviewImages.length).forEach((file) => {
+      if (!file.type.startsWith("image/")) { toast.error("Only image files allowed"); return; }
+      if (file.size > 4 * 1024 * 1024) { toast.error("Image must be under 4 MB"); return; }
+      const reader = new FileReader();
+      reader.onload = (e) => setReviewImages((imgs) => imgs.length >= 3 ? imgs : [...imgs, e.target?.result as string]);
+      reader.readAsDataURL(file);
+    });
   };
 
   const submitReply = (reviewId: string) => {
@@ -931,6 +947,45 @@ function ProductPage() {
                       placeholder="Share your experience with this product..."
                       className="mt-3 w-full resize-none rounded-lg border border-border bg-background p-3 text-sm outline-none transition focus:border-foreground"
                     />
+
+                    {/* Photo attachments (max 3) */}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {reviewImages.map((img, i) => (
+                        <div key={i} className="relative size-16 overflow-hidden rounded-lg border border-border">
+                          <img src={img} alt={`Photo ${i + 1}`} className="size-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setReviewImages((imgs) => imgs.filter((_, idx) => idx !== i))}
+                            aria-label="Remove photo"
+                            className="absolute right-0.5 top-0.5 flex size-5 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </div>
+                      ))}
+                      {reviewImages.length < 3 && (
+                        <button
+                          type="button"
+                          onClick={() => reviewFileRef.current?.click()}
+                          className="flex size-16 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed border-border text-muted-foreground transition hover:border-foreground/40 hover:text-foreground"
+                        >
+                          <ImagePlus className="size-5" />
+                          <span className="text-[9px] font-semibold">Photo</span>
+                        </button>
+                      )}
+                      <input
+                        ref={reviewFileRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => { addReviewImages(e.target.files); e.target.value = ""; }}
+                      />
+                      <p className="basis-full text-[11px] text-muted-foreground">
+                        Add up to 3 photos of the product (optional)
+                      </p>
+                    </div>
+
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-xs text-muted-foreground">Posting as {user!.name}</p>
                       <button
@@ -1045,6 +1100,23 @@ function ProductPage() {
                         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                           {r.text}
                         </p>
+
+                        {/* Customer photos */}
+                        {(r.images?.length ?? 0) > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {r.images!.map((img, i) => (
+                              <a
+                                key={i}
+                                href={img}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block size-20 overflow-hidden rounded-lg border border-border transition hover:opacity-90 sm:size-24"
+                              >
+                                <img src={img} alt={`Customer photo ${i + 1}`} className="size-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
 
                         {/* Reply action */}
                         <button

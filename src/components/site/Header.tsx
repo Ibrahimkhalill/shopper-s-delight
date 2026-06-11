@@ -4,10 +4,10 @@ import {
   Search, Heart, ShoppingCart, User, Menu, X, Package,
   LogOut, ChevronDown, Globe, Smartphone, Shirt, Home,
   Sparkles, ShoppingBasket, Tag, ChevronRight, MapPin, Settings,
-  ArrowLeftRight,
+  ArrowLeftRight, Truck,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useStore } from "@/lib/store";
@@ -38,7 +38,6 @@ export function Header() {
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const pathname = usePathname();
   const searchRef = useRef<HTMLDivElement>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -120,27 +119,6 @@ export function Header() {
   };
 
 
-  const [navHidden, setNavHidden] = useState(false);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      if (ticking.current) return;
-      ticking.current = true;
-      requestAnimationFrame(() => {
-        const current = window.scrollY;
-        const delta = current - lastScrollY.current;
-        if (delta > 6 && current > 100) setNavHidden(true);
-        else if (delta < -6) setNavHidden(false);
-        lastScrollY.current = current;
-        ticking.current = false;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
     <>
       <header className="sticky top-0 z-40 w-full min-w-0 overflow-x-clip bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/70">
@@ -149,6 +127,13 @@ export function Header() {
         <div className="bg-black text-xs text-white lg:text-[13px]">
           <div className="mx-auto flex min-w-0 max-w-7xl items-center justify-between gap-2 px-4 py-2 lg:px-6 lg:py-2.5">
             <span className={`min-w-0 flex-1 truncate ${lang === "bn" ? "font-bn" : ""}`}>{t("topbar.delivery")}</span>
+            <Link
+              href="/track"
+              className={`inline-flex shrink-0 items-center gap-1.5 font-semibold text-white/90 transition hover:text-white lg:gap-2 ${lang === "bn" ? "font-bn" : ""}`}
+            >
+              <Truck className="size-3.5 lg:size-4" />
+              {t("nav.track")}
+            </Link>
             <button
               onClick={() => setLang(lang === "en" ? "bn" : "en")}
               className="hidden items-center gap-1.5 opacity-80 transition hover:opacity-100 sm:inline-flex lg:gap-2"
@@ -218,6 +203,7 @@ export function Header() {
                       <Link href="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><User className="size-4 lg:size-[18px]" /> {t("user.profile")}</Link>
                       <Link href="/profile/orders" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Package className="size-4 lg:size-[18px]" /> {t("user.orders")}</Link>
                       <Link href="/wishlist" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Heart className="size-4 lg:size-[18px]" /> {t("user.wishlist")}</Link>
+                      <Link href="/track" onClick={() => setUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]"><Truck className="size-4 lg:size-[18px]" /> {t("nav.track")}</Link>
                       <div className="my-1.5 border-t" />
                       <button onClick={() => { logout(); setUserMenu(false); }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-accent hover:bg-secondary lg:gap-3 lg:py-3 lg:text-[15px]">
                         <LogOut className="size-4 lg:size-[18px]" /> {t("user.signout")}
@@ -290,34 +276,6 @@ export function Header() {
             </div>
           </div>
         </div>
-
-        {/* ── Category nav bar ── */}
-        <nav
-          style={{ maxHeight: navHidden ? "0px" : "56px", overflow: "hidden" }}
-          className={`bg-background transition-[max-height,opacity] duration-300 ease-in-out ${navHidden ? "opacity-0 pointer-events-none" : "opacity-100 border-b"}`}
-        >
-          <div className="relative">
-            <div className="mx-auto flex h-11 w-full min-w-0 max-w-7xl items-center gap-6 overflow-x-auto px-4 text-sm no-scrollbar lg:h-14 lg:gap-9 lg:px-6 lg:text-[16px]">
-              {categories.map((c) => {
-                const catActive =
-                  pathname === c.to || (c.to !== "/" && pathname.startsWith(c.to));
-                return (
-                <Link
-                  key={c.name}
-                  href={c.to}
-                  className={`shrink-0 whitespace-nowrap transition-colors ${catActive ? `text-foreground font-semibold ${lang === "bn" ? "font-bn" : ""}` : `text-muted-foreground hover:text-foreground ${lang === "bn" ? "font-bn" : ""}`}`}
-                >
-                  {c.name}
-                </Link>
-                );
-              })}
-              <Link href="/track" className={`ml-auto hidden shrink-0 whitespace-nowrap font-semibold text-accent md:block ${lang === "bn" ? "font-bn" : ""}`}>
-                {t("nav.track")}
-              </Link>
-            </div>
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-linear-to-l from-background to-transparent md:hidden" />
-          </div>
-        </nav>
 
       </header>
 

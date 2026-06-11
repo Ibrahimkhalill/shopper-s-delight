@@ -30,6 +30,8 @@ export type Review = {
   /** True when the reviewer had actually ordered this product */
   verified?: boolean;
   replies?: ReviewReply[];
+  /** Customer photos attached to the review (data URLs or remote URLs) */
+  images?: string[];
 };
 export type User = { name: string; phone: string; email?: string };
 export type Address = {
