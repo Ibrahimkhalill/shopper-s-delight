@@ -19,7 +19,7 @@ const POPULAR_CATEGORIES = [
   { label: "Deals",         href: "/category/deals",    icon: Tag },
 ];
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 12;
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
@@ -63,14 +63,6 @@ function SearchPageContent() {
 
   return (
     <Layout>
-      {/* Search page is mobile-only — desktop uses the header search bar */}
-      <div className="hidden md:flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-        <SearchIcon className="size-12 text-muted-foreground/20 mb-4" strokeWidth={1} />
-        <p className="text-lg font-bold">Use the search bar above</p>
-        <p className="text-sm text-muted-foreground mt-1">The search bar in the header works on desktop</p>
-      </div>
-
-      <div className="md:hidden">
       <PageHeader
         title="Search"
         subtitle={`${results.length} ${results.length === 1 ? "result" : "results"}${q ? ` for "${q}"` : ""}`}
@@ -159,7 +151,6 @@ function SearchPageContent() {
             />
           </>
         )}
-      </div>
       </div>
     </Layout>
   );

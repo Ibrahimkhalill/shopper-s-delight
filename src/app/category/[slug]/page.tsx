@@ -33,17 +33,20 @@ const SORT_OPTIONS = [
 type SortKey = typeof SORT_OPTIONS[number]["value"];
 
 const ALL_CATEGORIES = [...new Set(PRODUCTS.map((p) => p.category))];
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 12;
 
 function CategoryPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? "";
   const title = slug.charAt(0).toUpperCase() + slug.slice(1);
 
+  // Pre-select the current slug as category filter if products exist for it
+  const matchedCat = ALL_CATEGORIES.find((c) => c.toLowerCase() === slug.toLowerCase()) ?? null;
+
   const [search, setSearch]       = useState("");
   const [bands, setBands]         = useState<string[]>([]);
   const [sizes, setSizes]         = useState<string[]>([]);
-  const [cats, setCats]           = useState<string[]>([]);
+  const [cats, setCats]           = useState<string[]>(matchedCat ? [matchedCat] : []);
   const [brands, setBrands]       = useState<string[]>([]);
   const [colorHexes, setColorHexes] = useState<string[]>([]);
   const [sort, setSort]           = useState<SortKey>("feat");
