@@ -1,16 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ProfileShell } from "@/components/site/ProfileShell";
 import { useStore } from "@/lib/store";
 import {
-  LayoutDashboard, Package, PackageCheck, Clock, Bell, MapPin,
+  Package, PackageCheck, Clock, MapPin,
   Heart, ChevronRight, User as UserIcon,
 } from "lucide-react";
 import { Price } from "@/components/site/Price";
 
+type ApiOrderItem = {
+  productId: string;
+  qty: number;
+  size: string | null;
+  price: number;
+  product: { name: string; images: string[]; slug: string };
+};
+type ApiOrder = {
+  id: string;
+  total: number;
+  status: string;
+  createdAt: string;
+  items: ApiOrderItem[];
+};
+
 const STATUS_META: Record<string, { label: string; cls: string }> = {
+  PLACED:    { label: "Placed",     cls: "bg-accent text-white" },
+  CONFIRMED: { label: "Confirmed",  cls: "bg-foreground text-background" },
+  PACKED:    { label: "Packed",     cls: "bg-foreground text-background" },
+  SHIPPED:   { label: "Delivering", cls: "bg-foreground text-background" },
+  DELIVERED: { label: "Delivered",  cls: "bg-black text-white" },
+  CANCELLED: { label: "Cancelled",  cls: "bg-border text-foreground" },
   placed:    { label: "Placed",     cls: "bg-accent text-white" },
   packed:    { label: "Packed",     cls: "bg-foreground text-background" },
   shipped:   { label: "Delivering", cls: "bg-foreground text-background" },
@@ -19,16 +40,26 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 };
 
 function DashboardInner() {
-  const { user, orders, resolveProduct, addresses, wishlist } = useStore();
+  const { user, addresses, wishlist } = useStore();
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/orders")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.orders) setOrders(data.orders); })
+      .catch(() => {});
+  }, [user]);
+
   if (!user) return null;
 
   const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
 
   const stats = [
-    { label: "Total Orders", value: orders.length,                                       icon: Package },
-    { label: "Delivered",    value: orders.filter(o => o.status === "delivered").length, icon: PackageCheck },
-    { label: "Pending",      value: orders.filter(o => o.status !== "delivered").length, icon: Clock },
-    { label: "Wishlist",     value: wishlist.length,                                     icon: Heart },
+    { label: "Total Orders", value: orders.length,                                                    icon: Package },
+    { label: "Delivered",    value: orders.filter((o) => o.status === "DELIVERED").length,            icon: PackageCheck },
+    { label: "Pending",      value: orders.filter((o) => o.status !== "DELIVERED").length,            icon: Clock },
+    { label: "Wishlist",     value: wishlist.length,                                                  icon: Heart },
   ];
 
   return (
@@ -137,15 +168,15 @@ function DashboardInner() {
             </div>
             <div className="divide-y">
               {orders.slice(0, 3).map((o) => {
-                const meta = STATUS_META[o.status] ?? STATUS_META.placed;
+                const meta = STATUS_META[o.status] ?? STATUS_META[o.status?.toLowerCase()] ?? STATUS_META.placed;
                 return (
-                  <Link key={o.id} href={`/order/${o.id}/details`}
+                  <Link key={o.id} href={`/order/${o.id}`}
                     className="flex items-center gap-3 px-5 lg:px-6 py-3.5 lg:py-4 hover:bg-secondary/60 transition-colors group">
                     <div className="flex items-center -space-x-2 shrink-0">
                       {o.items.slice(0, 3).map((it) => {
-                        const p = resolveProduct(it.id);
-                        return p ? (
-                          <img key={it.id} src={p.image} className="size-9 lg:size-10 rounded-lg object-cover border-2 border-white shadow-sm" alt="" />
+                        const img = it.product?.images?.[0];
+                        return img ? (
+                          <img key={it.productId} src={img} className="size-9 lg:size-10 rounded-lg object-cover border-2 border-white shadow-sm" alt="" />
                         ) : null;
                       })}
                     </div>

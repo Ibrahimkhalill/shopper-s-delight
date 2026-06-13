@@ -5,23 +5,25 @@ import { Layout } from "@/components/site/Layout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { useStore } from "@/lib/store";
 import {
-  Heart, ShoppingCart, X, ArrowRight, Share2,
+  Heart, ShoppingCart, X, ArrowRight,
   Trash2, ShoppingBag, Star, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Price } from "@/components/site/Price";
+import { useProductCache } from "@/hooks/useProductCache";
 
 function WishlistPage() {
   const router = useRouter();
-  const { wishlist, resolveProduct, toggleWishlist, addToCart } = useStore();
+  const { wishlist, toggleWishlist, addToCart } = useStore();
   const [removed, setRemoved] = useState<string[]>([]);
+  const productCache = useProductCache(wishlist);
 
   const items = wishlist
     .filter((id) => !removed.includes(id))
-    .map((id) => resolveProduct(id))
-    .filter(Boolean) as NonNullable<ReturnType<typeof resolveProduct>>[];
+    .map((id) => productCache[id])
+    .filter(Boolean);
 
   const total    = items.reduce((s, p) => s + p.price, 0);
   const savings  = items.reduce((s, p) => s + (p.oldPrice ? p.oldPrice - p.price : 0), 0);

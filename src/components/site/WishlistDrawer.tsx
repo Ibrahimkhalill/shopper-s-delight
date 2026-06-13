@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Heart, ShoppingCart, Trash2, X } from "lucide-react";
+import { Heart, ShoppingCart, Trash2, X } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { useProductCache } from "@/hooks/useProductCache";
 
 export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { wishlist, resolveProduct, toggleWishlist, addToCart } = useStore();
+  const { wishlist, toggleWishlist, addToCart } = useStore();
   const { lang } = useT();
+  const productCache = useProductCache(wishlist);
 
   useEffect(() => {
     if (!open) return;
@@ -26,8 +28,7 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
 
   if (!open) return null;
 
-  const items = wishlist.map((id) => resolveProduct(id)).filter(Boolean) as NonNullable<ReturnType<typeof resolveProduct>>[];
-  const total = items.reduce((sum, item) => sum + item.price, 0);
+  const items = wishlist.map((id) => productCache[id]).filter(Boolean);
 
   const addAllToCart = () => {
     items.forEach((item) => addToCart(item.id, { size: item.sizes[0] }));

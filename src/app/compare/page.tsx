@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store";
 import { Price } from "@/components/site/Price";
 import { Star, Trash2, ShoppingCart, Plus, Search, X, Minus, Check } from "lucide-react";
 import { toast } from "sonner";
-import { PRODUCTS } from "@/lib/products";
+import { useProductCache } from "@/hooks/useProductCache";
 import type { Product } from "@/components/site/ProductCard";
 
 const MAX_SLOTS = 4;
@@ -35,14 +35,18 @@ function ratingForProduct(productId: string, reviews: { productId: string; ratin
 function SearchSlot({ onAdd, compareList }: { onAdd: (id: string) => void; compareList: string[] }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<Product[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return PRODUCTS.filter(
-      (p) => !compareList.includes(p.id) && p.name.toLowerCase().includes(q),
-    ).slice(0, 6);
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) { setResults([]); return; }
+    const ctrl = new AbortController();
+    fetch(`/api/products?search=${encodeURIComponent(q)}&limit=6`, { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then(({ products }) => setResults((products ?? []).filter((p: Product) => !compareList.includes(p.id))))
+      .catch(() => {});
+    return () => ctrl.abort();
   }, [query, compareList]);
 
   useEffect(() => {
@@ -113,10 +117,12 @@ const ROWS: { key: string; label: string }[] = [
 function ComparePage() {
   const { compareList, removeFromCompare, clearCompare, addToCompare, addToCart, reviews } = useStore();
   const [qty, setQty] = useState<QuantityMap>({});
+  const productCache = useProductCache(compareList);
 
   const products = useMemo(
-    () => compareList.map((id) => PRODUCTS.find((p) => p.id === id)).filter(Boolean) as Product[],
-    [compareList],
+    () => compareList.map((id) => productCache[id]).filter(Boolean) as Product[],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [compareList, productCache],
   );
 
   const slots = Array.from({ length: MAX_SLOTS }, (_, i) => products[i] ?? null);

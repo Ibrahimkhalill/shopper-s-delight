@@ -7,9 +7,11 @@ import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Price } from "./Price";
+import { useProductCache } from "@/hooks/useProductCache";
 
 export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, cartCount } = useStore();
+  const { cart, setQty, removeFromCart, cartSubtotal, cartCount } = useStore();
+  const productCache = useProductCache(cart.map((it) => it.id));
   const { lang } = useT();
 
   useEffect(() => {
@@ -84,7 +86,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
           ) : (
             cart.map((it) => {
-              const p = resolveProduct(it.id);
+              const p = productCache[it.id];
               if (!p) return null;
               const origPrice = Math.round(p.price * 1.45);
 
