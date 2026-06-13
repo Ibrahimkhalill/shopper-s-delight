@@ -13,14 +13,16 @@ export function SubcategorySection({ slug, title }: { slug: string; title: strin
   const [subs, setSubs] = useState<SubItem[] | null>(null);
 
   useEffect(() => {
-    const adminSubs = getAdminSubcategories(slug);
-    if (adminSubs.length > 0) {
-      setSubs(adminSubs.map((c: AdminCategory) => ({ label: c.name, image: c.image, slug: c.slug })));
-    } else {
-      // Fall back to static data
-      const staticSubs = SUBCATEGORIES[slug];
-      setSubs(staticSubs ?? []);
-    }
+    fetch(`/api/categories?slug=${slug}`)
+      .then((r) => r.json())
+      .then(({ categories }) => {
+        if (categories?.length > 0) {
+          setSubs(categories.map((c: AdminCategory) => ({ label: c.name, image: c.image ?? "", slug: c.slug })));
+        } else {
+          setSubs(SUBCATEGORIES[slug] ?? []);
+        }
+      })
+      .catch(() => setSubs(SUBCATEGORIES[slug] ?? []));
   }, [slug]);
 
   // Still loading — shimmer placeholder keeps the layout stable.

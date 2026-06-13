@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
-import { getProduct, PRODUCTS } from "@/lib/products";
+import type { Product } from "@/components/site/ProductCard";
 import { ProductCard } from "@/components/site/ProductCard";
 import {
   ChevronLeft,
@@ -31,7 +31,6 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { getAdminProductStock } from "@/lib/admin-config";
 import { toast } from "sonner";
 import { Price } from "@/components/site/Price";
 import { colorLabelFromHex } from "@/lib/product-filters";
@@ -62,10 +61,31 @@ function viewersNow(id: string) {
   return 8 + (n % 35);
 }
 
+type ApiProduct = Product & { description?: string; material?: string; dbId?: string };
+
 function ProductPage() {
   const params = useParams<{ id: string }>();
   const id = params.id ?? "";
-  const p = getProduct(id);
+  const [p, setP]           = useState<ApiProduct | null | undefined>(undefined);
+  const [related, setRelated] = useState<Product[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/products/${id}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) { setP(null); return; }
+        setP(data.product ?? data);
+        // Fetch related from same category
+        const cat = (data.product ?? data).category;
+        if (cat) {
+          fetch(`/api/products?category=${cat}&limit=6`)
+            .then((r) => r.json())
+            .then(({ products }) => setRelated((products ?? []).filter((x: Product) => x.id !== id).slice(0, 5)));
+        }
+      })
+      .catch(() => setP(null));
+  }, [id]);
+
   const {
     addToCart,
     toggleWishlist,
@@ -81,7 +101,8 @@ function ProductPage() {
     openAuthModal,
   } = useStore();
   const router = useRouter();
-  const [size, setSize] = useState(p?.sizes[0]);
+  const [size, setSize] = useState<string | undefined>(undefined);
+  useEffect(() => { if (p?.sizes[0]) setSize(p.sizes[0]); }, [p]);
   const [color, setColor] = useState(0);
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<"desc" | "reviews" | "shipping">("desc");
@@ -99,9 +120,8 @@ function ProductPage() {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   // Selected color pins its image until another image is chosen
   const [colorOverride, setColorOverride] = useState<string | null>(null);
-  // Available quantity managed from the admin panel (null = not tracked)
   const [stock, setStock] = useState<number | null>(null);
-  useEffect(() => { setStock(getAdminProductStock(id)); }, [id]);
+  useEffect(() => { if (p?.stock !== undefined) setStock(p.stock ?? null); }, [p]);
   // Gallery autoplay — pauses while zooming or hovering a color swatch
   const totalThumbs = p?.images && p.images.length > 1 ? p.images.length : 4;
   useEffect(() => {
@@ -127,12 +147,27 @@ function ProductPage() {
     ? productReviews.reduce((s, r) => s + r.rating, 0) / productReviews.length
     : 4.6;
 
-  if (!p) notFound();
+  // Loading state
+  if (p === undefined) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-7xl px-4 py-16 grid grid-cols-1 md:grid-cols-2 gap-10 animate-pulse">
+          <div className="aspect-square rounded-2xl bg-muted" />
+          <div className="space-y-4 pt-4">
+            <div className="h-8 w-3/4 rounded-xl bg-muted" />
+            <div className="h-6 w-1/3 rounded-xl bg-muted" />
+            <div className="h-12 w-1/2 rounded-xl bg-muted" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!p) { notFound(); return null; }
 
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   const liked = wishlist.includes(p.id);
   const inCompare = compareList.includes(p.id);
-  const related = PRODUCTS.filter((x) => x.id !== p.id).slice(0, 5);
 
   const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();

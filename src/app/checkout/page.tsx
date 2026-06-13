@@ -45,7 +45,7 @@ const PAYMENT_METHODS = [
 ];
 
 function CheckoutPage() {
-  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, placeOrder, user } = useStore();
+  const { cart, resolveProduct, setQty, removeFromCart, clearCart, cartSubtotal, user } = useStore();
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -71,38 +71,63 @@ function CheckoutPage() {
   const subtotal     = cartSubtotal;
   const total        = subtotal - discount + shippingCost;
 
-  const applyCoupon = () => {
+  const applyCoupon = async () => {
     const c = coupon.trim().toUpperCase();
-    if (c === "SHOPBD10")     { setDiscount(Math.round(subtotal * 0.1)); toast.success("10% off applied!"); }
-    else if (c === "WELCOME") { setDiscount(200); toast.success("৳200 off applied!"); }
-    else toast.error("Invalid coupon code");
+    if (!c) return;
+    try {
+      const res = await fetch("/api/offers/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: c, subtotal }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Invalid coupon"); return; }
+      setDiscount(data.discount ?? 0);
+      toast.success(`Coupon applied! ৳${data.discount} off`);
+    } catch {
+      toast.error("Could not validate coupon");
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.phone || !form.email.trim() || !form.address || !form.division || !form.district) {
+    if (!form.name || !form.phone || !form.address || !form.division || !form.district) {
       toast.error("Please fill all required fields"); return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       toast.error("Please enter a valid email address"); return;
     }
-    if (!agreed)       { toast.error("Please agree to Terms & Conditions"); return; }
+    if (!agreed)           { toast.error("Please agree to Terms & Conditions"); return; }
     if (cart.length === 0) { toast.error("Your cart is empty"); return; }
 
     setSubmitting(true);
-    setTimeout(() => {
-      const order = placeOrder({
-        payment: pay,
-        address: `${form.address}, ${form.district}, ${form.division}`,
-        name:    form.name,
-        phone:   form.phone,
-        email:   form.email.trim(),
-        discount,
-        shippingCost,
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name:    form.name,
+          phone:   form.phone,
+          email:   form.email.trim() || undefined,
+          address: form.address,
+          district: form.district,
+          division: form.division,
+          notes:   form.notes || undefined,
+          payment: pay,
+          items:   cart.map((it) => ({ productId: it.id, qty: it.qty, size: it.size })),
+          couponCode: coupon.trim().toUpperCase() || undefined,
+        }),
       });
-      toast.success("Order placed!", { description: `Order ID: ${order.id}` });
-      router.push(`/order/${order.id}`);
-    }, 900);
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Order failed"); return; }
+      clearCart();
+      toast.success("Order placed!", { description: `Order ID: ${data.orderId}` });
+      router.push(`/order/${data.orderId}`);
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (cart.length === 0) {

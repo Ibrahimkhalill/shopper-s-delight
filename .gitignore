@@ -41,3 +41,5 @@ dist-ssr
 *.jpeg
 .playwright-mcp/
 tsconfig.tsbuildinfo
+
+/src/generated/prisma

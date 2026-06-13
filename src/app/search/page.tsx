@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { ProductCard } from "@/components/site/ProductCard";
-import { PRODUCTS } from "@/lib/products";
+import type { Product } from "@/components/site/ProductCard";
 import { Search as SearchIcon, X, Smartphone, Shirt, Home as HomeIcon, Sparkles, ShoppingBasket, Tag } from "lucide-react";
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { DataPagination } from "@/components/site/DataPagination";
 
@@ -24,48 +24,43 @@ const PAGE_SIZE = 12;
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const initial = searchParams.get("q") ?? "";
-  const [q, setQ] = useState(initial);
-  useEffect(() => {
-    setQ(searchParams.get("q") ?? "");
-  }, [searchParams]);
-  const results = useMemo(
-    () =>
-      q.trim()
-        ? PRODUCTS.filter(
-            (p) =>
-              p.name.toLowerCase().includes(q.toLowerCase()) ||
-              p.category.toLowerCase().includes(q.toLowerCase()) ||
-              p.brand.toLowerCase().includes(q.toLowerCase()),
-          )
-        : PRODUCTS,
-    [q],
-  );
+  const [q, setQ]             = useState(initial);
+  const [results, setResults] = useState<Product[]>([]);
+  const [total, setTotal]     = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage]       = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  const [page, setPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
+  useEffect(() => { setQ(searchParams.get("q") ?? ""); }, [searchParams]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [q]);
+  const doSearch = useCallback((query: string, pg: number) => {
+    setLoading(true);
+    const params = new URLSearchParams({ limit: String(PAGE_SIZE), page: String(pg) });
+    if (query.trim()) params.set("search", query.trim());
+    fetch(`/api/products?${params}`)
+      .then((r) => r.json())
+      .then(({ products, total: t, totalPages: tp }) => {
+        setResults(products ?? []);
+        setTotal(t ?? 0);
+        setTotalPages(tp ?? 1);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+  useEffect(() => { setPage(1); doSearch(q, 1); }, [q, doSearch]);
+  useEffect(() => { doSearch(q, page); }, [page, q, doSearch]);
 
-  const pageItems = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return results.slice(start, start + PAGE_SIZE);
-  }, [results, currentPage]);
-
-  const rangeStart = results.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const rangeEnd = results.length === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, results.length);
+  const pageItems = results;
+  const currentPage = page;
+  const rangeStart = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd   = total === 0 ? 0 : Math.min(currentPage * PAGE_SIZE, total);
 
   return (
     <Layout>
       <PageHeader
         title="Search"
-        subtitle={`${results.length} ${results.length === 1 ? "result" : "results"}${q ? ` for "${q}"` : ""}`}
+        subtitle={`${total} ${total === 1 ? "result" : "results"}${q ? ` for "${q}"` : ""}`}
         crumbs={[{ label: "Home", to: "/" }, { label: "Search" }]}
       />
 
@@ -126,13 +121,8 @@ function SearchPageContent() {
               </div>
             </div>
 
-            {/* Trending products */}
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Trending Right Now</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
-                {PRODUCTS.slice(0, 5).map((p) => <ProductCard key={p.id} p={p} />)}
-              </div>
-            </div>
+            {/* Trending products placeholder - skip when empty */}
+            <div />
           </div>
         ) : (
           <>

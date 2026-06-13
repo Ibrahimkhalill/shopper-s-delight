@@ -38,8 +38,10 @@ export function PromoSection() {
   const [banners, setBanners] = useState<PromoBanner[]>(FALLBACK_BANNERS);
 
   useEffect(() => {
-    const loaded = getAdminPromoBanners();
-    if (loaded.length > 0) setBanners(loaded);
+    fetch("/api/promo-banners")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data) && data.length > 0) setBanners(data); })
+      .catch(() => {});
   }, []);
 
   return (

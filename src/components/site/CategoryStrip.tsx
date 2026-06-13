@@ -44,8 +44,17 @@ export function CategoryStrip() {
   const [adminCats, setAdminCats] = useState<AdminCategory[] | null | undefined>(undefined);
 
   useEffect(() => {
-    const cats = getAdminParentCategories();
-    setAdminCats(cats.length > 0 ? cats : null);
+    fetch("/api/categories?parent=true")
+      .then((r) => r.json())
+      .then(({ categories }) => {
+        const mapped: AdminCategory[] = (categories ?? []).map((c: { id: string; name: string; slug: string; parentId: string | null; image: string | null; status: string }) => ({
+          id: c.id, name: c.name, slug: c.slug,
+          parentId: c.parentId, image: c.image ?? "",
+          status: "active" as const, createdAt: 0,
+        }));
+        setAdminCats(mapped.length > 0 ? mapped : null);
+      })
+      .catch(() => setAdminCats(null));
   }, []);
 
   // Still reading config — shimmer placeholder, no static→admin flash.

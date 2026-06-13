@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
 import { ProductCard } from "@/components/site/ProductCard";
-import { PRODUCTS } from "@/lib/products";
 import {
   ChevronRight, SlidersHorizontal, X, Search,
   ArrowUpDown, LayoutGrid, List, ChevronDown, Check,
@@ -13,7 +12,7 @@ import { useParams } from "next/navigation";
 import { Price } from "@/components/site/Price";
 import { DataPagination } from "@/components/site/DataPagination";
 import { productHasAnyColor } from "@/lib/product-filters";
-import { getAdminSizes, getAdminColors, getAdminBrands } from "@/lib/admin-config";
+import type { Product } from "@/components/site/ProductCard";
 
 const PRICE_BANDS = [
   { id: "u1k",   label: "Under ৳1,000",       test: (n: number) => n < 1000 },
@@ -32,7 +31,7 @@ const SORT_OPTIONS = [
 
 type SortKey = typeof SORT_OPTIONS[number]["value"];
 
-const ALL_CATEGORIES = [...new Set(PRODUCTS.map((p) => p.category))];
+const ALL_CATEGORIES = ["fashion", "gadgets", "home", "beauty", "grocery"];
 const PAGE_SIZE = 12;
 
 function CategoryPage() {
@@ -55,31 +54,30 @@ function CategoryPage() {
   const [sortOpen, setSortOpen]   = useState(false);
   const [page, setPage]           = useState(1);
 
-  // Dynamic filter catalogs from admin
-  const [ALL_SIZES, setAllSizes]     = useState<string[]>(["XS","S","M","L","XL","XXL","1 size","7","8","10","BLK"]);
-  const [ALL_BRANDS, setAllBrands]   = useState<string[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [ALL_SIZES, setAllSizes]      = useState<string[]>(["XS","S","M","L","XL","XXL","One size","39","40","41","42","43"]);
+  const [ALL_BRANDS, setAllBrands]    = useState<string[]>([]);
   const [COLOR_CATALOG, setColorCatalog] = useState<{ hex: string; label: string }[]>([]);
 
   useEffect(() => {
-    const adminSizes = getAdminSizes();
-    if (adminSizes.length > 0) setAllSizes(adminSizes.map((s) => s.name));
-    const adminBrands = getAdminBrands();
-    if (adminBrands.length > 0) setAllBrands(adminBrands.map((b) => b.name));
-    else setAllBrands([...new Set(PRODUCTS.map((p) => p.brand).filter(Boolean))] as string[]);
-    const adminColors = getAdminColors();
-    if (adminColors.length > 0) setColorCatalog(adminColors.map((c) => ({ hex: c.hex, label: c.name })));
-    else {
-      // Derive from products as final fallback
-      const seen = new Map<string, string>();
-      PRODUCTS.forEach((p) => {
-        (p.colors ?? []).forEach((col: { hex: string; label: string } | string) => {
-          if (typeof col === "string") { if (!seen.has(col)) seen.set(col, col); }
-          else { if (!seen.has(col.hex)) seen.set(col.hex, col.label); }
-        });
-      });
-      setColorCatalog(Array.from(seen.entries()).map(([hex, label]) => ({ hex, label })));
-    }
-  }, []);
+    setLoading(true);
+    fetch(`/api/products?category=${slug}&limit=100`)
+      .then((r) => r.json())
+      .then(({ products }) => {
+        const prods: Product[] = products ?? [];
+        setAllProducts(prods);
+        // Derive filter catalogs from fetched products
+        setAllBrands([...new Set(prods.map((p) => p.brand).filter(Boolean))]);
+        const seen = new Map<string, string>();
+        prods.forEach((p) => (p.colors ?? []).forEach((c: string) => { if (!seen.has(c)) seen.set(c, c); }));
+        setColorCatalog(Array.from(seen.entries()).map(([hex]) => ({ hex, label: hex })));
+        const sizes = [...new Set(prods.flatMap((p) => p.sizes))];
+        if (sizes.length) setAllSizes(sizes);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [slug]);
 
   const toggleBand = (id: string) => setBands((b) => b.includes(id) ? b.filter((x) => x !== id) : [...b, id]);
   const toggleSize = (s: string)  => setSizes((v) => v.includes(s) ? v.filter((x) => x !== s) : [...v, s]);
@@ -103,7 +101,7 @@ function CategoryPage() {
   };
 
   const list = useMemo(() => {
-    let arr = [...PRODUCTS];
+    let arr = [...allProducts];
     if (search) arr = arr.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
     if (bands.length) arr = arr.filter((p) => PRICE_BANDS.filter((b) => bands.includes(b.id)).some((b) => b.test(p.price)));
     if (sizes.length) arr = arr.filter((p) => p.sizes.some((s) => sizes.includes(s)));
@@ -112,10 +110,10 @@ function CategoryPage() {
     if (colorHexes.length) arr = arr.filter((p) => productHasAnyColor(p, colorHexes));
     if (sort === "lh")   arr = [...arr].sort((a, b) => a.price - b.price);
     if (sort === "hl")   arr = [...arr].sort((a, b) => b.price - a.price);
-    if (sort === "sale") arr = arr.filter((p) => p.oldPrice);
+    if (sort === "sale") arr = arr.filter((p) => !!p.oldPrice);
     if (sort === "new")  arr = [...arr].reverse();
     return arr;
-  }, [search, bands, sizes, cats, brands, colorHexes, sort]);
+  }, [allProducts, search, bands, sizes, cats, brands, colorHexes, sort]);
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -383,7 +381,13 @@ function CategoryPage() {
 
         {/* Products grid */}
         <div className="flex-1 min-w-0">
-          {list.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : list.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
                 <Search className="size-7 text-muted-foreground" />
@@ -489,7 +493,7 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   );
 }
 
-function ListCard({ p }: { p: typeof PRODUCTS[0] }) {
+function ListCard({ p }: { p: Product }) {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   return (
     <Link href={`/product/${p.id}`} className="flex gap-4 rounded-2xl border bg-card p-3 hover:border-foreground/40 hover:shadow-sm transition group">

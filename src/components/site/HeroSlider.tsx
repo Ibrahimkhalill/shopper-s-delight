@@ -14,7 +14,10 @@ export function HeroSlider() {
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    setSlides(getAdminHeroSlides());
+    fetch("/api/hero-slides")
+      .then((r) => r.json())
+      .then((data) => setSlides(Array.isArray(data) ? data : []))
+      .catch(() => setSlides([]));
   }, []);
 
   const total = slides?.length ?? 0;
